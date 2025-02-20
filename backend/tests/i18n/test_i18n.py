@@ -1,15 +1,12 @@
-from test_data.data import hello_john, hello_world, hello_zhang
+from .test_data.data import hello_john, hello_world, hello_zhang
 
 from configs import funiq_ai_config
 from utils.i18n import (
-    LazyProxy,
     LocaleTranslator,
     _locale_ctx,
     get_current_locale_code,
     get_current_locale_translator,
     get_current_territory,
-    load_yaml_file_with_translations,
-    parse_yaml_translations,
     register_translation_domains,
     set_current_locale,
     translation_registry,
@@ -78,26 +75,6 @@ def test_locale_with_territory():
     assert get_current_territory() == "CN"
 
 
-def test_parse_yaml_translations():
-    yaml_content = '''
-    email:
-      reset_password:
-        subject: _("Password Reset Code")
-        title: _("Reset Your Password")
-        content: _("Please copy and paste this code to reset your password. This code is valid for the next 10 minutes only.")
-    '''
-    
-    translations = parse_yaml_translations(yaml_content, domain="templates")
-    print(f"translations: {translations}")
-    
-    set_current_locale("en")
-    assert str(translations['email']['reset_password']['subject']) == "Password Reset Code"
-    assert str(translations['email']['reset_password']['title']) == "Reset Your Password"
-    
-    set_current_locale("zh_CN")
-    assert str(translations['email']['reset_password']['subject']) == "密码重置验证码"
-    assert str(translations['email']['reset_password']['title']) == "重置您的密码" 
-
 
 def test_translation_with_params():
     translation_registry._translations = {}
@@ -108,24 +85,6 @@ def test_translation_with_params():
     message = _("Hello {name}", domain="test_i18n", name="John")
     assert str(message) == "Hello John"
 
-
-def test_load_yaml_file_with_translations(tmp_path):
-    yaml_file = tmp_path / "test.yaml"
-    yaml_content = '''
-    email:
-      reset_password:
-        subject: _("Password Reset Code")
-        title: _("Reset Your Password")
-    '''
-    yaml_file.write_text(yaml_content)
-    
-    translations = load_yaml_file_with_translations(str(yaml_file), domain="templates")
-    assert isinstance(translations['email']['reset_password']['subject'], LazyProxy)
-    assert isinstance(translations['email']['reset_password']['title'], LazyProxy)
-    
-    set_current_locale("en")
-    assert str(translations['email']['reset_password']['subject']) == "Password Reset Code"
-    assert str(translations['email']['reset_password']['title']) == "Reset Your Password"
 
 
 def test_register_multiple_domains():

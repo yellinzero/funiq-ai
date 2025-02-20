@@ -3,8 +3,9 @@ from __future__ import annotations
 import dataclasses
 from typing import Any, ClassVar
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, Depends, FastAPI
 
+from utils.jwt_bearer import JWTBearer
 from utils.singleton import Singleton
 
 
@@ -64,6 +65,7 @@ class _AppBaseMixin:
     """
     name: str
     manager: ClassVar[AppManager] = app_manager
+    public: bool = False
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -72,13 +74,21 @@ class _RouterMixin(_AppBaseMixin):
     Mixin for route management in an application.
     Provides a dedicated router for each module.
     """
-    router: APIRouter = dataclasses.field(default_factory=lambda: APIRouter(), init=False)
+    router: APIRouter = dataclasses.field(init=False)
 
     def add_route(self, path: str, endpoint: Any, methods: list[str] = ["GET"], **options):
         """
         Add a route to the module's dedicated router.
         """
         self.router.add_api_route(path, endpoint, methods=methods, **options)
+
+    def _init_router(self):
+        """
+        Initialize the router with appropriate dependencies.
+        """
+        self.router = APIRouter(
+            dependencies=[] if self.public else [Depends(JWTBearer())]
+        )
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -103,5 +113,7 @@ class FuniqAIApp(_RouterMixin, _MiddlewareMixin):
     """
 
     def __post_init__(self):
+        # Initialize the router
+        self._init_router()
         # Automatically register the app with the manager
         self.manager.install_app(self)

@@ -1,3 +1,3 @@
 from app_manager import FuniqAIApp
 
-app = FuniqAIApp(name="auth")
+app = FuniqAIApp(name="auth", public=True)

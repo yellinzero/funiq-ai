@@ -274,6 +274,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/model-providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Model Providers
+         * @description Get all available model providers and their configurations from provider schema
+         */
+        get: operations["get_model_providers_model_providers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/model-providers/{provider_name}/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Models
+         * @description Get all available models from a specific provider
+         */
+        get: operations["get_models_model_providers__provider_name__models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/static/providers/{provider}/icon/{size}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Provider Icon
+         * @description Get the icon for a specific provider
+         *
+         *     Args:
+         *         provider: The provider name
+         *         size: Icon size ('small' or 'large')
+         */
+        get: operations["get_provider_icon_static_providers__provider__icon__size__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -295,6 +359,29 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AIModelEntity
+         * @description Model class for AI model.
+         */
+        AIModelEntity: {
+            /** Model */
+            model: string;
+            /** Label */
+            label: string;
+            model_type: components["schemas"]["ModelType"];
+            /** Features */
+            features?: components["schemas"]["ModelFeature"][] | null;
+            configurate_method: components["schemas"]["ConfigurateMethod"];
+            /** Model Properties */
+            model_properties: Record<string, never>;
+            /**
+             * Deprecated
+             * @default false
+             */
+            deprecated: boolean;
+            parameter_rules_schema?: components["schemas"]["JSONSchema"] | null;
+            pricing?: components["schemas"]["PriceConfig"] | null;
+        };
         /** AccountResponse */
         AccountResponse: {
             /** Id */
@@ -353,6 +440,12 @@ export interface components {
              */
             token_type: string;
         };
+        /**
+         * ConfigurateMethod
+         * @description Enum class for configurate method of provider model.
+         * @enum {string}
+         */
+        ConfigurateMethod: "predefined" | "customizable";
         /** ForgotPasswordRequest */
         ForgotPasswordRequest: {
             /**
@@ -366,10 +459,77 @@ export interface components {
             /** Token */
             token: string;
         };
+        /** GetModelProvidersResponse */
+        GetModelProvidersResponse: {
+            /** Providers */
+            providers: components["schemas"]["ProviderInfo"][];
+            /** Total */
+            total: number;
+        };
+        /** GetModelsResponse */
+        GetModelsResponse: {
+            /** Models */
+            models: components["schemas"]["AIModelEntity"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * GlobalUISchemaOptions
+         * @description Global UI schema options that can be set globally and used as fallbacks when no field-level value is provided
+         */
+        GlobalUISchemaOptions: {
+            /**
+             * Addable
+             * @description If false, new items cannot be added to array fields
+             */
+            addable?: boolean | null;
+            /**
+             * Copyable
+             * @description If true, array items can be copied
+             */
+            copyable?: boolean | null;
+            /**
+             * Orderable
+             * @description If false, array items cannot be ordered
+             */
+            orderable?: boolean | null;
+            /**
+             * Removable
+             * @description If false, array items will not be removable
+             */
+            removable?: boolean | null;
+            /**
+             * Label
+             * @description If false, field labels will be omitted
+             */
+            label?: boolean | null;
+            /**
+             * Duplicatekeysuffixseparator
+             * @description Separator between key name and integer for duplicate additionalProperties keys
+             */
+            duplicateKeySuffixSeparator?: string | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * JSONSchema
+         * @description Generic JSON Schema definition
+         */
+        JSONSchema: {
+            /**
+             * Type
+             * @default object
+             */
+            type: string;
+            /** Properties */
+            properties: {
+                [key: string]: components["schemas"]["StringProperty"] | components["schemas"]["NumberProperty"] | Record<string, never>;
+            };
+            /** Required */
+            required?: string[] | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -392,6 +552,104 @@ export interface components {
              * @default bearer
              */
             token_type: string;
+        };
+        /**
+         * ModelFeature
+         * @description Enum class for llm feature.
+         * @enum {string}
+         */
+        ModelFeature: "tool-call" | "multi-tool-call" | "agent-thought" | "vision" | "stream-tool-call";
+        /**
+         * ModelPropertyKey
+         * @description Enum class for model property key.
+         * @enum {string}
+         */
+        ModelPropertyKey: "mode" | "context_size" | "max_chunks" | "file_upload_limit" | "supported_file_extensions" | "max_characters_per_chunk" | "default_voice" | "voices" | "word_limit" | "audio_type" | "max_workers";
+        /**
+         * ModelType
+         * @description Enum class for model type.
+         * @enum {string}
+         */
+        ModelType: "llm" | "text-embedding" | "rerank" | "speech2text" | "moderation" | "tts" | "text2img";
+        /**
+         * NumberProperty
+         * @description Number type schema
+         */
+        NumberProperty: {
+            /**
+             * Type
+             * @default number
+             */
+            type: string;
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Default */
+            default?: unknown | null;
+            /** Enum */
+            enum?: unknown[] | null;
+            /** Const */
+            const?: unknown | null;
+            /** Minimum */
+            minimum?: number | null;
+            /** Maximum */
+            maximum?: number | null;
+            /** Exclusive Minimum */
+            exclusive_minimum?: number | null;
+            /** Exclusive Maximum */
+            exclusive_maximum?: number | null;
+            /** Multiple Of */
+            multiple_of?: number | null;
+        };
+        /**
+         * PriceConfig
+         * @description Model class for pricing info.
+         */
+        PriceConfig: {
+            /** Input */
+            input: string;
+            /** Output */
+            output?: string | null;
+            /** Unit */
+            unit: string;
+            /** Currency */
+            currency: string;
+        };
+        /**
+         * ProviderDocs
+         * @description Model class for provider docs.
+         */
+        ProviderDocs: {
+            /** Title */
+            title: string;
+            /** Url */
+            url: string;
+        };
+        /** ProviderInfo */
+        ProviderInfo: {
+            /** Provider */
+            provider: string;
+            /** Label */
+            label: string;
+            /** Icon */
+            icon: {
+                [key: string]: string | null;
+            } | null;
+            /** Supported Model Types */
+            supported_model_types: components["schemas"]["ModelType"][];
+            docs: components["schemas"]["ProviderDocs"] | null;
+            /** Description */
+            description?: string | null;
+            /** Configurate Methods */
+            configurate_methods: components["schemas"]["ConfigurateMethod"][];
+            credential_schema: components["schemas"]["JSONSchema"] | null;
+            /** Ui Schema */
+            ui_schema?: {
+                [key: string]: {
+                    [key: string]: components["schemas"]["UiSchema"] | null;
+                } | null;
+            } | null;
         };
         /** ResendVerificationCodeRequest */
         ResendVerificationCodeRequest: {
@@ -486,6 +744,34 @@ export interface components {
              */
             msg: string;
             data: components["schemas"]["ForgotPasswordResponse"];
+        };
+        /** ResponseModel[GetModelProvidersResponse] */
+        ResponseModel_GetModelProvidersResponse_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["GetModelProvidersResponse"];
+        };
+        /** ResponseModel[GetModelsResponse] */
+        ResponseModel_GetModelsResponse_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["GetModelsResponse"];
         };
         /** ResponseModel[LoginResponse] */
         ResponseModel_LoginResponse_: {
@@ -639,6 +925,35 @@ export interface components {
              */
             token_type: string;
         };
+        /**
+         * StringProperty
+         * @description String type schema
+         */
+        StringProperty: {
+            /**
+             * Type
+             * @default string
+             */
+            type: string;
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Default */
+            default?: unknown | null;
+            /** Enum */
+            enum?: unknown[] | null;
+            /** Const */
+            const?: unknown | null;
+            /** Minlength */
+            minLength?: number | null;
+            /** Maxlength */
+            maxLength?: number | null;
+            /** Pattern */
+            pattern?: string | null;
+            /** Format */
+            format?: string | null;
+        };
         /** TenantCreateRequest */
         TenantCreateRequest: {
             /** Name */
@@ -661,6 +976,236 @@ export interface components {
          * @enum {string}
          */
         TenantUserRole: "owner" | "admin" | "member" | "guest";
+        /**
+         * UIOptionsBaseType
+         * @description Base type for UI options
+         */
+        UIOptionsBaseType: {
+            /**
+             * Addable
+             * @description If false, new items cannot be added to array fields
+             */
+            addable?: boolean | null;
+            /**
+             * Copyable
+             * @description If true, array items can be copied
+             */
+            copyable?: boolean | null;
+            /**
+             * Orderable
+             * @description If false, array items cannot be ordered
+             */
+            orderable?: boolean | null;
+            /**
+             * Removable
+             * @description If false, array items will not be removable
+             */
+            removable?: boolean | null;
+            /**
+             * Label
+             * @description If false, field labels will be omitted
+             */
+            label?: boolean | null;
+            /**
+             * Duplicatekeysuffixseparator
+             * @description Separator between key name and integer for duplicate additionalProperties keys
+             */
+            duplicateKeySuffixSeparator?: string | null;
+            /** Classnames */
+            classNames?: string | null;
+            /** Style */
+            style?: Record<string, never> | null;
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Placeholder */
+            placeholder?: string | null;
+            /** Help */
+            help?: string | null;
+            /** Autofocus */
+            autofocus?: boolean | null;
+            /** Autocomplete */
+            autocomplete?: string | null;
+            /** Disabled */
+            disabled?: boolean | null;
+            /** Emptyvalue */
+            emptyValue?: unknown | null;
+            /** Enumdisabled */
+            enumDisabled?: (string | number | boolean)[] | null;
+            /** Hideerror */
+            hideError?: boolean | null;
+            /** Readonly */
+            readonly?: boolean | null;
+            /** Order */
+            order?: string[] | null;
+            /** Filepreview */
+            filePreview?: boolean | null;
+            /** Inline */
+            inline?: boolean | null;
+            /** Inputtype */
+            inputType?: string | null;
+            /** Rows */
+            rows?: number | null;
+            submitButtonOptions?: components["schemas"]["UISchemaSubmitButtonOptions"] | null;
+            /** Widget */
+            widget?: string | null;
+            /** Enumnames */
+            enumNames?: string[] | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * UISchemaSubmitButtonOptions
+         * @description Options for customizing the submit button behavior
+         */
+        UISchemaSubmitButtonOptions: {
+            /**
+             * Submittext
+             * @description Text to display on submit button
+             */
+            submitText?: string | null;
+            /**
+             * Norender
+             * @description If true, removes submit button completely
+             */
+            norender?: boolean | null;
+            /**
+             * Props
+             * @description Additional props to pass to submit button
+             */
+            props?: Record<string, never> | null;
+        };
+        /**
+         * UiSchema
+         * @description UI Schema for React JSON Schema Form
+         */
+        UiSchema: {
+            /** Ui:Addable */
+            "ui:addable"?: boolean | null;
+            /** Ui:Copyable */
+            "ui:copyable"?: boolean | null;
+            /** Ui:Orderable */
+            "ui:orderable"?: boolean | null;
+            /** Ui:Removable */
+            "ui:removable"?: boolean | null;
+            /** Ui:Label */
+            "ui:label"?: boolean | null;
+            /** Ui:Duplicatekeysuffixseparator */
+            "ui:duplicateKeySuffixSeparator"?: string | null;
+            /**
+             * Ui:Classnames
+             * @description CSS class names to apply to field
+             */
+            "ui:classNames"?: string | null;
+            /**
+             * Ui:Style
+             * @description Custom styles to apply to field
+             */
+            "ui:style"?: Record<string, never> | null;
+            /**
+             * Ui:Title
+             * @description Custom title for the field
+             */
+            "ui:title"?: string | null;
+            /**
+             * Ui:Description
+             * @description Custom description for the field
+             */
+            "ui:description"?: string | null;
+            /**
+             * Ui:Placeholder
+             * @description Placeholder text for inputs
+             */
+            "ui:placeholder"?: string | null;
+            /**
+             * Ui:Help
+             * @description Help text shown next to field
+             */
+            "ui:help"?: string | null;
+            /**
+             * Ui:Autofocus
+             * @description If true, field will be focused on load
+             */
+            "ui:autofocus"?: boolean | null;
+            /**
+             * Ui:Autocomplete
+             * @description HTML autocomplete attribute
+             */
+            "ui:autocomplete"?: string | null;
+            /**
+             * Ui:Disabled
+             * @description If true, field will be disabled
+             */
+            "ui:disabled"?: boolean | null;
+            /**
+             * Ui:Emptyvalue
+             * @description Value to use when input is empty
+             */
+            "ui:emptyValue"?: unknown | null;
+            /**
+             * Ui:Enumdisabled
+             * @description List of enum values to disable
+             */
+            "ui:enumDisabled"?: (string | number | boolean)[] | null;
+            /**
+             * Ui:Hideerror
+             * @description If true, hide error display for field
+             */
+            "ui:hideError"?: boolean | null;
+            /**
+             * Ui:Readonly
+             * @description If true, field will be read-only
+             */
+            "ui:readonly"?: boolean | null;
+            /**
+             * Ui:Order
+             * @description Custom ordering of object properties
+             */
+            "ui:order"?: string[] | null;
+            /**
+             * Ui:Inline
+             * @description If true, checkboxes render inline
+             */
+            "ui:inline"?: boolean | null;
+            /**
+             * Ui:Widget
+             * @description Custom widget to use for field
+             */
+            "ui:widget"?: string | null;
+            /**
+             * Ui:Inputtype
+             * @description HTML input type
+             */
+            "ui:inputType"?: string | null;
+            /**
+             * Ui:Rows
+             * @description Number of rows for textarea
+             */
+            "ui:rows"?: number | null;
+            /**
+             * Ui:Filepreview
+             * @description If true, show file preview
+             */
+            "ui:filePreview"?: boolean | null;
+            "ui:submitButtonOptions"?: components["schemas"]["UISchemaSubmitButtonOptions"] | null;
+            /**
+             * Ui:Enumnames
+             * @description Custom labels for enum values
+             */
+            "ui:enumNames"?: string[] | null;
+            "ui:globalOptions"?: components["schemas"]["GlobalUISchemaOptions"] | null;
+            /** Ui:Rootfieldid */
+            "ui:rootFieldId"?: string | null;
+            /** Ui:Field */
+            "ui:field"?: string | null;
+            /** Ui:Fieldreplacesanyoroneof */
+            "ui:fieldReplacesAnyOrOneOf"?: boolean | null;
+            /** Ui:Options */
+            "ui:options"?: components["schemas"]["UIOptionsBaseType"] | Record<string, never> | null;
+        } & {
+            [key: string]: unknown;
+        };
         /** UserAddRequest */
         UserAddRequest: {
             /**
@@ -1216,6 +1761,89 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ResponseModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_model_providers_model_providers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_GetModelProvidersResponse_"];
+                };
+            };
+        };
+    };
+    get_models_model_providers__provider_name__models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_GetModelsResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_provider_icon_static_providers__provider__icon__size__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+                size: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

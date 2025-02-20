@@ -1,0 +1,6 @@
+{
+  "api_key": "API Key",
+  "configure_models": "Models",
+  "add_model": "Add Model",
+  "count_models": "{{count}} models"
+}

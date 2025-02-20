@@ -2,7 +2,7 @@
 import ColorModeIconDropdown from '@/theme/ColorModeIconDropdown'
 import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded'
 import Stack from '@mui/material/Stack'
-import MenuButton from './SideMenuButton'
+import MenuButton from '../../components/SideMenuButton'
 
 export default function Header() {
   return (

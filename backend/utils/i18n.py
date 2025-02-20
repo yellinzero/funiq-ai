@@ -1,27 +1,29 @@
 from __future__ import annotations
 
 import os
-import re
+from collections import deque
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Callable, ClassVar
+from typing import Annotated, Any, Callable, ClassVar
 
-import yaml
 from babel.core import Locale as BabelLocale
 from babel.support import LazyProxy, NullTranslations, Translations
 from loguru import logger
+from pydantic import GetJsonSchemaHandler
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core.core_schema import with_info_plain_validator_function
 
 from configs import funiq_ai_config
 from utils.context import ContextStorage
 
-all_domains = ["templates"]
+all_domains = ["templates", "providers"]
 
 
 class TranslationRegistry:
     """
-    A registry that manages translations for multiple domains (e.g., messages, email, model_providers).
+    A registry that manages translations for multiple domains (e.g., messages, email, providers).
     Handles loading and storing translations for different languages and domains.
     """
+
     _translations: ClassVar[dict[str, dict[str, NullTranslations]]] = {}  # domain -> language -> translations
     _default_locale: ClassVar[str] = funiq_ai_config.DEFAULT_LOCALE
     _supported_locales: ClassVar[set[str]] = set()
@@ -46,13 +48,13 @@ class TranslationRegistry:
         """
         Load translations for a specific domain from the locales directory.
         Updates the supported locales set based on available translations.
-        
+
         Args:
             domain: The translation domain to load (e.g., 'messages', 'email')
         """
         if domain not in self._translations:
             self._translations[domain] = {}
-            
+
         for lang in os.listdir(self._locales_path):
             if os.path.isfile(os.path.join(self._locales_path, lang)):
                 continue
@@ -77,9 +79,9 @@ class TranslationRegistry:
     def register_domains(self, domains: list[str]) -> None:
         """
         Register and load translations for multiple domains at once.
-        
+
         Args:
-            domains: List of domain names to register (e.g., ['messages', 'email', 'model_providers'])
+            domains: List of domain names to register (e.g., ['messages', 'email', 'providers'])
         """
         for domain in domains:
             self.load_translations(domain)
@@ -96,6 +98,7 @@ class LocaleTranslator:
     Handles locale-specific translations and stores locale information.
     Wraps Babel's Locale functionality with translation capabilities.
     """
+
     language: str
     translations: NullTranslations
     territory: str | None = None
@@ -108,10 +111,10 @@ class LocaleTranslator:
         """
         Create a LocaleTranslator instance for the given locale code.
         Falls back to default locale if the requested locale is not supported.
-        
+
         Args:
             locale_code: The locale code (e.g., 'en', 'zh-CN')
-        
+
         Returns:
             LocaleTranslator instance for the requested or default locale
         """
@@ -119,11 +122,10 @@ class LocaleTranslator:
             locale_code = translation_registry.default_locale
 
         babel_locale = BabelLocale.parse(locale_code)
-        default_translations = translation_registry.translations.get('messages', {}).get(
-            locale_code, 
-            NullTranslations()
+        default_translations = translation_registry.translations.get("messages", {}).get(
+            locale_code, NullTranslations()
         )
-        
+
         return cls(
             language=babel_locale.language,
             translations=default_translations,
@@ -138,7 +140,7 @@ class LocaleTranslator:
         message: str,
         plural_message: str | None = None,
         count: int | None = None,
-        domain: str = 'messages',
+        domain: str = "messages",
         **kwargs: str,
     ) -> str:
         """
@@ -147,15 +149,12 @@ class LocaleTranslator:
         locale_code = self.language
         if self.territory:
             locale_code = f"{self.language}_{self.territory}"
-        
-        translations = translation_registry.translations.get(domain, {}).get(
-            locale_code,
-            NullTranslations()
-        )
-        
+
+        translations = translation_registry.translations.get(domain, {}).get(locale_code, NullTranslations())
+
         if plural_message is not None and count is not None:
             message = translations.ungettext(message, plural_message, count)
-            format_kwargs = {'count': str(count), **kwargs}  # Create new dict with count, preserving user's kwargs
+            format_kwargs = {"count": str(count), **kwargs}  # Create new dict with count, preserving user's kwargs
         else:
             message = translations.ugettext(message)
             format_kwargs = kwargs
@@ -168,6 +167,7 @@ class LocaleContext(ContextStorage):
     Context manager for handling locale information in the current context.
     Provides thread-local storage for the current locale.
     """
+
     DEFAULT_VALUE = LocaleTranslator.get(funiq_ai_config.DEFAULT_LOCALE)
     CONTEXT_KEY_NAME = "locale"
 
@@ -179,13 +179,14 @@ _locale_ctx = LocaleContext()
 def create_lazy_translator(translation_func: Callable) -> Callable:
     """
     Create a lazy translation function that defers actual translation until the string is used.
-    
+
     Args:
         translation_func: The function to use for actual translation
-    
+
     Returns:
         A function that creates LazyProxy objects for delayed translation
     """
+
     def lazy_translator(
         string: LazyProxy | str,
         *args: Any,
@@ -211,7 +212,7 @@ def _translate(
 ):
     """
     Internal translation function that handles the actual translation process.
-    
+
     Args:
         message: The message to translate
         plural_message: Optional plural form of the message
@@ -256,6 +257,12 @@ def get_current_locale_code() -> str:
     return str(get_current_locale_translator().language)
 
 
+def get_current_locale_code_with_territory() -> str:
+    """Get the language code of the current locale."""
+    locale = get_current_locale_translator()
+    return locale.language if locale.territory is None else f"{locale.language}_{locale.territory}"
+
+
 def get_current_territory() -> str:
     """Get the territory code of the current locale."""
     return str(get_current_locale_translator().territory)
@@ -266,39 +273,152 @@ def get_current_variant() -> str:
     return str(get_current_locale_translator().variant)
 
 
-def parse_yaml_translations(yaml_content: str, domain: str = "messages") -> dict[str, Any]:
-    """
-    Parse YAML content and convert translation markers to lazy translation objects.
-    
-    Args:
-        yaml_content: The YAML content as a string
-        domain: Translation domain (default: 'messages')
-    
-    Returns:
-        Dict containing the parsed YAML with translation markers converted to lazy translations
-    """
-    def process_translations(data: Any) -> Any:
-        if isinstance(data, dict):
-            return {key: process_translations(value) for key, value in data.items()}
-        elif isinstance(data, list):
-            return [process_translations(item) for item in data]
-        elif isinstance(data, str):
-            match = re.match(r'^_\(["\'](.+?)["\']\)$', data)
-            if match:
-                return gettext_lazy(match.group(1), domain=domain)
-        return data
-
-    # Parse the YAML content first
-    parsed_data = yaml.safe_load(yaml_content)
-    # Process the parsed data to convert translation markers
-    return process_translations(parsed_data)
-
-
-def load_yaml_file_with_translations(file_path: str, domain: str = "messages") -> dict[str, Any]:
-    """Load and parse a YAML file with translation markers."""
-    return parse_yaml_translations(Path(file_path).read_text(encoding="utf-8"), domain=domain)
-
-
 def register_all_translation_domains() -> None:
     """Register and load translations for multiple domains at once."""
     translation_registry.register_domains(all_domains)
+
+
+def translate_text(text: LazyProxy | str | None) -> str | None:
+    """
+    Translate a single text that might be a LazyProxy or regular string.
+
+    Args:
+        text: Text to translate, can be LazyProxy, str, or None
+
+    Returns:
+        Translated string or None if input is None
+    """
+    if text is None:
+        return None
+    return str(text) if isinstance(text, (LazyProxy, str)) else text
+
+
+def translate_data(data: Any) -> Any:
+    """
+    Iteratively translate all LazyProxy objects within a Python data structure.
+    Handles dictionaries, lists, tuples and basic data types.
+    Prevents infinite loops from circular references.
+
+    Args:
+        data: Any Python data structure that might contain LazyProxy objects
+
+    Returns:
+        Data structure with all LazyProxy objects translated to strings
+    """
+    # Fast path for simple types
+    if isinstance(data, (str, int, float, bool, LazyProxy)) or data is None:
+        return str(data) if isinstance(data, LazyProxy) else data
+
+    # Track processed objects to prevent infinite loops
+    processed_objects = set()
+
+    # Stack for iterative processing
+    stack = deque([(data, None, None)])  # (value, parent, key/index)
+    root = None
+
+    while stack:
+        value, parent, key = stack.popleft()
+
+        # Skip already processed objects
+        value_id = id(value)
+        if value_id in processed_objects:
+            continue
+
+        # Only track container types
+        if isinstance(value, (dict, list, tuple, set)):
+            processed_objects.add(value_id)
+
+        # Create new container if needed
+        if isinstance(value, dict):
+            new_value = {}
+            if root is None:
+                root = new_value
+            if parent is not None:
+                if isinstance(parent, (list, tuple)):
+                    parent[key] = new_value
+                elif isinstance(parent, set):
+                    parent.remove(value)
+                    parent.add(new_value)
+                else:
+                    parent[key] = new_value
+            # Add all items to stack
+            stack.extend((v, new_value, k) for k, v in value.items())
+
+        elif isinstance(value, (list, tuple)):
+            is_list = isinstance(value, list)
+            new_value = []  # use list instead of tuple to avoid type error first
+            if root is None:
+                root = new_value
+            if parent is not None:
+                if isinstance(parent, (list, tuple)):
+                    parent[key] = new_value
+                elif isinstance(parent, set):
+                    parent.remove(value)
+                    parent.add(new_value)
+                else:
+                    parent[key] = new_value
+
+            # pre-allocate list size
+            if is_list:
+                new_value.extend([None] * len(value))
+
+            # Add all items to stack
+            stack.extend((v, new_value, i) for i, v in enumerate(value))
+
+            # if it's a tuple, convert it last
+            if not is_list and parent is not None:
+                if isinstance(parent, (list, tuple)):
+                    parent[key] = tuple(new_value)
+                elif isinstance(parent, set):
+                    parent.remove(new_value)
+                    parent.add(tuple(new_value))
+                else:
+                    parent[key] = tuple(new_value)
+
+        elif isinstance(value, set):
+            new_value = set()
+            if root is None:
+                root = new_value
+            if parent is not None:
+                if isinstance(parent, (list, tuple)):
+                    parent[key] = new_value
+                elif isinstance(parent, set):
+                    parent.remove(value)
+                    parent.add(new_value)
+                else:
+                    parent[key] = new_value
+            # Add all items to stack
+            stack.extend((v, new_value, None) for v in value)
+
+        else:
+            # Handle leaf nodes (including LazyProxy)
+            translated = str(value) if isinstance(value, LazyProxy) else value
+            if parent is not None:
+                if isinstance(parent, (list, tuple)):
+                    parent[key] = translated
+                elif isinstance(parent, set):
+                    parent.add(translated)
+                else:
+                    parent[key] = translated
+            else:
+                root = translated
+
+    return root if root is not None else data
+
+
+class LazyProxyAnnotation:
+    """Annotation for LazyProxy type validation and translation"""
+
+    @classmethod
+    def __get_pydantic_json_schema__(cls, _core_schema: Any, _handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+        return {"type": "string"}
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, _source_type: Any, _handler: Any) -> Any:
+        def validate_and_translate(value: str | LazyProxy, _: Any) -> str:
+            return translate_text(value)
+
+        return with_info_plain_validator_function(validate_and_translate)
+
+
+TranslatableText = Annotated[str | LazyProxy, LazyProxyAnnotation]

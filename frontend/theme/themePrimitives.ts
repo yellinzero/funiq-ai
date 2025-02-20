@@ -248,10 +248,10 @@ export const shape = {
   borderRadius: 8,
 }
 
-const defaultShadows: Shadows = [
-  'none',
-  'var(--funiq-ai-palette-baseShadow)',
-  ...defaultTheme.shadows.slice(2),
-] as Shadows
+// const defaultShadows: Shadows = [
+//   'none',
+//   'var(--funiq-ai-palette-baseShadow)',
+//   ...defaultTheme.shadows.slice(2),
+// ] as Shadows
 
-export const shadows = defaultShadows
+// export const shadows = defaultShadows

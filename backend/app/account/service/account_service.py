@@ -497,7 +497,7 @@ class AccountService:
 
         return [TenantResponse(id=str(tenant_id), name=tenant_name) for tenant_id, tenant_name in result]
 
-    # TODO
+    # TODO finish this
     @staticmethod
     async def oauth_login(session: AsyncSession, payload: OAuthLoginRequest, request: Request) -> tuple[str, str, str]:
         """

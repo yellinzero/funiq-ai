@@ -33,7 +33,7 @@ export default async function RootLayout({
           }
         }
         >
-          <InitColorSchemeScript attribute="data-funiq-ai-color-scheme" />
+          <InitColorSchemeScript />
           <Providers locale={locale}>
             {children}
           </Providers>

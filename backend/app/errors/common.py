@@ -19,3 +19,4 @@ class CommonErrorCode(BaseErrorCode):
         "A0008", 
         "The email verification code has expired. Please request a new one."
     )
+    FILE_NOT_FOUND = ("A0009", "The requested file could not be found")

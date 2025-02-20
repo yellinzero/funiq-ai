@@ -1,0 +1,362 @@
+# English translations for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-02-19 00:35+0800\n"
+"PO-Revision-Date: 2025-02-19 00:36+0800\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: providers/models/anthropic/anthropic_schema.py:5
+msgid "Anthropic"
+msgstr "Anthropic"
+
+#: providers/models/anthropic/anthropic_schema.py:6
+msgid "Anthropic's powerful models, such as Claude 3."
+msgstr "Anthropic's powerful models, such as Claude 3."
+
+#: providers/models/anthropic/anthropic_schema.py:12
+msgid "Get your API Key from Anthropic"
+msgstr "Get your API Key from Anthropic"
+
+#: providers/models/anthropic/anthropic_schema.py:26
+#: providers/models/deepseek/deepseek_schema.py:26
+#: providers/models/openai/openai_schema.py:30
+msgid "API Key"
+msgstr "API Key"
+
+#: providers/models/anthropic/anthropic_schema.py:27
+#: providers/models/deepseek/deepseek_schema.py:27
+#: providers/models/openai/openai_schema.py:31
+msgid "Enter your API Key"
+msgstr "Enter your API Key"
+
+#: providers/models/anthropic/anthropic_schema.py:33
+msgid "API URL"
+msgstr "API URL"
+
+#: providers/models/anthropic/anthropic_schema.py:34
+msgid "Enter your API URL"
+msgstr "Enter your API URL"
+
+#: providers/models/anthropic/llm/schemas/claude_2.py:22
+#: providers/models/anthropic/llm/schemas/claude_2_1.py:22
+#: providers/models/anthropic/llm/schemas/claude_3_5_haiku_20241022.py:25
+#: providers/models/anthropic/llm/schemas/claude_3_5_sonnet_20240620.py:25
+#: providers/models/anthropic/llm/schemas/claude_3_5_sonnet_20241022.py:25
+#: providers/models/anthropic/llm/schemas/claude_3_haiku_20240307.py:25
+#: providers/models/anthropic/llm/schemas/claude_3_opus_20240229.py:25
+#: providers/models/anthropic/llm/schemas/claude_3_sonnet_20240229.py:25
+#: providers/models/anthropic/llm/schemas/claude_instant_1.py:25
+#: providers/models/anthropic/llm/schemas/claude_instant_1_2.py:20
+msgid "Only sample from the top K options for each subsequent token."
+msgstr "Only sample from the top K options for each subsequent token."
+
+#: providers/models/core/models/model.py:212
+msgid "Temperature"
+msgstr "Temperature"
+
+#: providers/models/core/models/model.py:213
+msgid ""
+"Controls randomness. Lower temperature results in less random "
+"completions. As the temperature approaches zero, the model will become "
+"deterministic and repetitive. Higher temperature results in more random "
+"completions."
+msgstr ""
+"Controls randomness. Lower temperature results in less random "
+"completions. As the temperature approaches zero, the model will become "
+"deterministic and repetitive. Higher temperature results in more random "
+"completions."
+
+#: providers/models/core/models/model.py:223
+msgid "Top P"
+msgstr "Top P"
+
+#: providers/models/core/models/model.py:224
+msgid ""
+"Controls diversity via nucleus sampling: 0.5 means half of all "
+"likelihood-weighted options are considered."
+msgstr ""
+"Controls diversity via nucleus sampling: 0.5 means half of all "
+"likelihood-weighted options are considered."
+
+#: providers/models/core/models/model.py:233
+msgid "Top K"
+msgstr "Top K"
+
+#: providers/models/core/models/model.py:234
+msgid ""
+"Limits the number of tokens to consider for each step by keeping only the"
+" k most likely tokens."
+msgstr ""
+"Limits the number of tokens to consider for each step by keeping only the"
+" k most likely tokens."
+
+#: providers/models/core/models/model.py:241
+msgid "Presence Penalty"
+msgstr "Presence Penalty"
+
+#: providers/models/core/models/model.py:242
+msgid "Applies a penalty to the log-probability of tokens already in the text."
+msgstr "Applies a penalty to the log-probability of tokens already in the text."
+
+#: providers/models/core/models/model.py:250
+msgid "Frequency Penalty"
+msgstr "Frequency Penalty"
+
+#: providers/models/core/models/model.py:251
+msgid ""
+"Applies a penalty to the log-probability of tokens that appear in the "
+"text."
+msgstr ""
+"Applies a penalty to the log-probability of tokens that appear in the "
+"text."
+
+#: providers/models/core/models/model.py:259
+msgid "Max Tokens"
+msgstr "Max Tokens"
+
+#: providers/models/core/models/model.py:260
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:34
+msgid ""
+"Specifies the upper limit on the length of generated results. If the "
+"generated results are truncated, you can increase this parameter."
+msgstr ""
+"Specifies the upper limit on the length of generated results. If the "
+"generated results are truncated, you can increase this parameter."
+
+#: providers/models/core/models/model.py:268
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:89
+#: providers/models/openai/llm/schemas/chatgpt_4o_latest.py:37
+#: providers/models/openai/llm/schemas/gpt_3_5_turbo.py:36
+#: providers/models/openai/llm/schemas/gpt_3_5_turbo_0125.py:36
+#: providers/models/openai/llm/schemas/gpt_3_5_turbo_1106.py:36
+#: providers/models/openai/llm/schemas/gpt_4.py:47
+#: providers/models/openai/llm/schemas/gpt_4_0125_preview.py:47
+#: providers/models/openai/llm/schemas/gpt_4_1106_preview.py:47
+#: providers/models/openai/llm/schemas/gpt_4_32k.py:47
+#: providers/models/openai/llm/schemas/gpt_4_turbo.py:48
+#: providers/models/openai/llm/schemas/gpt_4_turbo_2024_04_09.py:48
+#: providers/models/openai/llm/schemas/gpt_4_turbo_preview.py:47
+#: providers/models/openai/llm/schemas/gpt_4_vision_preview.py:45
+#: providers/models/openai/llm/schemas/gpt_4o.py:37
+#: providers/models/openai/llm/schemas/gpt_4o_2024_08_06.py:37
+#: providers/models/openai/llm/schemas/gpt_4o_audio_preview.py:37
+#: providers/models/openai/llm/schemas/gpt_4o_mini.py:37
+#: providers/models/openai/llm/schemas/gpt_4o_mini_2024_07_18.py:37
+#: providers/models/openai/llm/schemas/o1_mini.py:22
+#: providers/models/openai/llm/schemas/o1_mini_2024_09_12.py:22
+#: providers/models/openai/llm/schemas/o1_preview.py:22
+#: providers/models/openai/llm/schemas/o1_preview_2024_09_12.py:22
+msgid "Response Format"
+msgstr "Response Format"
+
+#: providers/models/core/models/model.py:269
+msgid ""
+"Set a response format, ensure the output from llm is a valid code block "
+"as possible, such as JSON, XML, etc."
+msgstr ""
+"Set a response format, ensure the output from llm is a valid code block "
+"as possible, such as JSON, XML, etc."
+
+#: providers/models/core/models/model.py:275
+msgid "JSON Schema"
+msgstr "JSON Schema"
+
+#: providers/models/core/models/model.py:276
+msgid ""
+"Define a JSON schema to structure and validate the LLM's response. The "
+"schema should follow JSON Schema specification format."
+msgstr ""
+"Define a JSON schema to structure and validate the LLM's response. The "
+"schema should follow JSON Schema specification format."
+
+#: providers/models/deepseek/deepseek_schema.py:5
+msgid "DeepSeek"
+msgstr "DeepSeek"
+
+#: providers/models/deepseek/deepseek_schema.py:6
+msgid "Models provided by deepseek, such as deepseek-chat、deepseek-coder."
+msgstr "Models provided by deepseek, such as deepseek-chat、deepseek-coder."
+
+#: providers/models/deepseek/deepseek_schema.py:12
+msgid "Get your API Key from deepseek"
+msgstr "Get your API Key from deepseek"
+
+#: providers/models/deepseek/deepseek_schema.py:33
+msgid "Custom API endpoint URL"
+msgstr "Custom API endpoint URL"
+
+#: providers/models/deepseek/deepseek_schema.py:34
+msgid "Base URL, e.g. https://api.deepseek.com/v1 or https://api.deepseek.com"
+msgstr "Base URL, e.g. https://api.deepseek.com/v1 or https://api.deepseek.com"
+
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:22
+msgid ""
+"Control the diversity and randomness of generated results. The smaller "
+"the value, the more rigorous it is; the larger the value, the more "
+"divergent it is."
+msgstr ""
+"Control the diversity and randomness of generated results. The smaller "
+"the value, the more rigorous it is; the larger the value, the more "
+"divergent it is."
+
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:45
+msgid ""
+"Control the randomness of generated results. The smaller the value, the "
+"weaker the randomness; the larger the value, the stronger the randomness."
+" Generally speaking, you can adjust one of the two parameters top_p and "
+"temperature."
+msgstr ""
+"Control the randomness of generated results. The smaller the value, the "
+"weaker the randomness; the larger the value, the stronger the randomness."
+" Generally speaking, you can adjust one of the two parameters top_p and "
+"temperature."
+
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:54
+msgid "Log Probabilities"
+msgstr "Log Probabilities"
+
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:56
+msgid ""
+"Whether to return the log probability of the output token. If true, "
+"returns the log probability of each output token in the content of "
+"message."
+msgstr ""
+"Whether to return the log probability of the output token. If true, "
+"returns the log probability of each output token in the content of "
+"message."
+
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:63
+msgid "Top Log Probabilities"
+msgstr "Top Log Probabilities"
+
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:68
+msgid ""
+"An integer N between 0 and 20, specifying that each output position "
+"returns the top N tokenswith output probability, and returns the "
+"logarithmic probability of these tokens. When specifying this parameter, "
+"logprobs must be true."
+msgstr ""
+"An integer N between 0 and 20, specifying that each output position "
+"returns the top N tokens with output probability, and returns the "
+"logarithmic probability of these tokens. When specifying this parameter, "
+"logprobs must be true."
+
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:80
+msgid ""
+"A number between -2.0 and 2.0. If the value is positive, new tokens are "
+"penalized basedon their frequency of occurrence in existing text,reducing"
+" the likelihood that the model will repeat the same content."
+msgstr ""
+"A number between -2.0 and 2.0. If the value is positive, new tokens are "
+"penalized based on their frequency of occurrence in existing text, "
+"reducing the likelihood that the model will repeat the same content."
+
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:91
+#: providers/models/openai/llm/schemas/chatgpt_4o_latest.py:39
+#: providers/models/openai/llm/schemas/gpt_3_5_turbo.py:38
+#: providers/models/openai/llm/schemas/gpt_3_5_turbo_0125.py:38
+#: providers/models/openai/llm/schemas/gpt_3_5_turbo_1106.py:38
+#: providers/models/openai/llm/schemas/gpt_4.py:49
+#: providers/models/openai/llm/schemas/gpt_4_0125_preview.py:49
+#: providers/models/openai/llm/schemas/gpt_4_1106_preview.py:49
+#: providers/models/openai/llm/schemas/gpt_4_32k.py:49
+#: providers/models/openai/llm/schemas/gpt_4_turbo.py:50
+#: providers/models/openai/llm/schemas/gpt_4_turbo_2024_04_09.py:50
+#: providers/models/openai/llm/schemas/gpt_4_turbo_preview.py:49
+#: providers/models/openai/llm/schemas/gpt_4_vision_preview.py:47
+#: providers/models/openai/llm/schemas/gpt_4o.py:39
+#: providers/models/openai/llm/schemas/gpt_4o_2024_08_06.py:39
+#: providers/models/openai/llm/schemas/gpt_4o_audio_preview.py:39
+#: providers/models/openai/llm/schemas/gpt_4o_mini.py:39
+#: providers/models/openai/llm/schemas/gpt_4o_mini_2024_07_18.py:39
+#: providers/models/openai/llm/schemas/o1_mini.py:24
+#: providers/models/openai/llm/schemas/o1_mini_2024_09_12.py:24
+#: providers/models/openai/llm/schemas/o1_preview.py:24
+#: providers/models/openai/llm/schemas/o1_preview_2024_09_12.py:24
+msgid "specifying the format that the model must output"
+msgstr "specifying the format that the model must output"
+
+#: providers/models/openai/openai_schema.py:5
+msgid "OpenAI"
+msgstr "OpenAI"
+
+#: providers/models/openai/openai_schema.py:6
+msgid "Models provided by OpenAI, such as GPT-3.5-Turbo and GPT-4."
+msgstr "Models provided by OpenAI, such as GPT-3.5-Turbo and GPT-4."
+
+#: providers/models/openai/openai_schema.py:12
+msgid "Get your API Key from OpenAI"
+msgstr "Get your API Key from OpenAI"
+
+#: providers/models/openai/openai_schema.py:37
+msgid "Organization ID"
+msgstr "Organization ID"
+
+#: providers/models/openai/openai_schema.py:38
+msgid "Enter your Organization ID"
+msgstr "Enter your Organization ID"
+
+#: providers/models/openai/openai_schema.py:42
+msgid "API Base"
+msgstr "API Base"
+
+#: providers/models/openai/openai_schema.py:43
+msgid "Enter your API Base, e.g. https://api.openai.com"
+msgstr "Enter your API Base, e.g. https://api.openai.com"
+
+#: providers/models/openai/llm/schemas/gpt_4.py:36
+#: providers/models/openai/llm/schemas/gpt_4_0125_preview.py:36
+#: providers/models/openai/llm/schemas/gpt_4_1106_preview.py:36
+#: providers/models/openai/llm/schemas/gpt_4_32k.py:36
+#: providers/models/openai/llm/schemas/gpt_4_turbo.py:37
+#: providers/models/openai/llm/schemas/gpt_4_turbo_2024_04_09.py:37
+#: providers/models/openai/llm/schemas/gpt_4_turbo_preview.py:36
+#: providers/models/openai/llm/schemas/gpt_4_vision_preview.py:34
+msgid "Seed"
+msgstr "Seed"
+
+#: providers/models/openai/llm/schemas/gpt_4.py:38
+#: providers/models/openai/llm/schemas/gpt_4_0125_preview.py:38
+#: providers/models/openai/llm/schemas/gpt_4_1106_preview.py:38
+#: providers/models/openai/llm/schemas/gpt_4_32k.py:38
+#: providers/models/openai/llm/schemas/gpt_4_turbo_2024_04_09.py:39
+msgid ""
+"If specified, model will make a best effort to sample deterministically, "
+"such that repeated requests with the same seed and parameters should "
+"return the same result.Determinism is not guaranteed, and you should "
+"refer to the system_fingerprint response parameter"
+msgstr ""
+"If specified, model will make a best effort to sample deterministically, "
+"such that repeated requests with the same seed and parameters should "
+"return the same result.Determinism is not guaranteed, and you should "
+"refer to the system_fingerprint response parameter"
+
+#: providers/models/openai/llm/schemas/gpt_4_turbo.py:39
+#: providers/models/openai/llm/schemas/gpt_4_turbo_preview.py:38
+#: providers/models/openai/llm/schemas/gpt_4_vision_preview.py:36
+msgid ""
+"If specified, model will make a best effort to sample deterministically, "
+"such that repeated requests with the same seed and parameters should "
+"return the same result. Determinism is not guaranteed, and you should "
+"refer to the system_fingerprint response parameter to monitor changes in "
+"the backend."
+msgstr ""
+"If specified, model will make a best effort to sample deterministically, "
+"such that repeated requests with the same seed and parameters should "
+"return the same result. Determinism is not guaranteed, and you should "
+"refer to the system_fingerprint response parameter to monitor changes in "
+"the backend."
+

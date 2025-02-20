@@ -130,6 +130,12 @@ aiosqlite = "^0.20.0"
 sentry-sdk = "^2.20.0"
 starlette-csrf = "^3.0.0"
 babel = "^2.16.0"
+transformers = "~4.35.0"
+tiktoken = "~0.8.0"
+openai = "~1.52.0"
+jsonschema = "^4.23.0"
+anthropic = "~0.23.1"
+pillow = "^11.1.0"
 
 
 [tool.poetry.scripts]

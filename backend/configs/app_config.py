@@ -30,7 +30,7 @@ class FuniqAIConfigSettings(
     SECRET_KEY: str
     CSRF_SECRET_KEY: str
     REFRESH_TOKEN_COOKIE_NAME: str
-        
+    SERVER_URL: str
     DEPLOY_ENVIRONMENT: str = Field(
         default="development",
         description="Environment name for Sentry (development, staging, production)"

@@ -5,7 +5,7 @@
   "chats": "Chats",
   "workflows": "Workflows",
   "store": "Store",
-  "integrationHub": "Integration Hub",
+  "integrations": "Integrations",
   "enter_valid_email": "Please enter a valid email address",
   "enter_valid_password": "Password must be at least 6 characters long",
   "sign_in": "Sign in",
@@ -13,5 +13,9 @@
   "my_account": "My account",
   "settings": "Settings",
   "language": "Language",
-  "logout": "Logout"
+  "logout": "Logout",
+  "models": "Models",
+  "tools": "Tools",
+  "save": "Save",
+  "cancel": "Cancel"
 }

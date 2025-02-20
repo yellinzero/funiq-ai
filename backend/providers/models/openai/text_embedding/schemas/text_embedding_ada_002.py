@@ -1,0 +1,14 @@
+schema = {
+    "model": "text-embedding-ada-002",
+    "label": "text-embedding-ada-002",
+    "model_type": "text-embedding",
+    "model_properties": {
+        "context_size": 8097,
+        "max_chunks": 32,
+    },
+    "pricing": {
+        "input": "0.0001",
+        "unit": "0.001",
+        "currency": "USD",
+    },
+}

@@ -1,6 +1,4 @@
-from typing import ClassVar, List
-
-from fastapi import Request, status
+from fastapi import Request
 from fastapi.responses import JSONResponse
 from jose import JWTError
 from loguru import logger
@@ -8,7 +6,7 @@ from redis import RedisError
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.errors.base import FuniqAIError
-from app.errors.common import CommonErrorCode
+from app_manager import app_manager
 from utils.security import (
     decode_access_token,
     get_refresh_token_from_cookie,
@@ -18,66 +16,58 @@ from utils.security import (
 
 
 class TokenRefreshMiddleware(BaseHTTPMiddleware):
-    PUBLIC_PATH_PREFIXES: ClassVar[List[str]] = ["/auth/", "/health", "/openapi.json", "/docs", "/redoc"]
+    def __init__(self, app):
+        super().__init__(app)
+        # Get all public app paths from app_manager
+        self.public_paths = [f"/{app.name}/" for app in app_manager.apps.values() if app.public]
+        # Add other essential public paths
+        self.public_paths.extend(["/health", "/openapi.json", "/docs", "/redoc"])
 
     async def dispatch(self, request: Request, call_next):
         try:
-            # Skip auth for OPTIONS requests, CORS preflight requests and public endpoints
-            if (
-                request.method == "OPTIONS"
-                or any(request.url.path.startswith(prefix) for prefix in self.PUBLIC_PATH_PREFIXES)
+            # Skip authentication for OPTIONS requests and public paths
+            if request.method == "OPTIONS" or any(
+                request.url.path.startswith(prefix) for prefix in self.public_paths
             ):
-                logger.debug(f"Skipping auth for public path: {request.url.path}")
                 return await call_next(request)
+
             auth_header = request.headers.get("Authorization")
             refresh_token = get_refresh_token_from_cookie(request)
 
-            if not auth_header or not auth_header.startswith("Bearer ") or not refresh_token:
-                logger.warning("Missing or invalid Authorization header or refresh token")
-                raise CommonErrorCode.UNAUTHORIZED.exception(status_code=status.HTTP_401_UNAUTHORIZED)
+            # If no tokens present, let the route handler's JWTBearer dependency handle it
+            if not auth_header or not refresh_token:
+                return await call_next(request)
 
             access_token = auth_header.replace("Bearer ", "")
 
-            # Verify refresh token first
             try:
-                verify_refresh_token(refresh_token)
-                logger.debug("Refresh token verified successfully")
-            except FuniqAIError as e:
-                return self.handle_error(e)
-            except (RedisError) as e:
-                logger.error(f"Refresh token verification failed: {e!s}")
-                raise CommonErrorCode.UNAUTHORIZED.exception(status_code=status.HTTP_401_UNAUTHORIZED) from e
-
-            # Then check access token
-            try:
+                # Try to decode the access token
                 decode_access_token(access_token)
-                logger.debug("Access token verified successfully")
+                # If successful, continue with the request
                 return await call_next(request)
             except (JWTError, ValueError):
-                # Access token invalid but refresh token valid, refresh access token
-                logger.info("Access token expired, refreshing with valid refresh token")
-                new_access_token = refresh_access_token(refresh_token)
-                headers = request.scope["headers"]
-                headers_dict = dict(headers)
-                headers_dict[b"authorization"] = f"Bearer {new_access_token}".encode()
-                request.scope["headers"] = list(headers_dict.items())
+                # Only handle token refresh if the refresh token is valid
                 try:
+                    verify_refresh_token(refresh_token)
+                    new_access_token = refresh_access_token(refresh_token)
+                    
+                    # Update request headers with new access token
+                    headers = request.scope["headers"]
+                    headers_dict = dict(headers)
+                    headers_dict[b"authorization"] = f"Bearer {new_access_token}".encode()
+                    request.scope["headers"] = list(headers_dict.items())
+
+                    # Process request with new token
                     response = await call_next(request)
                     response.headers["X-New-Access-Token"] = new_access_token
-                    logger.info("Successfully refreshed access token")
                     return response
-                except Exception as e:
-                    # Let business logic errors propagate
-                    logger.error(f"Error occurred after token refresh: {e!s}")
-                    raise e
+                except (FuniqAIError, RedisError) as e:
+                    # Let JWTBearer handle the authentication failure
+                    return await call_next(request)
 
-        except FuniqAIError as e:
-            logger.error(f"Authentication error: {e!s}")
-            return self.handle_error(e)
         except Exception as e:
-            # Only handle authentication-related errors
-            logger.error(f"Unexpected error: {e!s}")
-            raise e
+            logger.error(f"Unexpected error in token refresh: {e!s}")
+            return await call_next(request)
 
     def handle_error(self, exc: FuniqAIError):
         logger.error(f"Handling authentication error: {exc!s}")

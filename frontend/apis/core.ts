@@ -134,6 +134,15 @@ const requestContextMiddleware: Middleware = {
   },
 }
 
+const publicRequestContextMiddleware: Middleware = {
+  async onRequest({ request }) {
+    const { language } = await getCookieContext()
+
+    request.headers.set(I18N_COOKIE_NAME, language)
+    return request
+  },
+}
+
 const responseMiddleware: Middleware = {
   async onResponse({ response }) {
     const newAccessToken = response.headers.get('X-New-Access-Token')
@@ -173,7 +182,7 @@ const responseMiddleware: Middleware = {
 // Apply middlewares
 apiFetch.use(requestContextMiddleware)
 apiFetch.use(responseMiddleware)
-publicApiFetch.use(requestContextMiddleware)
+publicApiFetch.use(publicRequestContextMiddleware)
 publicApiFetch.use(responseMiddleware)
 
 // API Factory

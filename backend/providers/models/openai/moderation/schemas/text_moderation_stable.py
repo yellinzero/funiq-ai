@@ -1,0 +1,9 @@
+schema = {
+    "model": "text-moderation-stable",
+    "label": "text-moderation-stable",
+    "model_type": "moderation",
+    "model_properties": {
+        "max_chunks": 32,
+        "max_characters_per_chunk": 2000,
+    },
+}

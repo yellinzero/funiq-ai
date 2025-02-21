@@ -1,4 +1,3 @@
-import type { IGetAccountInfoResponse } from '@/apis/types'
 import { getAccountInfoApi } from '@/apis/openapis/account'
 import CurrentUserInfoBox from '@/components/CurrentUserInfoBox'
 import HomePageHeader from '@/components/HomePageHeader'
@@ -7,11 +6,12 @@ import { initTranslations } from '@/plugins/i18n'
 import { getLocaleFromServer } from '@/plugins/i18n/server'
 import { Box, Button, Link, Typography } from '@mui/material'
 import { cookies } from 'next/headers'
+import { IAccountResponse } from '@/apis/types'
 
 export default async function Home() {
   const locale = await getLocaleFromServer()
   const { t } = await initTranslations(locale, ['global'])
-  let userInfo: IGetAccountInfoResponse | undefined
+  let userInfo: IAccountResponse | undefined
   const session = (await cookies()).get('session')?.value
   if(session) {
     try {

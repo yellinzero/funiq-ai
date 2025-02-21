@@ -1,14 +1,12 @@
 import { create } from 'zustand'
 import { getModelProvidersApi } from '@/apis/openapis/model_providers'
-import { components } from '@/types/openapi'
 import { useQuery } from '@tanstack/react-query'
-
-type ProviderInfo = components['schemas']['ProviderInfo']
+import { IProviderInfo } from '@/apis/types'
 
 interface ProvidersStoreState {
-  providers: ProviderInfo[]
+  providers: IProviderInfo[]
   error: Error | null
-  setProviders: (providers: ProviderInfo[]) => void
+  setProviders: (providers: IProviderInfo[]) => void
   setError: (error: Error | null) => void
 }
 

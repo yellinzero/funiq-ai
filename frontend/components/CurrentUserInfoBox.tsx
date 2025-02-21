@@ -1,10 +1,10 @@
 'use client'
-import type { IGetAccountInfoResponse } from '@/apis/types'
+import type { IAccountResponse } from '@/apis/types'
 
 import { Avatar, Box, Stack, Typography } from '@mui/material'
 
 interface IUserInfoBoxProps {
-  userInfo?: IGetAccountInfoResponse
+  userInfo?: IAccountResponse
   width?: number
   height?: number
   showName?: boolean

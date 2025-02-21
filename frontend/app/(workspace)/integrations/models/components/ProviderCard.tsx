@@ -1,12 +1,13 @@
-import { IGetModelProvidersResponse } from '@/apis/types'
 import { Box, Card, CardContent, Typography, Button, Chip, Stack, CardActions } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-export type ProviderCardProps = IGetModelProvidersResponse['providers'][number]
+import { IProviderInfo } from '@/apis/types'
 
-export default function ProviderCard(props: ProviderCardProps & {
-  onClickAPIKey?: (provider: ProviderCardProps) => void
-  onClickModels?: (provider: ProviderCardProps) => void
-}) {
+export type ProviderCardProps = IProviderInfo & {
+  onClickAPIKey?: (provider: IProviderInfo) => void
+  onClickModels?: (provider: IProviderInfo) => void
+}
+
+export default function ProviderCard(props: ProviderCardProps) {
   const { t } = useTranslation()
   const {
     label,

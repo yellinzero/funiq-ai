@@ -1,13 +1,10 @@
 import { Card, Stack, Typography, Chip, styled, Switch } from '@mui/material'
-import { components } from '@/types/openapi'
+import { IAIModelEntity, IProviderInfo } from '@/apis/types'
 import { capitalize } from 'lodash-es'
 
-type AIModelEntity = components['schemas']['AIModelEntity']
-type ProviderInfo = components['schemas']['ProviderInfo']
-
-interface ModelCardProps extends AIModelEntity {
-  icon: ProviderInfo['icon']
-  onToggle?: (model: AIModelEntity, checked: boolean) => void
+interface ModelCardProps extends IAIModelEntity {
+  icon: IProviderInfo['icon']
+  onToggle?: (model: IAIModelEntity, checked: boolean) => void
   enabled?: boolean
 }
 

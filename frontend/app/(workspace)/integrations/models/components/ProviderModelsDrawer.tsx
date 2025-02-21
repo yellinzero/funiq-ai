@@ -4,14 +4,11 @@ import { useEffect } from 'react'
 import FullPageLoading from '@/components/FullPageLoading'
 import ModelCard from './ModelCard'
 import { useModelsStore, useModelsQuery } from '@/app/(workspace)/integrations/models/stores/useModelsStore'
-import { components } from '@/types/openapi'
 import CloseIcon from '@mui/icons-material/Close'
-
-type ProviderInfo = components['schemas']['ProviderInfo']
-type AIModelEntity = components['schemas']['AIModelEntity']
+import { IAIModelEntity, IProviderInfo } from '@/apis/types'
 
 interface ProviderModelsDrawerProps {
-  provider: ProviderInfo
+  provider: IProviderInfo
   open: boolean
   onClose: () => void
 }
@@ -29,7 +26,7 @@ export default function ProviderModelsDrawer({ provider, open, onClose }: Provid
   const providerModels = models[provider.provider] || []
 
   const canAddModel = provider.configurate_methods.includes('customizable')
-  function handleToggle(model: AIModelEntity, enabled: boolean) {
+  function handleToggle(model: IAIModelEntity, enabled: boolean) {
     console.log(model, enabled)
   }
 
@@ -61,7 +58,7 @@ export default function ProviderModelsDrawer({ provider, open, onClose }: Provid
           <FullPageLoading />
         ) : (
           <Grid2 container spacing={2}>
-            {providerModels.map((model: AIModelEntity) => (
+            {providerModels.map((model: IAIModelEntity) => (
               <Grid2 size={12} key={model.model}>
                 <ModelCard {...model} icon={provider.icon} onToggle={handleToggle} />
               </Grid2>

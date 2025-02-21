@@ -379,6 +379,7 @@ export interface components {
              * @default false
              */
             deprecated: boolean;
+            parameter_rules_ui_schema?: components["schemas"]["UiSchema"] | null;
             parameter_rules_schema?: components["schemas"]["JSONSchema"] | null;
             pricing?: components["schemas"]["PriceConfig"] | null;
         };

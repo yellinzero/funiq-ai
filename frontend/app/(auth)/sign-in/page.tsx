@@ -4,6 +4,7 @@ import { HttpError } from '@/apis/core'
 import Toast from '@/components/Toast'
 import { useSessionCookie } from '@/hooks/useSessionCookie'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { passwordValidation } from '@/utils/validate_rules'
 import { Link } from '@mui/material'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -32,7 +33,7 @@ const Card = styled(MuiCard)(({ theme }) => ({
 
 const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
+  password: passwordValidation,
 })
 type LoginFormInputs = z.infer<typeof loginSchema>
 
@@ -44,11 +45,15 @@ export default function Login() {
   const {
     control,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<LoginFormInputs>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
+    mode: 'onChange'
   })
+
+  const emailValue = watch('email')
 
   const onSubmit = async (data: LoginFormInputs) => {
     try {
@@ -106,9 +111,7 @@ export default function Login() {
                   variant="outlined"
                   error={!!errors.email}
                   helperText={errors.email
-                    ? t('enter_valid_email', {
-                      ns: 'global',
-                    })
+                    ? t('enter_valid_email')
                     : undefined}
                 />
               )}
@@ -129,11 +132,7 @@ export default function Login() {
                   fullWidth
                   variant="outlined"
                   error={!!errors.password}
-                  helperText={errors.password
-                    ? t('enter_valid_password', {
-                      ns: 'global',
-                    })
-                    : undefined}
+                  helperText={errors.password ? t(errors.password.message as string) : undefined}
                 />
               )}
             />
@@ -149,7 +148,10 @@ export default function Login() {
             justifyContent: 'end',
           }}
           >
-            <Link href="/forgot-password" underline="hover">
+            <Link
+              href={`/forgot-password${emailValue ? `?email=${encodeURIComponent(emailValue)}` : ''}`}
+              underline="hover"
+            >
               {t('forgot_password')}
             </Link>
           </Box>

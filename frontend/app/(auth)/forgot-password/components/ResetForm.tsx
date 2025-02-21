@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { passwordValidation } from '@/utils/validate_rules'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import FormControl from '@mui/material/FormControl'
@@ -10,10 +11,12 @@ import * as z from 'zod'
 
 const resetSchema = z.object({
   code: z.string().min(6).max(6),
-  password: z.string().min(6),
-  confirmPassword: z.string().min(6),
-}).refine(data => data.password === data.confirmPassword, {
+  password: passwordValidation,
+  confirmPassword: z.string()
+    .min(8, { message: 'password_min_length' })
+}).refine((data: Record<string, string>) => data['password'] === data['confirmPassword'], {
   path: ['confirmPassword'],
+  message: 'passwords_dont_match'
 })
 
 type ResetFormInputs = z.infer<typeof resetSchema>
@@ -33,6 +36,7 @@ export default function ResetForm({ onSubmit, countdown, onResend }: ResetFormPr
   } = useForm<ResetFormInputs>({
     resolver: zodResolver(resetSchema),
     defaultValues: { code: '', password: '', confirmPassword: '' },
+    mode: 'onChange'
   })
 
   return (
@@ -70,7 +74,7 @@ export default function ResetForm({ onSubmit, countdown, onResend }: ResetFormPr
               fullWidth
               variant="outlined"
               error={!!errors.password}
-              helperText={errors.password ? t('enter_valid_password') : undefined}
+              helperText={errors.password ? t(errors.password.message as string) : undefined}
             />
           )}
         />

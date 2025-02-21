@@ -5,7 +5,7 @@ import { useCountdown } from '@/hooks/useCountdown'
 import MuiCard from '@mui/material/Card'
 import { styled } from '@mui/material/styles'
 import Typography from '@mui/material/Typography'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import EmailForm from './components/EmailForm'
@@ -26,9 +26,10 @@ const Card = styled(MuiCard)(({ theme }) => ({
 export default function ForgotPassword() {
   const { t } = useTranslation(['auth'])
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [step, setStep] = useState<1 | 2>(1)
   const [token, setToken] = useState('')
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(searchParams.get('email') || '')
   const { countdown, startCountdown } = useCountdown()
   const onSubmitEmail = async (data: { email: string }) => {
     try {
@@ -75,7 +76,7 @@ export default function ForgotPassword() {
       </Typography>
 
       {step === 1
-        ? <EmailForm onSubmit={onSubmitEmail} />
+        ? <EmailForm onSubmit={onSubmitEmail} initialEmail={email} />
         : (
             <ResetForm
               onSubmit={onSubmitReset}

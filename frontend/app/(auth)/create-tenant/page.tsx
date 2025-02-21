@@ -46,6 +46,7 @@ export default function CreateTenant() {
   } = useForm<TenantFormInputs>({
     resolver: zodResolver(tenantSchema),
     defaultValues: { name: '' },
+    mode: 'onChange'
   })
 
   const onSubmit = async (data: TenantFormInputs) => {

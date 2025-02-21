@@ -1,11 +1,13 @@
 import datetime
+import re
 import secrets
 from datetime import timedelta
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import bcrypt
 from fastapi import Request, Response, status
 from jose import JWTError, jwt
+from pydantic import BaseModel, field_validator
 
 from app.errors.account import AccountErrorCode
 from configs import funiq_ai_config
@@ -172,3 +174,37 @@ def set_refresh_token_to_cookie(response: Response, refresh_token: str):
 
 def delete_refresh_token_from_cookie(response: Response):
     response.delete_cookie(funiq_ai_config.REFRESH_TOKEN_COOKIE_NAME)
+
+
+def validate_password(password: str) -> str:
+    """
+    Validate password strength requirements:
+    - Minimum 8 characters
+    - Maximum 64 characters
+    - At least one uppercase letter
+    - At least one lowercase letter
+    - At least one number
+    - At least one special character
+    """
+    if len(password) < 8:
+        raise ValueError("Password must be at least 8 characters long")
+    if len(password) > 64:
+        raise ValueError("Password must not exceed 64 characters")
+    if not re.search(r"[A-Z]", password):
+        raise ValueError("Password must contain at least one uppercase letter")
+    if not re.search(r"[a-z]", password):
+        raise ValueError("Password must contain at least one lowercase letter")
+    if not re.search(r"\d", password):
+        raise ValueError("Password must contain at least one number")
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        raise ValueError("Password must contain at least one special character")
+    return password
+
+
+class PasswordMixin(BaseModel):
+    """A mixin class that adds password validation to a Pydantic model."""
+    
+    @field_validator("password", "new_password", check_fields=False)
+    @classmethod
+    def validate_password_field(cls, v: Any) -> Any:
+        return validate_password(v)

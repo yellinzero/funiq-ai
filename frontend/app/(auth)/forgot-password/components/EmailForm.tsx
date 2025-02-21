@@ -16,9 +16,10 @@ type EmailFormInputs = z.infer<typeof emailSchema>
 
 interface EmailFormProps {
   onSubmit: (data: EmailFormInputs) => Promise<void>
+  initialEmail?: string
 }
 
-export default function EmailForm({ onSubmit }: EmailFormProps) {
+export default function EmailForm({ onSubmit, initialEmail = '' }: EmailFormProps) {
   const { t } = useTranslation(['auth'])
   const {
     control,
@@ -26,7 +27,8 @@ export default function EmailForm({ onSubmit }: EmailFormProps) {
     formState: { errors },
   } = useForm<EmailFormInputs>({
     resolver: zodResolver(emailSchema),
-    defaultValues: { email: '' },
+    defaultValues: { email: initialEmail },
+    mode: 'onChange'
   })
 
   return (

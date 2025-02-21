@@ -1,6 +1,7 @@
 'use client'
 import { signupApi } from '@/apis'
 import Toast from '@/components/Toast'
+import { passwordValidation } from '@/utils/validate_rules'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -14,7 +15,7 @@ import * as z from 'zod'
 const signUpSchema = z.object({
   name: z.string().nonempty(),
   email: z.string().email(),
-  password: z.string().min(6),
+  password: passwordValidation,
 })
 type SignUpFormInputs = z.infer<typeof signUpSchema>
 
@@ -23,7 +24,7 @@ interface SignUpFormProps {
 }
 
 export default function SignUpForm({ onSuccess }: SignUpFormProps) {
-  const { t } = useTranslation(['auth'])
+  const { t } = useTranslation(['auth', 'global'])
 
   const {
     control,
@@ -36,6 +37,7 @@ export default function SignUpForm({ onSuccess }: SignUpFormProps) {
       email: '',
       password: '',
     },
+    mode: 'onChange'
   })
 
   const onSubmit = async (data: SignUpFormInputs) => {
@@ -111,13 +113,15 @@ export default function SignUpForm({ onSuccess }: SignUpFormProps) {
               fullWidth
               variant="outlined"
               error={!!errors.password}
-              helperText={errors.email ? t('enter_valid_password') : undefined}
+              helperText={errors.password ? t(errors.password.message as string) : undefined}
             />
           )}
         />
       </FormControl>
       <Button type="submit" fullWidth variant="contained">
-        {t('sign_up')}
+        {t('sign_up', {
+          ns: 'global',
+        })}
       </Button>
     </Box>
   )

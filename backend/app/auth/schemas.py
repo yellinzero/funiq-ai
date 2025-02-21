@@ -1,10 +1,11 @@
 from pydantic import BaseModel, EmailStr
 
 from app.models.account import OAuthProviderName
+from utils.security import PasswordMixin
 from utils.token_manager import AccountTokenType
 
 
-class SignupRequest(BaseModel):
+class SignupRequest(PasswordMixin, BaseModel):
     name: str
     email: EmailStr
     password: str
@@ -20,7 +21,7 @@ class SignupVerifyRequest(BaseModel):
     code: str
 
 
-class LoginRequest(BaseModel):
+class LoginRequest(PasswordMixin, BaseModel):
     email: EmailStr
     password: str
 
@@ -53,7 +54,7 @@ class ForgotPasswordResponse(BaseModel):
     token: str
 
 
-class ResetPasswordRequest(BaseModel):
+class ResetPasswordRequest(PasswordMixin, BaseModel):
     token: str
     code: str
     new_password: str

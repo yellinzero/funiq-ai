@@ -6,8 +6,6 @@
   "workflows": "Workflows",
   "store": "Store",
   "integrations": "Integrations",
-  "enter_valid_email": "Please enter a valid email address",
-  "enter_valid_password": "Password must be at least 6 characters long",
   "sign_in": "Sign in",
   "sign_up": "Sign up",
   "my_account": "My account",

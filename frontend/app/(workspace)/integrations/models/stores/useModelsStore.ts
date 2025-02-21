@@ -1,17 +1,14 @@
 import { create } from 'zustand'
 import { getModelsApi } from '@/apis/openapis/model_providers'
-import { components } from '@/types/openapi'
 import { useQuery } from '@tanstack/react-query'
-
-type AIModelEntity = components['schemas']['AIModelEntity']
-type ProviderInfo = components['schemas']['ProviderInfo']
+import { IAIModelEntity, IProviderInfo } from '@/apis/types'
 
 interface ModelsStoreState {
-  models: Record<string, AIModelEntity[]>
-  currentProvider: ProviderInfo | null
+  models: Record<string, IAIModelEntity[]>
+  currentProvider: IProviderInfo | null
   error: Error | null
-  setModels: (provider: string, models: AIModelEntity[]) => void
-  setCurrentProvider: (provider: ProviderInfo | null) => void
+  setModels: (provider: string, models: IAIModelEntity[]) => void
+  setCurrentProvider: (provider: IProviderInfo | null) => void
   setError: (error: Error | null) => void
 }
 

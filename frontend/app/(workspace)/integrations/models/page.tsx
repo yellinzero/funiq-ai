@@ -8,18 +8,16 @@ import { RJSFSchema, UiSchema } from '@rjsf/utils'
 import ProviderApiKeyDialog from './components/ProviderApiKeyDialog'
 import FullPageLoading from '@/components/FullPageLoading'
 import { useProvidersStore, useProvidersQuery } from './stores/useProvidersStore'
-import { components } from '@/types/openapi'
+import { IProviderInfo } from '@/apis/types'
 
 const namespaces = ['global', 'integrations']
-
-type ProviderInfo = components['schemas']['ProviderInfo']
 
 export default function ModelsPage() {
   const { i18n } = useTranslation(namespaces)
   const { isLoading } = useProvidersQuery(i18n.language)
   const { providers } = useProvidersStore()
   const [openDrawer, setOpenDrawer] = useState(false)
-  const [provider, setProvider] = useState<ProviderInfo | null>(null)
+  const [provider, setProvider] = useState<IProviderInfo | null>(null)
   const [providerLabel, setProviderLabel] = useState<string | null>(null)
   const [providerCredentialSchema, setProviderCredentialSchema] = useState<RJSFSchema | null>(null)
   const [providerCredentialUiSchema, setProviderCredentialUiSchema] = useState<UiSchema>()
@@ -29,12 +27,12 @@ export default function ModelsPage() {
     return <FullPageLoading />
   }
 
-  function handleClickModels(provider: ProviderInfo) {
+  function handleClickModels(provider: IProviderInfo) {
     setProvider(provider)
     setOpenDrawer(true)
   }
 
-  function handleClickAPIKey(provider: ProviderInfo) {
+  function handleClickAPIKey(provider: IProviderInfo) {
     setProviderLabel(provider.label)
     setProviderCredentialSchema(provider.credential_schema as RJSFSchema)
     setProviderCredentialUiSchema(provider.ui_schema?.credential_schema as UiSchema)

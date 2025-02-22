@@ -74,6 +74,9 @@ importers:
       accept-language:
         specifier: ^3.0.20
         version: 3.0.20
+      ajv-i18n:
+        specifier: ^4.2.0
+        version: 4.2.0(ajv@8.17.1)
       i18next:
         specifier: ^24.0.0
         version: 24.0.0(typescript@5.7.2)
@@ -2070,6 +2073,11 @@ packages:
     peerDependenciesMeta:
       ajv:
         optional: true
+
+  ajv-i18n@4.2.0:
+    resolution: {integrity: sha512-v/ei2UkCEeuKNXh8RToiFsUclmU+G57LO1Oo22OagNMENIw+Yb8eMwvHu7Vn9fmkjJyv6XclhJ8TbuigSglPkg==}
+    peerDependencies:
+      ajv: ^8.0.0-beta.0
 
   ajv@6.12.6:
     resolution: {integrity: sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==}
@@ -7073,6 +7081,10 @@ snapshots:
 
   ajv-formats@2.1.1(ajv@8.17.1):
     optionalDependencies:
+      ajv: 8.17.1
+
+  ajv-i18n@4.2.0(ajv@8.17.1):
+    dependencies:
       ajv: 8.17.1
 
   ajv@6.12.6:

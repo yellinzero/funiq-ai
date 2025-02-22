@@ -18,7 +18,7 @@ schema = {
                 "type": "string",
                 "title": _("API Key", domain="providers"),
                 "format": "password",
-                "minLength": 1,
+
             },
             "openai_organization": {
                 "type": "string",
@@ -26,6 +26,7 @@ schema = {
             },
             "openai_api_base": {
                 "type": "string",
+                "format": "uri",
                 "title": _("API Base", domain="providers"),
                 "description": _("Enter your API Base, e.g. https://api.openai.com", domain="providers"),
             },

@@ -25,10 +25,10 @@ schema = {
         "type": "string",
         "title": _("API Key", domain="providers"),
         "format": "password",
-        "minLength": 1
       },
       "endpoint_url": {
         "type": "string",
+        "format": "uri",
         "title": _("Custom API endpoint URL", domain="providers"),
         "description": _("Base URL, e.g. https://api.deepseek.com/v1 or https://api.deepseek.com", domain="providers")
       }

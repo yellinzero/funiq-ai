@@ -18,11 +18,11 @@ schema = {
                 "type": "string",
                 "title": _("API Key", domain="providers"),
                 "format": "password",
-                "minLength": 1,
             },
             "anthropic_api_url": {
                 "type": "string",
                 "title": _("API URL", domain="providers"),
+                "format": "uri",
             },
         },
         "required": ["anthropic_api_key"],

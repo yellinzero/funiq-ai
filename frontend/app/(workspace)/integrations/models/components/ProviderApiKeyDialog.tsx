@@ -1,7 +1,5 @@
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material'
-import Form from '@rjsf/mui';
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material'
 import { RJSFSchema, UiSchema } from '@rjsf/utils';
-import validator from '@rjsf/validator-ajv8';
 import { useTranslation } from 'react-i18next';
 import React from 'react';
 import JsonSchemaForm from '@/components/JsonSchemaForm';
@@ -15,7 +13,7 @@ interface ProviderApiKeyDialogProps {
 }
 
 export default function ProviderApiKeyDialog({ providerName, schema, uiSchema, open, onClose }: ProviderApiKeyDialogProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const formRef = React.useRef<any>()
 
   const handleSubmit = () => {
@@ -36,7 +34,7 @@ export default function ProviderApiKeyDialog({ providerName, schema, uiSchema, o
           ref={formRef}
           schema={schema}
           uiSchema={uiSchema}
-          validator={validator}
+          locale={i18n.language}
         />
       </DialogContent>
       <DialogActions sx={{ pb: 3, px: 2 }}>

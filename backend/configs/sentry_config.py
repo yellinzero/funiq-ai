@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
@@ -9,7 +7,7 @@ class SentryConfig(BaseSettings):
     Sentry-related configuration
     """
     
-    SENTRY_DSN: Optional[str] = Field(
+    SENTRY_DSN: str | None = Field(
         default=None,
         description="Sentry DSN for error tracking"
     )

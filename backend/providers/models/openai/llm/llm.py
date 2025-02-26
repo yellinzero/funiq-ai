@@ -1,6 +1,6 @@
 import json
 from collections.abc import Generator
-from typing import Any, Optional, Union, cast
+from typing import Any, Union, cast
 
 import tiktoken
 from loguru import logger
@@ -43,10 +43,10 @@ class OpenAILargeLanguageModel(OpenAICore, LargeLanguageModel):
         credentials: dict,
         prompt_messages: list[PromptMessage],
         model_parameters: dict,
-        tools: Optional[list[PromptMessageTool]] = None,
-        stop: Optional[list[str]] = None,
+        tools: list[PromptMessageTool] | None = None,
+        stop: list[str] | None = None,
         stream: bool = True,
-        user: Optional[str] = None,
+        user: str | None = None,
     ) -> Union[LLMResult, Generator]:
         """
         Invoke large language model
@@ -97,11 +97,11 @@ class OpenAILargeLanguageModel(OpenAICore, LargeLanguageModel):
         credentials: dict,
         prompt_messages: list[PromptMessage],
         model_parameters: dict,
-        tools: Optional[list[PromptMessageTool]] = None,
-        stop: Optional[list[str]] = None,
+        tools: list[PromptMessageTool] | None = None,
+        stop: list[str] | None = None,
         stream: bool = True,
-        user: Optional[str] = None,
-        callbacks: Optional[list[Callback]] = None,
+        user: str | None = None,
+        callbacks: list[Callback] | None = None,
     ) -> Union[LLMResult, Generator]:
         """
         Code block mode wrapper for invoking large language model
@@ -244,7 +244,7 @@ class OpenAILargeLanguageModel(OpenAICore, LargeLanguageModel):
         model: str,
         credentials: dict,
         prompt_messages: list[PromptMessage],
-        tools: Optional[list[PromptMessageTool]] = None,
+        tools: list[PromptMessageTool] | None = None,
     ) -> int:
         """
         Get number of tokens for given prompt messages
@@ -367,9 +367,9 @@ class OpenAILargeLanguageModel(OpenAICore, LargeLanguageModel):
         credentials: dict,
         prompt_messages: list[PromptMessage],
         model_parameters: dict,
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
         stream: bool = True,
-        user: Optional[str] = None,
+        user: str | None = None,
     ) -> Union[LLMResult, Generator]:
         """
         Invoke llm completion model
@@ -536,10 +536,10 @@ class OpenAILargeLanguageModel(OpenAICore, LargeLanguageModel):
         credentials: dict,
         prompt_messages: list[PromptMessage],
         model_parameters: dict,
-        tools: Optional[list[PromptMessageTool]] = None,
-        stop: Optional[list[str]] = None,
+        tools: list[PromptMessageTool] | None = None,
+        stop: list[str] | None = None,
         stream: bool = True,
-        user: Optional[str] = None,
+        user: str | None = None,
     ) -> Union[LLMResult, Generator]:
         """
         Invoke llm chat model
@@ -632,7 +632,7 @@ class OpenAILargeLanguageModel(OpenAICore, LargeLanguageModel):
         self,
         block_result: LLMResult,
         prompt_messages: list[PromptMessage],
-        stop: Optional[list[str]] = None,
+        stop: list[str] | None = None,
     ) -> Generator[LLMResultChunk, None, None]:
         """
         Handle llm chat response
@@ -669,7 +669,7 @@ class OpenAILargeLanguageModel(OpenAICore, LargeLanguageModel):
         credentials: dict,
         response: ChatCompletion,
         prompt_messages: list[PromptMessage],
-        tools: Optional[list[PromptMessageTool]] = None,
+        tools: list[PromptMessageTool] | None = None,
     ) -> LLMResult:
         """
         Handle llm chat response
@@ -723,7 +723,7 @@ class OpenAILargeLanguageModel(OpenAICore, LargeLanguageModel):
         credentials: dict,
         response: Stream[ChatCompletionChunk],
         prompt_messages: list[PromptMessage],
-        tools: Optional[list[PromptMessageTool]] = None,
+        tools: list[PromptMessageTool] | None = None,
     ) -> Generator:
         """
         Handle llm chat stream response
@@ -985,7 +985,7 @@ class OpenAILargeLanguageModel(OpenAICore, LargeLanguageModel):
 
         return message_dict
 
-    def _num_tokens_from_string(self, model: str, text: str, tools: Optional[list[PromptMessageTool]] = None) -> int:
+    def _num_tokens_from_string(self, model: str, text: str, tools: list[PromptMessageTool] | None = None) -> int:
         """
         Calculate num tokens for text completion model with tiktoken package.
 
@@ -1007,7 +1007,7 @@ class OpenAILargeLanguageModel(OpenAICore, LargeLanguageModel):
         return num_tokens
 
     def _num_tokens_from_messages(
-        self, model: str, messages: list[PromptMessage], tools: Optional[list[PromptMessageTool]] = None
+        self, model: str, messages: list[PromptMessage], tools: list[PromptMessageTool] | None = None
     ) -> int:
         """Calculate num tokens for OpenAI chat models with tiktoken package.
         

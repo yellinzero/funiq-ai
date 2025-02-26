@@ -1,6 +1,5 @@
 from decimal import Decimal
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -105,12 +104,12 @@ class LLMResult(BaseModel):
     Model class for llm result.
     """
 
-    id: Optional[str] = None
+    id: str | None = None
     model: str
     prompt_messages: list[PromptMessage]
     message: AssistantPromptMessage
     usage: LLMUsage
-    system_fingerprint: Optional[str] = None
+    system_fingerprint: str | None = None
 
 
 class LLMResultChunkDelta(BaseModel):
@@ -120,8 +119,8 @@ class LLMResultChunkDelta(BaseModel):
 
     index: int
     message: AssistantPromptMessage
-    usage: Optional[LLMUsage] = None
-    finish_reason: Optional[str] = None
+    usage: LLMUsage | None = None
+    finish_reason: str | None = None
 
 
 class LLMResultChunk(BaseModel):
@@ -131,7 +130,7 @@ class LLMResultChunk(BaseModel):
 
     model: str
     prompt_messages: list[PromptMessage]
-    system_fingerprint: Optional[str] = None
+    system_fingerprint: str | None = None
     delta: LLMResultChunkDelta
 
 

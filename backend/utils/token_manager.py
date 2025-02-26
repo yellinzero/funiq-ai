@@ -2,7 +2,6 @@ import json
 import uuid
 from datetime import timedelta
 from enum import Enum
-from typing import Optional
 
 from configs import funiq_ai_config
 from database import redis
@@ -37,7 +36,7 @@ class TokenManager:
         token_key = self._get_token_key(token, namespace)
         await redis.delete(token_key)
 
-    async def get_token_data(self, token: str, namespace: str = 'funiq_ai') -> Optional[dict]:
+    async def get_token_data(self, token: str, namespace: str = 'funiq_ai') -> dict | None:
         """
         Retrieve the data associated with a token.
 
@@ -100,7 +99,7 @@ class AccountTokenManager(TokenManager):
         """
         return await self.generate_token(AccountTokenType.SIGNUP_EMAIL.value, email, {"code": code})
     
-    async def get_signup_email_verification_data(self, token: str) -> Optional[dict]:
+    async def get_signup_email_verification_data(self, token: str) -> dict | None:
         return await self.get_token_data(token, AccountTokenType.SIGNUP_EMAIL.value)
     
     async def revoke_signup_email_verification_token(self, email: str) -> None:
@@ -168,7 +167,7 @@ class AccountTokenManager(TokenManager):
         """
         await self.revoke_token(email, AccountTokenType.RESET_PASSWORD_EMAIL.value)
                     
-    async def _get_current_token_for_account(self, email: str, token_type: str) -> Optional[str]:
+    async def _get_current_token_for_account(self, email: str, token_type: str) -> str | None:
         key = self._get_account_token_key(email, token_type)
         current_token = await redis.get(key)
         return current_token

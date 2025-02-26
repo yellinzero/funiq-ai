@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from typing import Any, Optional, Union
+from typing import Any, Union
 from urllib.parse import urlparse
 
 import tiktoken
@@ -19,10 +19,10 @@ class DeepSeekLargeLanguageModel(OpenAILargeLanguageModel):
         credentials: dict,
         prompt_messages: list[PromptMessage],
         model_parameters: dict,
-        tools: Optional[list[PromptMessageTool]] = None,
-        stop: Optional[list[str]] = None,
+        tools: list[PromptMessageTool] | None = None,
+        stop: list[str] | None = None,
         stream: bool = True,
-        user: Optional[str] = None,
+        user: str | None = None,
     ) -> Union[LLMResult, Generator]:
         self._add_custom_parameters(credentials)
 
@@ -33,7 +33,7 @@ class DeepSeekLargeLanguageModel(OpenAILargeLanguageModel):
         super().validate_credentials(model, credentials)
 
     # refactored from openai model runtime, use cl100k_base for calculate token number
-    def _num_tokens_from_string(self, model: str, text: str, tools: Optional[list[PromptMessageTool]] = None) -> int:
+    def _num_tokens_from_string(self, model: str, text: str, tools: list[PromptMessageTool] | None = None) -> int:
         """
         Calculate num tokens for text completion model with tiktoken package.
 
@@ -52,7 +52,7 @@ class DeepSeekLargeLanguageModel(OpenAILargeLanguageModel):
 
     # refactored from openai model runtime, use cl100k_base for calculate token number
     def _num_tokens_from_messages(
-        self, model: str, messages: list[PromptMessage], tools: Optional[list[PromptMessageTool]] = None
+        self, model: str, messages: list[PromptMessage], tools: list[PromptMessageTool] | None = None
     ) -> int:
         """Calculate num tokens for chat models with tiktoken package."""
         encoding = tiktoken.get_encoding("cl100k_base")

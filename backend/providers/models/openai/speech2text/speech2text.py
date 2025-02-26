@@ -1,4 +1,4 @@
-from typing import IO, Optional
+from typing import IO
 
 from openai import OpenAI
 
@@ -14,7 +14,7 @@ class OpenAISpeech2TextModel(OpenAICore, Speech2TextModel):
     Model class for OpenAI Speech to text model.
     """
 
-    def _invoke(self, model: str, credentials: dict, file: IO[bytes], user: Optional[str] = None) -> str:
+    def _invoke(self, model: str, credentials: dict, file: IO[bytes], user: str | None = None) -> str:
         """
         Invoke speech2text model
 
@@ -61,7 +61,7 @@ class OpenAISpeech2TextModel(OpenAICore, Speech2TextModel):
 
         return response.text
 
-    def get_customizable_model_schema(self, model: str, credentials: dict) -> Optional[AIModelEntity]:
+    def get_customizable_model_schema(self, model: str, credentials: dict) -> AIModelEntity | None:
         """
         used to define customizable model schema
         """

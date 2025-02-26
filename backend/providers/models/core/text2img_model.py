@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import IO, Optional
+from typing import IO
 
 from providers.models.core.base_model import AIModel
 from providers.models.core.models.model import ModelType
@@ -13,7 +13,7 @@ class Text2ImageModel(AIModel):
     model_type: ModelType = ModelType.TEXT2IMG
 
     def invoke(
-        self, model: str, credentials: dict, prompt: str, model_parameters: dict, user: Optional[str] = None
+        self, model: str, credentials: dict, prompt: str, model_parameters: dict, user: str | None = None
     ) -> list[IO[bytes]]:
         """
         Invoke Text2Image model
@@ -33,7 +33,7 @@ class Text2ImageModel(AIModel):
 
     @abstractmethod
     def _invoke(
-        self, model: str, credentials: dict, prompt: str, model_parameters: dict, user: Optional[str] = None
+        self, model: str, credentials: dict, prompt: str, model_parameters: dict, user: str | None = None
     ) -> list[IO[bytes]]:
         """
         Invoke Text2Image model

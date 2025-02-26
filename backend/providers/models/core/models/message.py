@@ -1,6 +1,6 @@
 from abc import ABC
 from enum import Enum
-from typing import Optional, Union
+from typing import Union
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -102,8 +102,8 @@ class PromptMessage(ABC, BaseModel):
     """
 
     role: PromptMessageRole
-    content: Optional[str | list[PromptMessageContent]] = None
-    name: Optional[str] = None
+    content: str | list[PromptMessageContent] | None = None
+    name: str | None = None
 
     def is_empty(self) -> bool:
         """

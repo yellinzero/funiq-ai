@@ -1,6 +1,6 @@
 import importlib
 import os
-from typing import ClassVar, Optional, Sequence
+from typing import ClassVar, Sequence
 
 from loguru import logger
 
@@ -85,8 +85,8 @@ class ProviderFactory:
     def get_models(
         cls,
         *,
-        provider_name: Optional[str] = None,
-        model_type: Optional[ModelType] = None,
+        provider_name: str | None = None,
+        model_type: ModelType | None = None,
     ) -> list[AIModelEntity]:
         """
         List all available models, optionally filtered by provider and/or model type.

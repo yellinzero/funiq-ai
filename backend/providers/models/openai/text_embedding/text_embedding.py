@@ -1,5 +1,5 @@
 import base64
-from typing import Optional, Union
+from typing import Union
 
 import numpy as np
 import tiktoken
@@ -22,7 +22,7 @@ class OpenAITextEmbeddingModel(OpenAICore, TextEmbeddingModel):
         model: str,
         credentials: dict,
         texts: list[str],
-        user: Optional[str] = None,
+        user: str | None = None,
         input_type: EmbeddingInputType = EmbeddingInputType.DOCUMENT,
     ) -> TextEmbeddingResult:
         """

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from openai import OpenAI
 from openai.types import ModerationCreateResponse
 
@@ -14,7 +12,7 @@ class OpenAIModerationModel(OpenAICore, ModerationModel):
     Model class for OpenAI text moderation model.
     """
 
-    def _invoke(self, model: str, credentials: dict, text: str, user: Optional[str] = None) -> bool:
+    def _invoke(self, model: str, credentials: dict, text: str, user: str | None = None) -> bool:
         """
         Invoke moderation model
 

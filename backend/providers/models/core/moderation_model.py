@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from typing import Optional
 
 from providers.models.core.base_model import AIModel
 from providers.models.core.models.model import ModelType
@@ -12,7 +11,7 @@ class ModerationModel(AIModel):
 
     model_type: ModelType = ModelType.MODERATION
 
-    def invoke(self, model: str, credentials: dict, text: str, user: Optional[str] = None) -> bool:
+    def invoke(self, model: str, credentials: dict, text: str, user: str | None = None) -> bool:
         """
         Invoke moderation model
 
@@ -30,7 +29,7 @@ class ModerationModel(AIModel):
             raise self.transform_provider_error(e) from e
 
     @abstractmethod
-    def _invoke(self, model: str, credentials: dict, text: str, user: Optional[str] = None) -> bool:
+    def _invoke(self, model: str, credentials: dict, text: str, user: str | None = None) -> bool:
         """
         Invoke large language model
 

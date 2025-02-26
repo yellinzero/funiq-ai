@@ -1,6 +1,5 @@
 import logging
 import time
-from typing import Optional
 
 from celery import shared_task
 
@@ -10,7 +9,7 @@ from utils.template_renderer import template_renderer
 
 
 @shared_task(queue="mail")
-def send_signup_verification_email_task(language: str, to: str, code: str) -> Optional[str]:
+def send_signup_verification_email_task(language: str, to: str, code: str) -> str | None:
     """
     Asynchronously send a verification email with a code.
 
@@ -46,7 +45,7 @@ def send_signup_verification_email_task(language: str, to: str, code: str) -> Op
 
 
 @shared_task(queue="mail")
-def send_reset_password_verification_email_task(language: str, to: str, code: str) -> Optional[str]:
+def send_reset_password_verification_email_task(language: str, to: str, code: str) -> str | None:
     """
     Asynchronously send a password reset verification email.
 
@@ -82,7 +81,7 @@ def send_reset_password_verification_email_task(language: str, to: str, code: st
 
 
 @shared_task(queue="mail")
-def send_activate_account_email_task(language: str, to: str, code: str) -> Optional[str]:
+def send_activate_account_email_task(language: str, to: str, code: str) -> str | None:
     """
     Asynchronously send an account activation verification email.
 

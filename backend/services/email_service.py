@@ -1,5 +1,3 @@
-from typing import Optional
-
 from fastapi import FastAPI
 from pydantic import EmailStr
 
@@ -36,7 +34,7 @@ class EmailService:
             opportunistic_tls=funiq_ai_config.SMTP_OPPORTUNISTIC_TLS,
         )
 
-    def send(self, to: EmailStr, subject: str, html: str, from_: Optional[str] = None):
+    def send(self, to: EmailStr, subject: str, html: str, from_: str | None = None):
         """Send an email."""
         if not self._client:
             raise ValueError("Email client is not initialized")

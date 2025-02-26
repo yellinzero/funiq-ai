@@ -1,7 +1,7 @@
 import re
 from abc import abstractmethod
 from collections.abc import Iterable
-from typing import Any, Optional
+from typing import Any
 
 from providers.models.core.base_model import AIModel
 from providers.models.core.models.model import ModelPropertyKey, ModelType
@@ -21,7 +21,7 @@ class TTSModel(AIModel):
         credentials: dict,
         content_text: str,
         voice: str,
-        user: Optional[str] = None,
+        user: str | None = None,
     ) -> Iterable[bytes]:
         """
         Invoke large language model
@@ -55,7 +55,7 @@ class TTSModel(AIModel):
         credentials: dict,
         content_text: str,
         voice: str,
-        user: Optional[str] = None,
+        user: str | None = None,
     ) -> Iterable[bytes]:
         """
         Invoke large language model
@@ -71,7 +71,7 @@ class TTSModel(AIModel):
         """
         raise NotImplementedError
 
-    def get_tts_model_voices(self, model: str, credentials: dict, language: Optional[str] = None) -> list:
+    def get_tts_model_voices(self, model: str, credentials: dict, language: str | None = None) -> list:
         """
         Retrieves the list of voices supported by a given text-to-speech (TTS) model.
 

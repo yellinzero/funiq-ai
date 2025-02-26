@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import sentry_sdk
 from fastapi.exceptions import HTTPException
@@ -9,7 +9,7 @@ from sentry_sdk.integrations.logging import LoggingIntegration
 from configs import funiq_ai_config
 
 
-def before_send(event: Dict[str, Any], hint: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def before_send(event: Dict[str, Any], hint: Dict[str, Any]) -> Dict[str, Any] | None:
     """
     Custom handler for processing events before sending to Sentry
     

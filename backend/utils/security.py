@@ -2,7 +2,7 @@ import datetime
 import re
 import secrets
 from datetime import timedelta
-from typing import Any, Optional, Tuple
+from typing import Any, Tuple
 
 import bcrypt
 from fastapi import Request, Response, status
@@ -45,13 +45,13 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 # -------- JWT Token Handling --------
 
 
-def create_access_token(data: dict, expires_delta: Optional[datetime.timedelta] = None) -> str:
+def create_access_token(data: dict, expires_delta: datetime.timedelta | None = None) -> str:
     """
     Create a JSON Web Token (JWT) with an optional expiration time.
 
     Args:
         data (dict): The payload data to encode into the token.
-        expires_delta (Optional[datetime.timedelta]): Optional expiration time.
+        expires_delta (datetime.timedelta | None): Optional expiration time.
 
     Returns:
         str: The encoded JWT.
@@ -135,7 +135,7 @@ def verify_refresh_token(refresh_token: str) -> str:
     raise AccountErrorCode.REFRESH_TOKEN_EXPIRED.exception(status_code=status.HTTP_401_UNAUTHORIZED)
 
 
-def invalidate_refresh_token(account_id: Optional[str] = None, refresh_token: Optional[str] = None):
+def invalidate_refresh_token(account_id: str | None = None, refresh_token: str | None = None):
     """Invalidate refresh token either by account_id or by token value."""
     if refresh_token:
         # if provide refresh token

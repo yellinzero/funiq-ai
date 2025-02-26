@@ -1,5 +1,5 @@
 import concurrent.futures
-from typing import Any, Optional
+from typing import Any
 
 from openai import OpenAI
 
@@ -15,7 +15,7 @@ class OpenAIText2SpeechModel(OpenAICore, TTSModel):
     """
 
     def _invoke(
-        self, model: str, tenant_id: str, credentials: dict, content_text: str, voice: str, user: Optional[str] = None
+        self, model: str, tenant_id: str, credentials: dict, content_text: str, voice: str, user: str | None = None
     ) -> Any:
         """
         _invoke text2speech model
@@ -36,7 +36,7 @@ class OpenAIText2SpeechModel(OpenAICore, TTSModel):
         # if streaming:
         return self._tts_invoke_streaming(model=model, credentials=credentials, content_text=content_text, voice=voice)
 
-    def validate_credentials(self, model: str, credentials: dict, user: Optional[str] = None) -> None:
+    def validate_credentials(self, model: str, credentials: dict, user: str | None = None) -> None:
         """
         validate credentials text2speech model
 

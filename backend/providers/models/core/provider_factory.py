@@ -28,20 +28,22 @@ class ProviderFactory:
             module_path = f"providers.models.{provider_name}.{provider_name}"
             # Import module
             module = importlib.import_module(module_path)
-            
+
             # Find provider class by looking for classes with provider_name attribute
             for attr_name in dir(module):
                 attr = getattr(module, attr_name)
-                if (isinstance(attr, type) and 
-                    issubclass(attr, ModelProvider) and 
-                    getattr(attr, 'provider_name', None) == provider_name):
+                if (
+                    isinstance(attr, type)
+                    and issubclass(attr, ModelProvider)
+                    and getattr(attr, "provider_name", None) == provider_name
+                ):
                     provider_class = attr
                     break
             else:
                 # Fallback to old naming convention if no provider_name found
                 class_name = f"{provider_name.capitalize()}Provider"
                 provider_class = getattr(module, class_name)
-            
+
             # Create instance
             provider = provider_class()
             # Cache instance
@@ -54,7 +56,7 @@ class ProviderFactory:
     def get_all_providers(cls) -> Sequence[ModelProvider]:
         """
         Get all available providers by scanning the providers directory
-        
+
         :return: List of ModelProvider instances
         """
         # Get the path of current file
@@ -63,7 +65,8 @@ class ProviderFactory:
 
         # Get all provider directories (excluding __pycache__ etc)
         provider_dirs = [
-            d for d in os.listdir(providers_path)
+            d
+            for d in os.listdir(providers_path)
             if os.path.isdir(os.path.join(providers_path, d))
             and not d.startswith("__")
             and not d.startswith("_")
@@ -120,3 +123,30 @@ class ProviderFactory:
                     all_models.extend(models)
 
         return all_models
+
+    @classmethod
+    def get_model(cls, model_name: str, provider_name: str) -> AIModelEntity:
+        """
+        Get a model by model name and provider name
+
+        :param model_name: The name of the model to retrieve (e.g. 'gpt-4', 'claude-3-opus-20240229')
+        :param provider_name: The name of the provider (e.g. 'openai', 'anthropic')
+        :return: AIModelEntity instance for the specified model
+        :raises ValueError: If the model is not found or provider cannot be loaded
+        """
+        # Get the specific provider instance
+        provider = cls.get_provider_instance(provider_name)
+
+        # Get provider schema to find supported model types
+        provider_schema = provider.get_provider_schema()
+
+        # Check each supported model type
+        for model_type in provider_schema.supported_model_types:
+            # Get models of this type from the provider
+            model_instance = provider.get_model_instance(model_type=model_type)
+
+            model_schema = model_instance.get_model_schema(model=model_name)
+            if model_schema:
+                return model_schema
+
+        raise ValueError(f"Model '{model_name}' not found in provider '{provider_name}'")

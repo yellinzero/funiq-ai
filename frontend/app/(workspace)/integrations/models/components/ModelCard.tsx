@@ -1,11 +1,11 @@
 import { Card, Stack, Typography, Chip, styled, Switch } from '@mui/material'
-import { IAIModelEntity, IProviderInfo } from '@/apis/types'
+import { IModelInfo, IProviderInfo } from '@/apis/types'
 import { capitalize } from 'lodash-es'
 
-interface ModelCardProps extends IAIModelEntity {
+interface ModelCardProps extends IModelInfo {
   icon: IProviderInfo['icon']
-  onToggle?: (model: IAIModelEntity, checked: boolean) => void
-  enabled?: boolean
+  disabled?: boolean
+  onToggle?: (model: IModelInfo, checked: boolean) => void
 }
 
 const StyledChip = styled(Chip)({
@@ -22,8 +22,8 @@ export default function ModelCard(props: ModelCardProps) {
   const {
     icon,
     onToggle,
-    enabled = false,
-    ...modelEntity
+    disabled,
+    ...modelInfo
   } = props
 
   const {
@@ -32,7 +32,10 @@ export default function ModelCard(props: ModelCardProps) {
     features = [],
     model_properties,
     deprecated = false,
-  } = modelEntity
+    is_enabled
+  } = modelInfo
+
+  const isDisabled = disabled || deprecated
 
   const mode = (model_properties?.mode as string | undefined)?.toUpperCase()
   const contextSize = model_properties?.context_size ? (Number(model_properties.context_size) / 1000)?.toFixed(0) : undefined
@@ -87,10 +90,10 @@ export default function ModelCard(props: ModelCardProps) {
         </Stack>
         {onToggle && (
           <Switch
-            checked={enabled}
-            onChange={(e) => onToggle(modelEntity, e.target.checked)}
+            checked={is_enabled}
+            onChange={(e) => onToggle(modelInfo, e.target.checked)}
             size="small"
-            disabled={deprecated}
+            disabled={isDisabled}
           />
         )}
       </Stack>

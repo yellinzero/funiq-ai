@@ -1,13 +1,21 @@
+// TODO optimize typescript
 import type { paths } from '@/types/openapi'
-import type { Client, ClientMethod, FetchResponse, InitParam, MaybeOptionalInit, Middleware } from 'openapi-fetch'
+import type {
+  Client,
+  ClientMethod,
+  FetchResponse,
+  InitParam,
+  MaybeOptionalInit,
+  Middleware,
+} from 'openapi-fetch'
 import Toast from '@/components/Toast'
 import { initTranslations } from '@/plugins/i18n'
 import { I18N_COOKIE_NAME } from '@/plugins/i18n/settings'
 import { SESSION_COOKIE_NAME } from '@/utils/constants'
 import createClient from 'openapi-fetch'
 import { Cookies } from 'react-cookie'
-import { permanentRedirect, redirect, RedirectType } from 'next/navigation'
-import { NextResponse } from 'next/server'
+import { redirect } from 'next/navigation'
+import { TFunction } from 'i18next'
 
 // Types
 export type HttpMethod = 'get' | 'put' | 'post' | 'delete' | 'options' | 'head' | 'patch' | 'trace'
@@ -17,13 +25,13 @@ export type ExtractInitType<Method extends HttpMethod, Path extends keyof paths>
 
 export type ExtractBodyType<Method extends HttpMethod, Path extends keyof paths> =
   'body' extends keyof MaybeOptionalInit<paths[Path], Method>
-    ? MaybeOptionalInit<paths[Path], Method>['body']
-    : never
+  ? MaybeOptionalInit<paths[Path], Method>['body']
+  : never
 
 export type ExtractParamsType<Method extends HttpMethod, Path extends keyof paths> =
   'params' extends keyof MaybeOptionalInit<paths[Path], Method>
-    ? MaybeOptionalInit<paths[Path], Method>['params']
-    : never
+  ? MaybeOptionalInit<paths[Path], Method>['params']
+  : never
 
 export type PathsWithMethod<T, M extends HttpMethod> = keyof {
   [P in keyof T as T[P] extends { [K in M]: unknown } ? P : never]: T[P]
@@ -31,10 +39,10 @@ export type PathsWithMethod<T, M extends HttpMethod> = keyof {
 
 export type ExtractResponseType<Method extends HttpMethod, Path extends keyof paths> =
   paths[Path][Method] extends { responses: { 200: { content: { 'application/json': infer R } } } }
-    ? R extends { data: infer D }
-      ? D
-      : never
-    : never
+  ? R extends { data: infer D }
+  ? D
+  : never
+  : never
 
 export type CustomFetchResponse<Path extends keyof paths, Method extends HttpMethod> =
   | {
@@ -48,6 +56,10 @@ export type CustomFetchResponse<Path extends keyof paths, Method extends HttpMet
     response: FetchResponse<paths[Path], MaybeOptionalInit<paths[Path], Method>, Path>['response']
   }
 
+
+export interface ExtraConfig {
+  disableErrorToast?: boolean
+}
 // Constants
 const namespaces = ['error']
 
@@ -185,11 +197,27 @@ apiFetch.use(responseMiddleware)
 publicApiFetch.use(publicRequestContextMiddleware)
 publicApiFetch.use(responseMiddleware)
 
+
+// Error Handling
+export const showErrorToast = async (code: string | number, t?: TFunction) => {
+  if (typeof window === 'undefined') return
+
+  const { t: translator } = t ? { t } : await initTranslations('en', namespaces)
+
+  if (typeof code === 'number') {
+    Toast.error({ message: translator(`HCODE${code}`, { ns: 'error' }) })
+  } else {
+    Toast.error({
+      message: translator(code, { ns: 'error' }) || translator('undefined_error', { ns: 'error' })
+    })
+  }
+}
+
 // API Factory
 export function createFetchApi(client: Client<paths>) {
   const handleResponse = async <Path extends keyof paths, Method extends HttpMethod>(
-    // eslint-disable-next-line ts/no-empty-object-type
     promise: ReturnType<ClientMethod<{}, Method, Path>>,
+    config?: ExtraConfig,
   ): Promise<CustomFetchResponse<Path, Method>> => {
     const { data, response, error } = await promise
     const { language } = await getCookieContext()
@@ -197,19 +225,18 @@ export function createFetchApi(client: Client<paths>) {
     const { t } = await initTranslations(language, namespaces)
     const errorCode = data?.code || error?.code
     if (errorCode && errorCode !== '0') {
-      if (typeof window !== 'undefined') {
-        Toast.error({ message: t(errorCode, { ns: 'error' }) || t('undefined_error', { ns: 'error' }) })
+      if (!config?.disableErrorToast) {
+        await showErrorToast(errorCode, t)
       }
-      throw new HttpError(data?.message || error?.message, response, data)
+      throw new HttpError(data?.message || error?.message, response, data || error)
     }
     else if (response.status >= 400 && response.status < 600) {
-      const httpErrorMsg = t(`HCODE${response.status}`, { ns: 'error' })
-      if (typeof window !== 'undefined') {
-        Toast.error({ message: httpErrorMsg })
+      if (!config?.disableErrorToast) {
+        await showErrorToast(response.status, t)
       }
-      throw new HttpError(httpErrorMsg, response, data)
+      const httpErrorMsg = t(`HCODE${response.status}`, { ns: 'error' })
+      throw new HttpError(httpErrorMsg, response, data || error)
     }
-
     return {
       data: data?.data,
       error: response.error,
@@ -217,46 +244,37 @@ export function createFetchApi(client: Client<paths>) {
     }
   }
 
+  const createRequest = <T>(init?: T) => {
+    return [...(init ? [init] : [])] as InitParam<T>
+  }
+
+  type MethodConfig<M extends HttpMethod> = {
+    [P in keyof paths as paths[P] extends { [K in M]: unknown } ? P : never]: {
+      path: P;
+      init?: MaybeOptionalInit<paths[P], M>;
+    }
+  }
+
+  const createMethod = <M extends HttpMethod>(method: M) => {
+    return <P extends keyof MethodConfig<M>>(
+      url: P,
+      init?: MethodConfig<M>[P]['init'],
+      config?: ExtraConfig
+    ) => handleResponse<P, M>(
+      (client[method.toUpperCase() as Uppercase<M>] as any)(url, ...createRequest(init)),
+      config
+    )
+  }
+
   return {
-    GET: <Path extends PathsWithMethod<paths, 'get'>>(
-      url: Path,
-      ...init: InitParam<MaybeOptionalInit<paths[Path], 'get'>>
-    ) => handleResponse<Path, 'get'>(client.GET(url, ...init)),
-
-    POST: <Path extends PathsWithMethod<paths, 'post'>>(
-      url: Path,
-      ...init: InitParam<MaybeOptionalInit<paths[Path], 'post'>>
-    ) => handleResponse<Path, 'post'>(client.POST(url, ...init)),
-
-    PUT: <Path extends PathsWithMethod<paths, 'put'>>(
-      url: Path,
-      ...init: InitParam<MaybeOptionalInit<paths[Path], 'put'>>
-    ) => handleResponse(client.PUT(url, ...init)),
-
-    DELETE: <Path extends PathsWithMethod<paths, 'delete'>>(
-      url: Path,
-      ...init: InitParam<MaybeOptionalInit<paths[Path], 'delete'>>
-    ) => handleResponse<Path, 'delete'>(client.DELETE(url, ...init)),
-
-    OPTIONS: <Path extends PathsWithMethod<paths, 'options'>>(
-      url: Path,
-      ...init: InitParam<MaybeOptionalInit<paths[Path], 'options'>>
-    ) => handleResponse<Path, 'options'>(client.OPTIONS(url, ...init)),
-
-    HEAD: <Path extends PathsWithMethod<paths, 'head'>>(
-      url: Path,
-      ...init: InitParam<MaybeOptionalInit<paths[Path], 'head'>>
-    ) => handleResponse<Path, 'head'>(client.HEAD(url, ...init)),
-
-    PATCH: <Path extends PathsWithMethod<paths, 'patch'>>(
-      url: Path,
-      ...init: InitParam<MaybeOptionalInit<paths[Path], 'patch'>>
-    ) => handleResponse<Path, 'patch'>(client.PATCH(url, ...init)),
-
-    TRACE: <Path extends PathsWithMethod<paths, 'trace'>>(
-      url: Path,
-      ...init: InitParam<MaybeOptionalInit<paths[Path], 'trace'>>
-    ) => handleResponse<Path, 'trace'>(client.TRACE(url, ...init)),
+    GET: createMethod('get'),
+    POST: createMethod('post'),
+    PUT: createMethod('put'),
+    DELETE: createMethod('delete'),
+    OPTIONS: createMethod('options'),
+    HEAD: createMethod('head'),
+    PATCH: createMethod('patch'),
+    TRACE: createMethod('trace'),
   }
 }
 

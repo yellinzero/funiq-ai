@@ -32,4 +32,4 @@ class OperatorEntity(BaseModel):
     description: Union[str, TranslatableText]
     output_schema: JSONSchema
     config_schema: JSONSchema
-    ui_schema: UiSchema | None = None 
+    config_ui_schema: UiSchema | None = None 

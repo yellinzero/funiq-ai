@@ -9,6 +9,7 @@ import { Localize } from 'ajv-i18n/localize/types';
 export interface JsonSchemaFormProps extends FormProps {
   hideSubmitButton?: boolean
   locale?: Locale
+  ref?: React.Ref<FormType>
 }
 
 const localizer: Record<Locale, Localize> = {
@@ -16,7 +17,9 @@ const localizer: Record<Locale, Localize> = {
   'zh_CN': ajvLocalizer.zh
 }
 
-const JsonSchemaForm = forwardRef<FormType, Omit<JsonSchemaFormProps, 'validator'>>((props, ref) => {
+
+export default function JsonSchemaForm(props: Omit<JsonSchemaFormProps, 'validator'>) {
+  const { ref, ...rest } = props
   const locale = props.locale ?? fallbackLang
   const noHtml5Validate = props.noHtml5Validate ?? true
   const showErrorList = props.showErrorList ?? false
@@ -24,7 +27,7 @@ const JsonSchemaForm = forwardRef<FormType, Omit<JsonSchemaFormProps, 'validator
   const hideSubmitButton = props.hideSubmitButton ?? true
   return (
     <Form
-      {...props}
+      {...rest}
       ref={ref}
       validator={validator}
       showErrorList={showErrorList}
@@ -33,6 +36,4 @@ const JsonSchemaForm = forwardRef<FormType, Omit<JsonSchemaFormProps, 'validator
       children={hideSubmitButton && !props.children ? <></> : props.children}
     />
   )
-});
-
-export default JsonSchemaForm;
+}

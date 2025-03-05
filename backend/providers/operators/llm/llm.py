@@ -5,7 +5,7 @@ from fastapi_async_sqlalchemy import db
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.model_providers import Model
+from app.models.model_provider import Model
 from providers.models.core.large_language_model import LargeLanguageModel
 from providers.models.core.models.llm import LLMResult
 from providers.models.core.models.message import UserPromptMessage

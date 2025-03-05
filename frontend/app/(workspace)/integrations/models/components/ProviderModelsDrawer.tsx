@@ -1,11 +1,13 @@
 import { Box, Drawer, Grid2, Typography, IconButton, Stack, Button } from '@mui/material'
 import { useTranslation } from 'react-i18next'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import FullPageLoading from '@/components/FullPageLoading'
 import ModelCard from './ModelCard'
 import { useModelsStore, useModelsQuery } from '@/app/(workspace)/integrations/models/stores/useModelsStore'
+import { useProviderQuery, useProviderStore } from '@/app/(workspace)/integrations/models/stores/useProviderStore'
 import CloseIcon from '@mui/icons-material/Close'
-import { IAIModelEntity, IProviderInfo } from '@/apis/types'
+import { IModelInfo, IProviderInfo } from '@/apis/types'
+import { enableModelApi, saveModelApi } from '@/apis'
 
 interface ProviderModelsDrawerProps {
   provider: IProviderInfo
@@ -16,18 +18,39 @@ interface ProviderModelsDrawerProps {
 export default function ProviderModelsDrawer({ provider, open, onClose }: ProviderModelsDrawerProps) {
   const { i18n, t } = useTranslation()
   const { setCurrentProvider } = useModelsStore()
-  const { isLoading } = useModelsQuery(open ? provider.provider : null, i18n.language)
+  const { isLoading: isModelsLoading, refetch: refetchModels } = useModelsQuery(open ? provider.provider : null, i18n.language)
+  const { isLoading: isProviderLoading } = useProviderQuery(open ? provider.provider : '')
   const { models } = useModelsStore()
+  const { provider: currentProvider } = useProviderStore()
+  const [isProviderUnavailable, setIsProviderUnavailable] = useState(false)
 
   useEffect(() => {
     setCurrentProvider(open ? provider : null)
   }, [open, provider])
 
+  useEffect(() => {
+    setIsProviderUnavailable(!currentProvider || !currentProvider.is_active)
+  }, [currentProvider])
+
   const providerModels = models[provider.provider] || []
+  const isLoading = isModelsLoading || isProviderLoading
 
   const canAddModel = provider.configurate_methods.includes('customizable')
-  function handleToggle(model: IAIModelEntity, enabled: boolean) {
-    console.log(model, enabled)
+
+  async function handleToggle(model: IModelInfo, enabled: boolean) {
+    try {
+      if (enabled) {
+        await enableModelApi(model.provider, model.model)
+      } else {
+        await saveModelApi(model.provider, model.model, {
+          is_enabled: enabled,
+          is_system: model.is_system,
+        })
+      }
+      refetchModels()
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   return (
@@ -58,9 +81,9 @@ export default function ProviderModelsDrawer({ provider, open, onClose }: Provid
           <FullPageLoading />
         ) : (
           <Grid2 container spacing={2}>
-            {providerModels.map((model: IAIModelEntity) => (
+            {providerModels.map((model: IModelInfo) => (
               <Grid2 size={12} key={model.model}>
-                <ModelCard {...model} icon={provider.icon} onToggle={handleToggle} />
+                <ModelCard {...model} icon={provider.icon} onToggle={handleToggle} disabled={isProviderUnavailable} />
               </Grid2>
             ))}
           </Grid2>
@@ -69,7 +92,7 @@ export default function ProviderModelsDrawer({ provider, open, onClose }: Provid
 
       {/* Footer */}
       <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider', mt: 'auto' }}>
-        <Stack direction="row" alignItems="center">
+        <Stack direction="row" alignItems="center" spacing={2}>
           <Typography variant="body2" color="text.secondary" sx={{
             flexGrow: 1,
           }}>

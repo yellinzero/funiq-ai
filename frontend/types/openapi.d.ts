@@ -314,6 +314,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/model-providers/{provider_name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Provider
+         * @description Get a provider configuration by name
+         */
+        get: operations["get_provider_model_providers__provider_name__get"];
+        put?: never;
+        /**
+         * Save Provider
+         * @description Save a provider configuration
+         */
+        post: operations["save_provider_model_providers__provider_name__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/model-providers/{provider_name}/models/{model_name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Model
+         * @description Get a model configuration by name
+         */
+        get: operations["get_model_model_providers__provider_name__models__model_name__get"];
+        put?: never;
+        /**
+         * Save Model
+         * @description Save a model configuration
+         */
+        post: operations["save_model_model_providers__provider_name__models__model_name__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/model-providers/{provider_name}/models/{model_name}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Enable Model
+         * @description Enable a model and create its associated system app if it doesn't exist
+         */
+        post: operations["enable_model_model_providers__provider_name__models__model_name__enable_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/static/providers/{provider}/icon/{size}": {
         parameters: {
             query?: never;
@@ -330,6 +398,26 @@ export interface paths {
          *         size: Icon size ('small' or 'large')
          */
         get: operations["get_provider_icon_static_providers__provider__icon__size__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workflows/operators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Operators
+         * @description Get all available operators
+         */
+        get: operations["get_operators_workflows_operators_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -359,30 +447,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /**
-         * AIModelEntity
-         * @description Model class for AI model.
-         */
-        AIModelEntity: {
-            /** Model */
-            model: string;
-            /** Label */
-            label: string;
-            model_type: components["schemas"]["ModelType"];
-            /** Features */
-            features?: components["schemas"]["ModelFeature"][] | null;
-            configurate_method: components["schemas"]["ConfigurateMethod"];
-            /** Model Properties */
-            model_properties: Record<string, never>;
-            /**
-             * Deprecated
-             * @default false
-             */
-            deprecated: boolean;
-            parameter_rules_ui_schema?: components["schemas"]["UiSchema"] | null;
-            parameter_rules_schema?: components["schemas"]["JSONSchema"] | null;
-            pricing?: components["schemas"]["PriceConfig"] | null;
-        };
         /** AccountResponse */
         AccountResponse: {
             /** Id */
@@ -470,7 +534,14 @@ export interface components {
         /** GetModelsResponse */
         GetModelsResponse: {
             /** Models */
-            models: components["schemas"]["AIModelEntity"][];
+            models: components["schemas"]["ModelInfo"][];
+            /** Total */
+            total: number;
+        };
+        /** GetOperatorsResponse */
+        GetOperatorsResponse: {
+            /** Operators */
+            operators: components["schemas"]["OperatorEntity"][];
             /** Total */
             total: number;
         };
@@ -561,11 +632,66 @@ export interface components {
          */
         ModelFeature: "tool-call" | "multi-tool-call" | "agent-thought" | "vision" | "stream-tool-call";
         /**
+         * ModelInfo
+         * @description Model info for a provider
+         */
+        ModelInfo: {
+            /** Model */
+            model: string;
+            /** Label */
+            label: string;
+            model_type: components["schemas"]["ModelType"];
+            /** Features */
+            features?: components["schemas"]["ModelFeature"][] | null;
+            configurate_method: components["schemas"]["ConfigurateMethod"];
+            /** Model Properties */
+            model_properties: Record<string, never>;
+            /**
+             * Deprecated
+             * @default false
+             */
+            deprecated: boolean;
+            parameter_rules_ui_schema?: components["schemas"]["UiSchema"] | null;
+            parameter_rules_schema?: components["schemas"]["JSONSchema"] | null;
+            pricing?: components["schemas"]["PriceConfig"] | null;
+            /** Tenant Id */
+            tenant_id: string;
+            /** Provider */
+            provider: string;
+            /** Is Enabled */
+            is_enabled: boolean;
+            /** Is System */
+            is_system: boolean;
+            /** Last Used At */
+            last_used_at?: string | null;
+        };
+        /**
          * ModelPropertyKey
          * @description Enum class for model property key.
          * @enum {string}
          */
         ModelPropertyKey: "mode" | "context_size" | "max_chunks" | "file_upload_limit" | "supported_file_extensions" | "max_characters_per_chunk" | "default_voice" | "voices" | "word_limit" | "audio_type" | "max_workers";
+        /**
+         * ModelResponse
+         * @description Response schema for getting a model
+         */
+        ModelResponse: {
+            /** Id */
+            id: string;
+            /** Tenant Id */
+            tenant_id: string;
+            /** Provider */
+            provider: string;
+            /** Model */
+            model: string;
+            model_type: components["schemas"]["ModelType"];
+            /** Is System */
+            is_system: boolean;
+            /** Is Enabled */
+            is_enabled: boolean;
+            /** Last Used At */
+            last_used_at?: string | null;
+        };
         /**
          * ModelType
          * @description Enum class for model type.
@@ -603,6 +729,33 @@ export interface components {
             /** Multiple Of */
             multiple_of?: number | null;
         };
+        /**
+         * OperatorEntity
+         * @description Model class for operator schema.
+         */
+        OperatorEntity: {
+            /** Name */
+            name: string;
+            /** Label */
+            label: string;
+            type: components["schemas"]["OperatorType"];
+            status?: components["schemas"]["OperatorStatus"] | null;
+            /** Description */
+            description: string;
+            output_schema: components["schemas"]["JSONSchema"];
+            config_schema: components["schemas"]["JSONSchema"];
+            config_ui_schema?: components["schemas"]["UiSchema"] | null;
+        };
+        /**
+         * OperatorStatus
+         * @enum {string}
+         */
+        OperatorStatus: "pending" | "running" | "failed" | "completed" | "warning";
+        /**
+         * OperatorType
+         * @enum {string}
+         */
+        OperatorType: "ai" | "start" | "end" | "logic";
         /**
          * PriceConfig
          * @description Model class for pricing info.
@@ -651,6 +804,24 @@ export interface components {
                     [key: string]: components["schemas"]["UiSchema"] | null;
                 } | null;
             } | null;
+        };
+        /**
+         * ProviderResponse
+         * @description Response schema for getting a provider
+         */
+        ProviderResponse: {
+            /** Id */
+            id: string;
+            /** Tenant Id */
+            tenant_id: string;
+            /** Provider */
+            provider: string;
+            /** Is System */
+            is_system: boolean;
+            /** Is Active */
+            is_active: boolean;
+            /** Credentials */
+            credentials?: Record<string, never> | null;
         };
         /** ResendVerificationCodeRequest */
         ResendVerificationCodeRequest: {
@@ -774,6 +945,20 @@ export interface components {
             msg: string;
             data: components["schemas"]["GetModelsResponse"];
         };
+        /** ResponseModel[GetOperatorsResponse] */
+        ResponseModel_GetOperatorsResponse_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["GetOperatorsResponse"];
+        };
         /** ResponseModel[LoginResponse] */
         ResponseModel_LoginResponse_: {
             /**
@@ -787,6 +972,20 @@ export interface components {
              */
             msg: string;
             data: components["schemas"]["LoginResponse"];
+        };
+        /** ResponseModel[ModelResponse] */
+        ResponseModel_ModelResponse_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["ModelResponse"];
         };
         /** ResponseModel[NoneType] */
         ResponseModel_NoneType_: {
@@ -803,6 +1002,20 @@ export interface components {
             /** Data */
             data: null;
         };
+        /** ResponseModel[ProviderResponse] */
+        ResponseModel_ProviderResponse_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["ProviderResponse"];
+        };
         /** ResponseModel[ResendVerificationCodeResponse] */
         ResponseModel_ResendVerificationCodeResponse_: {
             /**
@@ -816,6 +1029,20 @@ export interface components {
              */
             msg: string;
             data: components["schemas"]["ResendVerificationCodeResponse"];
+        };
+        /** ResponseModel[SaveModelResponse] */
+        ResponseModel_SaveModelResponse_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["SaveModelResponse"];
         };
         /** ResponseModel[SignupResponse] */
         ResponseModel_SignupResponse_: {
@@ -887,6 +1114,47 @@ export interface components {
             msg: string;
             /** Data */
             data: components["schemas"]["TenantResponse"][];
+        };
+        /**
+         * SaveModelRequest
+         * @description Request schema for saving a model
+         */
+        SaveModelRequest: {
+            /** Is System */
+            is_system: boolean;
+            /** Is Enabled */
+            is_enabled?: boolean | null;
+        };
+        /**
+         * SaveModelResponse
+         * @description Response schema for saving a model
+         */
+        SaveModelResponse: {
+            /** Id */
+            id: string;
+            /** Tenant Id */
+            tenant_id: string;
+            /** Provider */
+            provider: string;
+            /** Model */
+            model: string;
+            model_type: components["schemas"]["ModelType"];
+            /** Is System */
+            is_system: boolean;
+            /** Is Enabled */
+            is_enabled: boolean;
+            /** Last Used At */
+            last_used_at?: string | null;
+        };
+        /**
+         * SaveProviderRequest
+         * @description Request schema for saving a provider
+         */
+        SaveProviderRequest: {
+            /** Is System */
+            is_system: boolean;
+            /** Credentials */
+            credentials?: Record<string, never> | null;
         };
         /** SignupRequest */
         SignupRequest: {
@@ -1826,6 +2094,172 @@ export interface operations {
             };
         };
     };
+    get_provider_model_providers__provider_name__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_ProviderResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_provider_model_providers__provider_name__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveProviderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_ProviderResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_model_model_providers__provider_name__models__model_name__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_name: string;
+                model_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_ModelResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_model_model_providers__provider_name__models__model_name__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_name: string;
+                model_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveModelRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_SaveModelResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    enable_model_model_providers__provider_name__models__model_name__enable_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_name: string;
+                model_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_ModelResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_provider_icon_static_providers__provider__icon__size__get: {
         parameters: {
             query?: never;
@@ -1854,6 +2288,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_operators_workflows_operators_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_GetOperatorsResponse_"];
                 };
             };
         };

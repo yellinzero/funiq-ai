@@ -17,25 +17,20 @@ export default function ModelsPage() {
   const { isLoading } = useProvidersQuery(i18n.language)
   const { providers } = useProvidersStore()
   const [openDrawer, setOpenDrawer] = useState(false)
-  const [provider, setProvider] = useState<IProviderInfo | null>(null)
-  const [providerLabel, setProviderLabel] = useState<string | null>(null)
-  const [providerCredentialSchema, setProviderCredentialSchema] = useState<RJSFSchema | null>(null)
-  const [providerCredentialUiSchema, setProviderCredentialUiSchema] = useState<UiSchema>()
   const [openApiKeyDialog, setOpenApiKeyDialog] = useState(false)
+  const [selectedProvider, setSelectedProvider] = useState<IProviderInfo | null>(null)
 
   if (isLoading) {
     return <FullPageLoading />
   }
 
   function handleClickModels(provider: IProviderInfo) {
-    setProvider(provider)
+    setSelectedProvider(provider)
     setOpenDrawer(true)
   }
 
   function handleClickAPIKey(provider: IProviderInfo) {
-    setProviderLabel(provider.label)
-    setProviderCredentialSchema(provider.credential_schema as RJSFSchema)
-    setProviderCredentialUiSchema(provider.ui_schema?.credential_schema as UiSchema)
+    setSelectedProvider(provider)
     setOpenApiKeyDialog(true)
   }
 
@@ -56,8 +51,24 @@ export default function ModelsPage() {
           ))}
         </Grid2>
       </Box>
-      {provider && <ProviderModelsDrawer provider={provider} open={openDrawer} onClose={() => setOpenDrawer(false)} />}
-      {providerLabel && providerCredentialSchema && <ProviderApiKeyDialog providerName={providerLabel} schema={providerCredentialSchema} uiSchema={providerCredentialUiSchema} open={openApiKeyDialog} onClose={() => setOpenApiKeyDialog(false)} />}
+      {selectedProvider && (
+        <>
+          <ProviderModelsDrawer
+            provider={selectedProvider}
+            open={openDrawer}
+            onClose={() => setOpenDrawer(false)}
+          />
+          {selectedProvider.credential_schema && (
+            <ProviderApiKeyDialog
+              providerName={selectedProvider.provider}
+              schema={selectedProvider.credential_schema as RJSFSchema}
+              uiSchema={selectedProvider.ui_schema?.[selectedProvider.provider]?.credential_schema as UiSchema}
+              open={openApiKeyDialog}
+              onClose={() => setOpenApiKeyDialog(false)}
+            />
+          )}
+        </>
+      )}
     </>
   )
 }

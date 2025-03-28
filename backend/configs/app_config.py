@@ -35,6 +35,10 @@ class FuniqAIConfigSettings(
         default="development",
         description="Environment name for Sentry (development, staging, production)"
     )
+    TENANT_HEADER_NAME: str = Field(
+        default="X-Tenant-ID",
+        description="Tenant header name",
+    )
     
     model_config = SettingsConfigDict(
         # read from dotenv format config file

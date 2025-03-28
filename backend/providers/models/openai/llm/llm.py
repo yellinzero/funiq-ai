@@ -929,9 +929,14 @@ class OpenAILargeLanguageModel(OpenAICore, LargeLanguageModel):
         """
         Convert PromptMessage to dict for OpenAI API
         """
+        message_dict = {}
+        
         if isinstance(message, UserPromptMessage):
-            if isinstance(message.content, str):
-                message_dict = {"role": "user", "content": message.content}
+            message_dict["role"] = "user"
+            if message.content is None:
+                message_dict["content"] = ""
+            elif isinstance(message.content, str):
+                message_dict["content"] = message.content
             elif isinstance(message.content, list):
                 sub_messages = []
                 for message_content in message.content:
@@ -953,14 +958,12 @@ class OpenAILargeLanguageModel(OpenAICore, LargeLanguageModel):
                             },
                         }
                         sub_messages.append(sub_message_dict)
-
-                message_dict = {"role": "user", "content": sub_messages}
+                message_dict["content"] = sub_messages
         elif isinstance(message, AssistantPromptMessage):
             message = cast(AssistantPromptMessage, message)
-            message_dict = {"role": "assistant", "content": message.content}
+            message_dict["role"] = "assistant"
+            message_dict["content"] = message.content or ""
             if message.tool_calls:
-                # message_dict["tool_calls"] = [tool_call.dict() for tool_call in
-                #                               message.tool_calls]
                 function_call = message.tool_calls[0]
                 message_dict["function_call"] = {
                     "name": function_call.function.name,
@@ -968,15 +971,13 @@ class OpenAILargeLanguageModel(OpenAICore, LargeLanguageModel):
                 }
         elif isinstance(message, SystemPromptMessage):
             message = cast(SystemPromptMessage, message)
-            message_dict = {"role": "system", "content": message.content}
+            message_dict["role"] = "system"
+            message_dict["content"] = message.content or ""
         elif isinstance(message, ToolPromptMessage):
             message = cast(ToolPromptMessage, message)
-            # message_dict = {
-            #     "role": "tool",
-            #     "content": message.content,
-            #     "tool_call_id": message.tool_call_id
-            # }
-            message_dict = {"role": "function", "content": message.content, "name": message.tool_call_id}
+            message_dict["role"] = "function"
+            message_dict["content"] = message.content or ""
+            message_dict["name"] = message.tool_call_id
         else:
             raise ValueError(f"Got unknown type {message}")
 

@@ -8,8 +8,8 @@ from app_manager import app_manager
 from configs import funiq_ai_config
 from database import shutdown_database
 from middleware import install_global_middlewares
-from services.celery import init_celery
 from services.email_service import init_email_service
+from tasks.celery import init_celery
 from utils.i18n import register_all_translation_domains
 from utils.loguru_handler import setup_loguru
 from utils.sentry_handler import setup_sentry

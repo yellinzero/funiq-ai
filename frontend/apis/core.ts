@@ -17,6 +17,7 @@ import { Cookies } from 'react-cookie'
 import { redirect } from 'next/navigation'
 import { TFunction } from 'i18next'
 
+export const TENANT_HEADER_NAME = 'X-Tenant-ID'
 // Types
 export type HttpMethod = 'get' | 'put' | 'post' | 'delete' | 'options' | 'head' | 'patch' | 'trace'
 
@@ -127,7 +128,7 @@ const requestContextMiddleware: Middleware = {
     const { language, session } = await getCookieContext()
 
     request.headers.set(I18N_COOKIE_NAME, language)
-    request.headers.set('X-Tenant-ID', session.tenantId)
+    request.headers.set(TENANT_HEADER_NAME, session.tenantId)
     if (session.accessToken) {
       request.headers.set('Authorization', `Bearer ${session.accessToken}`)
     }

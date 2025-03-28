@@ -5,7 +5,7 @@ set -e  # if any command fails, exit
 case "${MODE}" in
   worker)
     echo "[INFO] Starting Celery Worker..."
-    exec celery -A app.main.celery worker --loglevel info -Q ${CELERY_QUEUES:-mail}
+    exec celery -A app.main.celery worker --loglevel info -Q ${CELERY_QUEUES:-mail,workflow}
     ;;
 
   beat)

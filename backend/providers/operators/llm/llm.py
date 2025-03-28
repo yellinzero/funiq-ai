@@ -1,11 +1,11 @@
 from collections.abc import Generator
 from typing import Dict, Union
 
-from fastapi_async_sqlalchemy import db
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.model_provider import Model
+from app.models.model_provider import Model, ModelProvider
+from database import with_session
 from providers.models.core.large_language_model import LargeLanguageModel
 from providers.models.core.models.llm import LLMResult
 from providers.models.core.models.message import UserPromptMessage
@@ -19,25 +19,40 @@ class LLMOperator(BaseOperator):
     """LLM operator implementation"""
     operator_name = "llm"
         
-    async def execute(self, input_data: Dict, config: Dict) -> Dict:
+    @with_session
+    async def execute(self, input_data: Dict, config: Dict, session: AsyncSession) -> Dict:
         """
         Execute the LLM operator
         
         Args:
             input_data: Input containing prompt and context
             config: Configuration for the LLM including model_id, prompt, and parameters
+            session: Database session (injected by with_session decorator)
             
         Returns:
             Dict containing the LLM response and metadata
         """
-        # Get model info from database using FastAPI's async SQLAlchemy session
-        model = await self._get_model(db.session, config['model'])
+        # Get model info from database using provided session
+        model = await self._get_model(session, config['model_id'])
         
         if not model:
-            raise ValueError(f"Model {config['model']} not found")
+            raise ValueError(f"Model {config['model_id']} not found")
             
         if not model.is_active:
             raise ValueError(f"Model {model.model} is not active")
+
+        # Get credentials - first try model credentials, if None then get provider credentials
+        credentials = model.credentials
+        if credentials is None:
+            # Modify the query to get the full provider object
+            provider_stmt = (
+                select(ModelProvider)
+                .join(Model)
+                .where(Model.id == model.id)
+            )
+            provider_result = await session.execute(provider_stmt)
+            provider_obj = provider_result.scalar_one()
+            credentials = provider_obj.credentials
 
         # Get model provider instance
         provider = ProviderFactory.get_provider_instance(model.provider)
@@ -58,7 +73,7 @@ class LLMOperator(BaseOperator):
         # Execute model using invoke instead of _invoke
         result: Union[LLMResult, Generator] = await model_instance.invoke(
             model=model.model,
-            credentials=model.credentials or model.provider_obj.credentials,
+            credentials=credentials,
             prompt_messages=messages,
             model_parameters=model_parameters,
             tools=None,

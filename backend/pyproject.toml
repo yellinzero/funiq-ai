@@ -136,6 +136,10 @@ openai = "~1.52.0"
 jsonschema = "^4.23.0"
 anthropic = "~0.23.1"
 pillow = "^11.1.0"
+prefect = "^3.2.11"
+networkx = "^3.4.2"
+asgiref = "^3.8.1"
+httpx = "0.27.2"
 
 
 [tool.poetry.scripts]

@@ -2,8 +2,8 @@ import contextlib
 import functools
 import logging
 import time
-from inspect import signature
-from typing import Any, AsyncGenerator, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any, TypeVar
 
 from redis import Redis as SyncRedis
 from redis.asyncio import BlockingConnectionPool, Redis
@@ -14,6 +14,9 @@ from configs import funiq_ai_config
 from utils.json import json_dumps, json_loads
 
 from .models import DBBase
+
+T = TypeVar("T")
+R = TypeVar("R")
 
 # Database engine and session factory
 sync_engine = create_engine(
@@ -34,7 +37,7 @@ engine: AsyncEngine = create_async_engine(
     json_deserializer=json_loads,
 )
 
-SessionFactory = async_sessionmaker(
+AsyncSessionLocal = async_sessionmaker(
     bind=engine,
     autoflush=False,
     expire_on_commit=False,
@@ -84,20 +87,43 @@ async def shutdown_database():
 
 
 @contextlib.asynccontextmanager
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    """
-    Provide a database session for dependency injection in FastAPI routes.
-    """
-    async with SessionFactory() as session:
-        yield session
+async def get_session():
+    """Context manager for getting a database session."""
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 
 
-@contextlib.asynccontextmanager
-async def transactional_session() -> AsyncGenerator[AsyncSession, None]:
+def create_transient_session():
     """
-    Provide a database session within a transactional scope.
+    Creates a transient async session factory for use in synchronous environments.
+
+    This function creates a separate engine and session maker that can be used
+    for one-off database operations, typically run with asyncio.run().
+
+    Example usage:
+        async def do_something():
+            async with create_transient_session() as session:
+                result = await session.execute(select(...))
+                return result.scalars().one()
+
+        result = asyncio.run(do_something())
+
+    Returns:
+        An async context manager that yields a session and handles cleanup
     """
-    async with SessionFactory() as session:
+    transient_engine = create_async_engine(funiq_ai_config.ASYNC_DATABASE_URL, pool_pre_ping=True, pool_recycle=3600)
+    transient_session = async_sessionmaker(
+        bind=transient_engine, autoflush=False, autocommit=False, expire_on_commit=False
+    )
+
+    @contextlib.asynccontextmanager
+    async def _session_context():
+        session = transient_session()
         try:
             yield session
             await session.commit()
@@ -106,59 +132,36 @@ async def transactional_session() -> AsyncGenerator[AsyncSession, None]:
             raise
         finally:
             await session.close()
+            await transient_engine.dispose()
+
+    return _session_context()
 
 
-def provide_session(fn: Callable[..., Any]):
+def with_session(func: Callable[..., Awaitable[R]]) -> Callable[..., Awaitable[R]]:
     """
-    Decorator: Provide a transactional session to the target function.
-    - If a `session` is explicitly passed to the target function, use it directly.
-    - If no `session` is provided, create a new session and inject it into the function.
+    Decorator that provides an async session if one is not passed.
+
+    If 'session' is not provided in the function arguments, this decorator
+    will create a new session and pass it to the function. The session will be
+    committed and closed automatically when the function completes.
+
+    Args:
+        func: The async function to decorate
+
+    Returns:
+        Decorated function that handles session management
     """
-    parameters = signature(fn).parameters  # Retrieve the target function's parameter signature
-    has_session = "session" in parameters  # Check if the function defines a `session` parameter
 
-    # Check if the `session` parameter has a default value and is not empty
-    session_has_default = has_session and parameters["session"].default is not parameters["session"].empty
+    @functools.wraps(func)
+    async def wrapper(*args: Any, **kwargs: Any) -> R:
+        if "session" in kwargs and kwargs["session"] is not None:
+            # Session already provided, just call the function
+            return await func(*args, **kwargs)
 
-    # Retrieve the position index of the `session` parameter
-    session_idx = tuple(parameters).index("session") if has_session else None
-
-    @functools.wraps(fn)
-    async def wrapper(*args, **kwargs) -> Any:
-        """
-        Wrapper logic:
-        1. Check if the `session` parameter is defined in the target function.
-        2. Use an explicitly passed `session` if provided; otherwise, create a new session.
-        """
-
-        # Case 1: If the target function does not define `session`
-        #         or `session` has a valid(including None) default value, call the function directly.
-        if not has_session or session_has_default:
-            return await fn(*args, **kwargs)
-
-        # Case 2: Check if `session` is provided via positional arguments (`args`).
-        if session_idx is not None and session_idx < len(args):
-            session_value = args[session_idx]
-            if session_value is not None:  # If a valid `session` is provided, call the function directly.
-                return await fn(*args, **kwargs)
-
-        # Case 3: Check if `session` is provided via keyword arguments (`kwargs`) and has a valid value.
-        if has_session and "session" in kwargs and kwargs["session"]:
-            return await fn(*args, **kwargs)
-
-        # Case 4: If no valid `session` is provided, create a new transactional session.
-        async with transactional_session() as session:
-            if session_idx is not None and session_idx < len(args):
-                # If `session` is defined as a positional argument, inject the session into `args`.
-                args = list(args)  # Convert `args` to a mutable list
-                args[session_idx] = session
-                args = tuple(args)  # Convert back to a tuple
-            else:
-                # If `session` is defined as a keyword argument, inject the session into `kwargs`.
-                kwargs["session"] = session
-
-            # Call the original function with the injected session
-            return await fn(*args, **kwargs)
+        # No session provided, create one
+        async with create_transient_session() as session:
+            kwargs["session"] = session
+            return await func(*args, **kwargs)
 
     return wrapper
 

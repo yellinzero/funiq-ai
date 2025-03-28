@@ -3,8 +3,8 @@ from abc import abstractmethod
 from collections.abc import Generator, Mapping
 from typing import Union
 
+from jsonschema import ValidationError, validate
 from loguru import logger
-from pydantic import ValidationError
 
 from configs import funiq_ai_config
 from utils.json_schemas.base import JSONSchema
@@ -747,19 +747,19 @@ class LargeLanguageModel(AIModel):
         :param credentials: model credentials
         :return: validated and filtered parameters
         """
+
         # Get the parameter rules schema
         parameter_rules_schema = self.get_parameter_rules_schema(model, credentials)
-
+        
+        # Convert schema to dict using model_dump
+        schema_dict = parameter_rules_schema.model_dump(exclude_none=True)
+        logger.debug(f"Model: {model}, Schema: {schema_dict}")
         try:
-            # Validate parameters against the schema
-            validated_parameters = parameter_rules_schema.validate_python(model_parameters)
-            return validated_parameters
+            # Use jsonschema.validate to validate against the schema
+            validate(instance=model_parameters, schema=schema_dict)
+            return model_parameters
         except ValidationError as e:
             # Transform validation error into a more user-friendly message
-            error_messages = []
-            for error in e.errors():
-                field = error["loc"][0]
-                msg = error["msg"]
-                error_messages.append(f"Model Parameter '{field}': {msg}")
-            
-            raise ValueError("\n".join(error_messages)) from e
+            path = " -> ".join(str(p) for p in e.path) if e.path else "unknown field"
+            error_message = f"Model Parameter '{path}': {e.message}"
+            raise ValueError(error_message) from e

@@ -40,6 +40,7 @@ class AppManager(metaclass=Singleton):
         :param funiq_ai_app: The FastAPI instance where modules will be applied.
         """
         # Add each app's router to the FastAPI instance
+        
         for app in self.apps.values():
             funiq_ai_app.include_router(app.router)
 

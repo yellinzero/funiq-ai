@@ -8,7 +8,7 @@ schema = {
     "config_schema": {
         "type": "object",
         "properties": {
-            "model": {
+            "model_id": {
                 "type": "string",
                 "title": _("Model"),
                 "description": _("The LLM model to use"),

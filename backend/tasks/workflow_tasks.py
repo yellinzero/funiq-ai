@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Dict
+from typing import Any, Dict
 
 from asgiref.sync import async_to_sync
 from celery import Task, shared_task
@@ -9,12 +9,8 @@ from database import with_session
 from services.workflow_service import WorkflowService
 
 
-# TODO implement correct workflow task
 class WorkflowBaseTask(Task):
     """Base task class for workflow execution."""
-    
-    autoretry_for: ClassVar[tuple] = (Exception,)
-    retry_kwargs: ClassVar[dict] = {"max_retries": 3, "countdown": 5}
     
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         """Handle task failure."""

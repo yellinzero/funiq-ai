@@ -71,7 +71,7 @@ class LLMOperator(BaseOperator):
         stream = config.get('stream', False)
         
         # Execute model using invoke instead of _invoke
-        result: Union[LLMResult, Generator] = await model_instance.invoke(
+        result: Union[LLMResult, Generator] = model_instance.invoke(
             model=model.model,
             credentials=credentials,
             prompt_messages=messages,

@@ -3,7 +3,7 @@ from fastapi_async_sqlalchemy import db
 from loguru import logger
 
 from app.account.service.account_service import AccountService
-from app.schemas import ResponseModel
+from app.core.schemas import ResponseModel
 from utils.security import (
     delete_refresh_token_from_cookie,
     get_refresh_token_from_cookie,

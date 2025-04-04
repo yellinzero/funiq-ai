@@ -6,7 +6,7 @@ from configs import funiq_ai_config
 from database import DBBase, load_models
 from alembic import context
 
-load_models('app.models')
+load_models('app.core.models')
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config

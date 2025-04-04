@@ -1,7 +1,7 @@
 from .test_data.data import hello_john, hello_world, hello_zhang
 
 from configs import funiq_ai_config
-from utils.i18n import (
+from utils.common.i18n import (
     LocaleTranslator,
     _locale_ctx,
     get_current_locale_code,
@@ -11,7 +11,7 @@ from utils.i18n import (
     set_current_locale,
     translation_registry,
 )
-from utils.i18n import gettext_lazy as _
+from utils.common.i18n import gettext_lazy as _
 
 
 def test_ctx_locale():

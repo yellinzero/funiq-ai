@@ -11,7 +11,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
 from configs import funiq_ai_config
-from utils.json import json_dumps, json_loads
+from utils.common.json import json_dumps, json_loads
 
 from .models import DBBase
 

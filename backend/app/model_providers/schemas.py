@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from providers.models.core.models.model import AIModelEntity, ModelType
 from providers.models.core.models.provider import ProviderEntity
-from utils.json_schemas.ui_base import UiSchema
+from utils.json_schema import UiSchema
 
 
 class ProviderInfo(ProviderEntity):

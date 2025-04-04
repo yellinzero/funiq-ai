@@ -3,7 +3,7 @@ from typing import Dict
 
 from jsonschema import ValidationError, validate
 
-from utils.json_schemas.base import JSONSchema
+from utils.json_schema import JSONSchema
 
 
 class ValidateHandlingMixin(ABC):
@@ -28,7 +28,7 @@ class ValidateHandlingMixin(ABC):
 
     def validate_output(self, data: Dict) -> bool:
         """Validate output data against output schema"""
-        schema = self.get_output_schema()
+        schema = self.get_output_schema().model_dump(exclude_none=True)
         if schema is None:
             return True
             
@@ -40,7 +40,7 @@ class ValidateHandlingMixin(ABC):
 
     def validate_config(self, config: Dict) -> bool:
         """Validate configuration data against config schema"""
-        schema = self.get_config_schema()
+        schema = self.get_config_schema().model_dump(exclude_none=True)
         if schema is None:
             return True
             

@@ -4,7 +4,7 @@ from typing import Dict, Union
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.model_provider import Model, ModelProvider
+from app.core.models.model_provider import Model, ModelProvider
 from database import with_session
 from providers.models.core.large_language_model import LargeLanguageModel
 from providers.models.core.models.llm import LLMResult
@@ -71,7 +71,7 @@ class LLMOperator(BaseOperator):
         stream = config.get('stream', False)
         
         # Execute model using invoke instead of _invoke
-        result: Union[LLMResult, Generator] = await model_instance.invoke(
+        result: Union[LLMResult, Generator] = model_instance.invoke(
             model=model.model,
             credentials=credentials,
             prompt_messages=messages,

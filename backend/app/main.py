@@ -3,16 +3,18 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 
-from app.errors import register_exception_handlers
+from app.core.errors import register_exception_handlers
 from app_manager import app_manager
 from configs import funiq_ai_config
 from database import shutdown_database
+from infrastructure import (
+    init_celery,
+    init_email_service,
+    setup_loguru,
+    setup_sentry,
+)
 from middleware import install_global_middlewares
-from services.email_service import init_email_service
-from tasks.celery import init_celery
-from utils.i18n import register_all_translation_domains
-from utils.loguru_handler import setup_loguru
-from utils.sentry_handler import setup_sentry
+from utils.common.i18n import register_all_translation_domains
 
 
 # Define the FastAPI application with essential configurations

@@ -1,8 +1,10 @@
 from pydantic import BaseModel, EmailStr
 
-from app.models.account import OAuthProviderName
-from utils.security import PasswordMixin
-from utils.token_manager import AccountTokenType
+from app.core.models.account import OAuthProviderName
+from utils.security import (
+    AccountTokenType,
+    PasswordMixin,
+)
 
 
 class SignupRequest(PasswordMixin, BaseModel):

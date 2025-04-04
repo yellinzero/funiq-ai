@@ -16,10 +16,10 @@ from app.auth.schemas import (
     SignupRequest,
     SignupVerifyRequest,
 )
-from app.errors.account import AccountErrorCode
-from app.errors.base import FuniqAIError
-from app.errors.common import CommonErrorCode
-from app.models.account import (
+from app.core.errors.account import AccountErrorCode
+from app.core.errors.base import FuniqAIError
+from app.core.errors.common import CommonErrorCode
+from app.core.models.account import (
     Account,
     AccountStatus,
     OAuthProvider,
@@ -35,9 +35,14 @@ from tasks.email_tasks import (
     send_reset_password_verification_email_task,
     send_signup_verification_email_task,
 )
-from utils.datatime import utcnow
-from utils.security import create_token_pair, get_account_id_from_request, invalidate_refresh_token
-from utils.token_manager import AccountTokenManager, AccountTokenType
+from utils.common.datatime import utcnow
+from utils.security import (
+    AccountTokenManager,
+    AccountTokenType,
+    create_token_pair,
+    get_account_id_from_request,
+    invalidate_refresh_token,
+)
 
 token_manager = AccountTokenManager()
 
@@ -104,22 +109,22 @@ class AccountService:
         )
 
         account.set_password(payload.password)
-        session.add(account)
+        await account.save(session)
 
         # If invite exists, create user in tenant and mark invite as used
         if invite:
             user = User(
                 account_id=account.id, tenant_id=invite.tenant_id, role=TenantUserRole.MEMBER, invite_code=invite.code
             )
-            session.add(user)
+            await user.save(session)
 
             invite.status = TenantInviteStatus.USED
             invite.used_at = utcnow().replace(tzinfo=None)
-            session.add(invite)
+            await invite.save(session)
 
             # Set last login tenant
             account.last_login_tenant_id = invite.tenant_id
-            session.add(account)
+            await account.save(session)
 
         # Commit account creation
         await session.commit()
@@ -253,6 +258,7 @@ class AccountService:
 
         # Generate tokens
         access_token, refresh_token = create_token_pair({"aid": str(account.id)})
+        await session.commit()
         return access_token, refresh_token, str(current_tenant_id)
 
     @staticmethod

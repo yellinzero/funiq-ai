@@ -1,7 +1,7 @@
 
 from pydantic import BaseModel, EmailStr
 
-from app.models.account import AccountStatus, TenantUserRole
+from app.core.models.account import AccountStatus, TenantUserRole
 
 
 class TenantCreateRequest(BaseModel):

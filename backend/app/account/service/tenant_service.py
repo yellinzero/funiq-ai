@@ -7,10 +7,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.account.schemas import TenantResponse, UserResponse
-from app.errors.account import AccountErrorCode
-from app.errors.common import CommonErrorCode
-from app.models.account import Account, Tenant, TenantInvite, TenantInviteStatus, TenantUserRole, User
-from utils.datatime import utcnow
+from app.core.errors.account import AccountErrorCode
+from app.core.errors.common import CommonErrorCode
+from app.core.models.account import Account, Tenant, TenantInvite, TenantInviteStatus, TenantUserRole, User
+from utils.common.datatime import utcnow
 
 
 class TenantService:
@@ -35,6 +35,7 @@ class TenantService:
         await user.save(session)
 
         logger.info(f"Successfully created tenant {tenant.id} with owner {account_id}")
+        await session.commit()
         return TenantResponse(id=str(tenant.id), name=tenant.name)
 
     @staticmethod
@@ -65,6 +66,7 @@ class TenantService:
         await tenant.save(session)
         
         logger.info(f"Successfully updated tenant {tenant_id}")
+        await session.commit()
         return TenantResponse(id=str(tenant.id), name=tenant.name)
 
     @staticmethod
@@ -80,7 +82,7 @@ class TenantService:
 
         # Delete tenant (cascade will handle users)
         tenant = await TenantService.get_tenant(session, tenant_id)
-        await session.delete(tenant)
+        await tenant.delete(session)
         await session.commit()
         
         logger.info(f"Successfully deleted tenant {tenant_id}")
@@ -192,6 +194,7 @@ class TenantService:
         await new_user.save(session)
         
         logger.info(f"Successfully added user {new_user_email} to tenant {tenant_id} with role {role}")
+        await session.commit()
         return UserResponse(
             id=str(new_user.id),
             account_id=str(new_user.account_id),
@@ -235,6 +238,7 @@ class TenantService:
         await target_user.save(session)
         
         logger.info(f"Successfully updated role to {new_role} for user {target_user_id} in tenant {tenant_id}")
+        await session.commit()
         return UserResponse(
             id=str(target_user.id),
             account_id=str(target_user.account_id),
@@ -278,7 +282,7 @@ class TenantService:
                 raise AccountErrorCode.CANNOT_REMOVE_LAST_OWNER.exception(status_code=status.HTTP_400_BAD_REQUEST)
 
         # Remove user
-        await session.delete(target_user)
+        await target_user.delete(session)
         await session.commit()
         
         logger.info(f"Successfully removed user {target_user_id} from tenant {tenant_id}")

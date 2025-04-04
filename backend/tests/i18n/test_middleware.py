@@ -1,5 +1,5 @@
 from configs import funiq_ai_config
-from utils.i18n import translation_registry
+from utils.common.i18n import translation_registry
 
 
 def test_middleware_set_locale_from_cookie(client):

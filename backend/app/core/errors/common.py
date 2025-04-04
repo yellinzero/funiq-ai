@@ -1,4 +1,4 @@
-from app.errors.base import BaseErrorCode
+from app.core.errors.base import BaseErrorCode
 
 
 class CommonErrorCode(BaseErrorCode):

@@ -1,4 +1,4 @@
-from utils.i18n import gettext_lazy as _
+from utils.common.i18n import gettext_lazy as _
 
 schema = {
     "model": "claude-3-5-sonnet-20240620",

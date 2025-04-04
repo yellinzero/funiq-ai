@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from utils.json import json_dumps, json_loads
+from utils.common.json import json_dumps, json_loads
 
 
 def test_json_dumps_and_loads():

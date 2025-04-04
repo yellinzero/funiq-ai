@@ -3,9 +3,8 @@ from typing import Union
 
 from pydantic import BaseModel
 
-from utils.i18n import TranslatableText
-from utils.json_schemas.base import JSONSchema
-from utils.json_schemas.ui_base import UiSchema
+from utils.common.i18n import TranslatableText
+from utils.json_schema import JSONSchema, UiSchema
 
 
 class OperatorType(Enum): 

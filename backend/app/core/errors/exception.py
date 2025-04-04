@@ -4,8 +4,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 
-from app.errors.base import FuniqAIError
-from app.errors.common import CommonErrorCode
+from app.core.errors.base import FuniqAIError
+from app.core.errors.common import CommonErrorCode
 
 
 # Exception handler registration

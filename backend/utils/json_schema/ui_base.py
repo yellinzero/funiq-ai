@@ -5,7 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from utils.i18n import TranslatableText
+from utils.common.i18n import TranslatableText
 
 
 class GlobalUISchemaOptions(BaseModel):

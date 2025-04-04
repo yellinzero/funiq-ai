@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from utils.smtp import SMTPClient
+from utils.notification import SMTPClient
 
 
 @pytest.fixture

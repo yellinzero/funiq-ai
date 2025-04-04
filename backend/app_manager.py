@@ -5,8 +5,8 @@ from typing import Any, ClassVar
 
 from fastapi import APIRouter, Depends, FastAPI
 
-from utils.jwt_bearer import JWTBearer
-from utils.singleton import Singleton
+from utils.common.singleton import Singleton
+from utils.security import JWTBearer
 
 
 class AppManager(metaclass=Singleton):

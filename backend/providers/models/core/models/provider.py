@@ -3,8 +3,8 @@ from typing import Literal, Union
 
 from pydantic import BaseModel
 
-from utils.i18n import TranslatableText
-from utils.json_schemas.base import JSONSchema
+from utils.common.i18n import TranslatableText
+from utils.json_schema import JSONSchema
 
 from .model import ConfigurateMethod, ModelType
 

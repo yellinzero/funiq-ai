@@ -5,8 +5,8 @@ from typing import ClassVar
 
 from loguru import logger
 
-from utils.i18n import get_current_locale_code_with_territory
-from utils.json_schemas.base import JSONSchema
+from utils.common.i18n import get_current_locale_code_with_territory
+from utils.json_schema import JSONSchema
 
 from ..models.model import (
     PARAMETER_RULE_TEMPLATE,

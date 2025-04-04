@@ -3,7 +3,7 @@ from typing import Dict
 
 from jsonschema import ValidationError, validate
 
-from utils.json_schemas.base import JSONSchema
+from utils.json_schema import JSONSchema
 
 
 class ValidateHandlingMixin(ABC):

@@ -4,8 +4,8 @@ from starlette.responses import PlainTextResponse
 from starlette.testclient import TestClient
 
 from middleware.i18n import I18nMiddleware
-from utils.i18n import get_current_locale_code, translation_registry
-from utils.i18n import gettext_lazy as _
+from utils.common.i18n import get_current_locale_code, translation_registry
+from utils.common.i18n import gettext_lazy as _
 
 
 @pytest.fixture

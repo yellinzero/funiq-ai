@@ -4,17 +4,17 @@ from typing import Union
 
 import jinja2
 
-from utils.i18n import NullTranslations, get_current_locale_translator, translation_registry
+from utils.common.i18n import NullTranslations, get_current_locale_translator, translation_registry
 
 
-class TemplateRenderer:
+class EmailTemplateRenderer:
     def __init__(self, template_dir: Union[str, pathlib.Path]):
         """
         Initialize the template renderer.
 
         :param template_dir: Path to the directory containing template files.
         """
-        self.template_dir = pathlib.Path(__file__).resolve().parent.parent / template_dir
+        self.template_dir = pathlib.Path(__file__).resolve().parent.parent.parent / template_dir
         self.environment = jinja2.Environment(
             loader=jinja2.FileSystemLoader(self.template_dir),
             autoescape=True,
@@ -66,7 +66,7 @@ class TemplateRenderer:
 
 
 @cache
-def _get_template(template_renderer: TemplateRenderer, template_name: str) -> jinja2.Template:
+def _get_template(template_renderer: EmailTemplateRenderer, template_name: str) -> jinja2.Template:
     """
     Load and cache the Jinja2 template by name.
 
@@ -79,4 +79,4 @@ def _get_template(template_renderer: TemplateRenderer, template_name: str) -> ji
         raise FileNotFoundError(f"Template '{template_name}' not found in {template_renderer.template_dir}") from err
 
 
-template_renderer = TemplateRenderer("templates")
+email_template_renderer = EmailTemplateRenderer("/infrastructure/email/templates")

@@ -5,7 +5,6 @@ Manage global middlewares
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_async_sqlalchemy import SQLAlchemyMiddleware
-from starlette_csrf import CSRFMiddleware
 
 from configs import funiq_ai_config
 from database import engine

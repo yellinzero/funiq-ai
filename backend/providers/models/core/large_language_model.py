@@ -7,7 +7,7 @@ from jsonschema import ValidationError, validate
 from loguru import logger
 
 from configs import funiq_ai_config
-from utils.json_schemas.base import JSONSchema
+from utils.json_schema import JSONSchema
 
 from .base_model import AIModel
 from .callbacks.base_callback import Callback

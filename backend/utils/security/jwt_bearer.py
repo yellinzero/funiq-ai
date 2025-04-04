@@ -1,17 +1,16 @@
 from contextlib import contextmanager
-from contextvars import ContextVar
 
 from fastapi import Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.security.utils import get_authorization_scheme_param
 from starlette.requests import HTTPConnection
 
-from app.errors.common import CommonErrorCode
-from utils.context import ContextStorage
-from utils.security import decode_access_token, get_account_id_from_token
-
-# Context variable for current user ID
-_current_user_id: ContextVar[str | None] = ContextVar("current_user_id", default=None)
+from app.core.errors.common import CommonErrorCode
+from utils.common.context import ContextStorage
+from utils.security.security import (
+    decode_access_token,
+    get_account_id_from_token,
+)
 
 
 class CurrentUserContext(ContextStorage):

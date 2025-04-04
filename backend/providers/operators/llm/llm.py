@@ -4,7 +4,7 @@ from typing import Dict, Union
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.model_provider import Model, ModelProvider
+from app.core.models.model_provider import Model, ModelProvider
 from database import with_session
 from providers.models.core.large_language_model import LargeLanguageModel
 from providers.models.core.models.llm import LLMResult

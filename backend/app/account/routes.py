@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 from fastapi_async_sqlalchemy import db
 
-from app.schemas import ResponseModel
+from app.core.schemas import ResponseModel
 from utils.security import get_account_id_from_request
 
 from .schemas import (

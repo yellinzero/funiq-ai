@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from pydantic import EmailStr
 
 from configs import funiq_ai_config
-from utils.smtp import SMTPClient
+from utils.notification import SMTPClient
 
 
 class EmailService:

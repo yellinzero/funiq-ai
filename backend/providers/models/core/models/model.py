@@ -4,10 +4,15 @@ from typing import Any, Union
 
 from pydantic import BaseModel
 
-from utils.i18n import TranslatableText
-from utils.i18n import gettext_lazy as _
-from utils.json_schemas.base import JSONSchema, JSONSchemaPropertyBase, NumberProperty, StringProperty
-from utils.json_schemas.ui_base import UiSchema
+from utils.common.i18n import TranslatableText
+from utils.common.i18n import gettext_lazy as _
+from utils.json_schema import (
+    JSONSchema,
+    JSONSchemaPropertyBase,
+    NumberProperty,
+    StringProperty,
+    UiSchema,
+)
 
 
 class ConfigurateMethod(Enum):

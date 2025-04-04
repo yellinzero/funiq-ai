@@ -5,10 +5,10 @@ from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.errors.model_provider import ModelProviderErrorCode
-from app.models.app import App, AppType
-from app.models.model_provider import Model, ModelProvider
-from app.models.workflow import Workflow, WorkflowEdge, WorkflowNode
+from app.app.service.app_service import AppService
+from app.core.errors.model_provider import ModelProviderErrorCode
+from app.core.models.app import App
+from app.core.models.model_provider import Model, ModelProvider
 from configs import funiq_ai_config
 from providers.models.core.models.model import ConfigurateMethod
 from providers.models.core.provider_factory import ProviderFactory
@@ -336,98 +336,6 @@ class ProviderService:
         return model
 
     @staticmethod
-    async def _create_system_app(
-        session: AsyncSession,
-        tenant_id: str,
-        model_name: str,
-        model_id: str,
-    ) -> App:
-        """
-        Create system app with workflow for a model
-
-        Args:
-            session: Database session
-            tenant_id: ID of the tenant
-            model_name: Name of the model
-            model_id: ID of the model
-
-        Returns:
-            App: Created system app
-        """
-        logger.info("Creating system app for model", extra={"tenant_id": tenant_id, "model": model_name})
-
-        # Create workflow
-        workflow = Workflow(tenant_id=tenant_id, name=model_name, description=f"System workflow for {model_name}")
-        session.add(workflow)
-        await session.flush()  # Flush to get workflow.id
-
-        # Create nodes
-        nodes = {
-            "start": WorkflowNode(
-                workflow_id=workflow.id,
-                node_key="start",
-                node_type="start",
-                name="Start",
-                meta={"position": {"x": 100, "y": 100}},
-                config={},
-            ),
-            "llm": WorkflowNode(
-                workflow_id=workflow.id,
-                node_key="llm",
-                node_type="llm",
-                name="LLM",
-                meta={"position": {"x": 300, "y": 100}},
-                config={"model_id": str(model_id), "prompt": None},
-            ),
-            "end": WorkflowNode(
-                workflow_id=workflow.id,
-                node_key="end",
-                node_type="end",
-                name="End",
-                meta={"position": {"x": 500, "y": 100}},
-                config={},
-            ),
-        }
-
-        for node in nodes.values():
-            session.add(node)
-
-        # Create edges
-        edges = [
-            WorkflowEdge(
-                workflow_id=workflow.id,
-                edge_key="start_to_llm",
-                source_node_key="start",
-                target_node_key="llm",
-                edge_type="normal",
-            ),
-            WorkflowEdge(
-                workflow_id=workflow.id,
-                edge_key="llm_to_end",
-                source_node_key="llm",
-                target_node_key="end",
-                edge_type="normal",
-            ),
-        ]
-
-        for edge in edges:
-            session.add(edge)
-
-        # Create app
-        app = App(
-            tenant_id=tenant_id,
-            app_type=AppType.MODEL,
-            name=model_name,
-            description=f"System app for {model_name}",
-            is_system=True,
-            workflow_id=workflow.id,
-        )
-        session.add(app)
-
-        logger.info("Created system app", extra={"workflow_id": str(workflow.id)})
-        return app
-
-    @staticmethod
     async def enable_model(
         session: AsyncSession,
         tenant_id: str,
@@ -470,7 +378,7 @@ class ProviderService:
             else:
                 # Enable the existing model
                 model.is_enabled = True
-                session.add(model)
+                await model.save(session)
 
             # Check if system app exists for this model
             result = await session.execute(
@@ -479,12 +387,13 @@ class ProviderService:
             app = result.scalars().first()
 
             if not app:
-                await ProviderService._create_system_app(
+                await AppService.create_system_app(
                     session=session,
                     tenant_id=tenant_id,
                     model_name=model_name,
                     model_id=model.id,
                 )
 
+            await session.commit()
             logger.info("Successfully enabled model", extra={"model_id": str(model.id)})
             return model

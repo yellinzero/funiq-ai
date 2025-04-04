@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict
 
-from utils.json_schemas.base import JSONSchema
+from utils.json_schema import JSONSchema
 
 from .mixins.convert_handling import ConvertHandlingMixin
 from .mixins.schema_handling import SchemaHandlingMixin

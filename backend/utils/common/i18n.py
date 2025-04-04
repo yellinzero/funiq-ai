@@ -13,7 +13,7 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic_core.core_schema import with_info_plain_validator_function
 
 from configs import funiq_ai_config
-from utils.context import ContextStorage
+from utils.common.context import ContextStorage
 
 all_domains = ["templates", "providers"]
 

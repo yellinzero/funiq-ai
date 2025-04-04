@@ -1,6 +1,6 @@
 import pytest
 
-from utils.singleton import Singleton
+from utils.common.singleton import Singleton
 
 
 class ExampleSingleton(metaclass=Singleton):

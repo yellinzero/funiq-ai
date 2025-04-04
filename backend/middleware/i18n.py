@@ -3,7 +3,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
 from configs import funiq_ai_config
-from utils.i18n import set_current_locale
+from utils.common.i18n import set_current_locale
 
     
 class I18nMiddleware(BaseHTTPMiddleware):

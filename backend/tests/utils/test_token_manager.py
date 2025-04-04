@@ -3,7 +3,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from utils.token_manager import AccountTokenManager, AccountTokenType, TokenManager
+from utils.security import (
+    AccountTokenManager,
+    AccountTokenType,
+    TokenManager,
+)
 
 
 @pytest.fixture

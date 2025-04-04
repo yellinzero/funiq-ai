@@ -4,14 +4,13 @@ from typing import Any
 from sqlalchemy import JSON, Boolean, ForeignKey, ForeignKeyConstraint, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database import DBBase, DBUUIDIDModelMixin
+from database import DBBase, DBUUIDModelMixin
 from providers.models.core.models.model import ConfigurateMethod, ModelFeature, ModelPropertyKey, ModelType, PriceConfig
 from providers.models.core.models.provider import ProviderDocs
-from utils.json_schemas.base import JSONSchema
-from utils.json_schemas.ui_base import UiSchema
+from utils.json_schema import JSONSchema, UiSchema
 
 
-class ModelProvider(DBBase, DBUUIDIDModelMixin):
+class ModelProvider(DBBase, DBUUIDModelMixin):
     """Model provider model for storing model provider configurations per tenant"""
 
     tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), nullable=False)
@@ -30,9 +29,7 @@ class ModelProvider(DBBase, DBUUIDIDModelMixin):
     # Add relationship to Model
     models: Mapped[list["Model"]] = relationship("Model", back_populates="provider_obj", cascade="all, delete-orphan")
 
-    __table_args__ = (
-        UniqueConstraint("tenant_id", "provider", name="unique_tenant_provider"),
-    )
+    __table_args__ = (UniqueConstraint("tenant_id", "provider", name="unique_tenant_provider"),)
 
     @property
     def is_active(self) -> bool:
@@ -40,12 +37,10 @@ class ModelProvider(DBBase, DBUUIDIDModelMixin):
         return self.credentials is not None
 
     def __repr__(self) -> str:
-        return (
-            f"<ModelProvider(tenant_id={self.tenant_id}, provider={self.provider}, is_active={self.is_active})>"
-        )
+        return f"<ModelProvider(tenant_id={self.tenant_id}, provider={self.provider}, is_active={self.is_active})>"
 
 
-class Model(DBBase, DBUUIDIDModelMixin):
+class Model(DBBase, DBUUIDModelMixin):
     """Model model for storing model configurations per tenant"""
 
     tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), nullable=False)
@@ -76,7 +71,7 @@ class Model(DBBase, DBUUIDIDModelMixin):
             ["tenant_id", "provider"],
             ["model_providers.tenant_id", "model_providers.provider"],
             name="fk_model_provider",
-            ondelete="CASCADE"
+            ondelete="CASCADE",
         ),
     )
 

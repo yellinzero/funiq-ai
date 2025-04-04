@@ -4,7 +4,7 @@ from typing import Union
 
 from pydantic import BaseModel, Field, field_validator
 
-from utils.i18n import TranslatableText
+from utils.common.i18n import TranslatableText
 
 
 class PromptMessageRole(Enum):

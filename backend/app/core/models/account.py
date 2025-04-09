@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from configs import funiq_ai_config
-from database import DBBase, DBSoftDeleteMixin, DBUUIDModelMixin
+from infrastructure import DBBase, DBSoftDeleteMixin, DBUUIDModelMixin
 from utils.security import hash_password, verify_password
 
 # ---------- Enums ----------
@@ -141,11 +141,10 @@ class User(DBBase, DBUUIDModelMixin, DBSoftDeleteMixin):
     tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), nullable=False)
     role: Mapped[TenantUserRole] = mapped_column(String(50), default=TenantUserRole.MEMBER)
     avatar: Mapped[str | None] = mapped_column(String(2048))  # User avatar (URL)
-    invite_code: Mapped[str | None] = mapped_column(ForeignKey("tenant_invites.code"), nullable=True)
+    invite_code: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     account: Mapped["Account"] = relationship("Account", back_populates="users")
     tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="users")
-    invite: Mapped["TenantInvite | None"] = relationship("TenantInvite", foreign_keys=[invite_code])
 
     __table_args__ = (UniqueConstraint("account_id", "tenant_id", name="unique_user_key"),)
 

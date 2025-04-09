@@ -1,32 +1,32 @@
+x-service-common: &service-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+    tags:
+      - funiq_ai:latest
+  image: funiq_ai:latest
+  volumes:
+    - .:/app
+  env_file:
+    - .env
+
 services:
   server:
+    <<: *service-common
     container_name: funiq_ai_server
-    build:
-      context: .
-      dockerfile: Dockerfile
     environment:
       MODE: "web"
     ports:
       - "5001:5000"
-    volumes:
-      - .:/app
-    env_file:
-      - .env
     depends_on:
       - db
       - redis
 
   celery_worker:
-    container_name: funiq_ai_celery_worker
-    build:
-      context: .
-      dockerfile: Dockerfile
+    <<: *service-common
+    container_name: funiq_ai_celery
     environment:
       MODE: "worker"
-    volumes:
-      - .:/app
-    env_file:
-      - .env
     depends_on:
       - server
       - redis
@@ -62,6 +62,7 @@ services:
       retries: 30
 
   redis:
+    container_name: funiq_ai_redis
     image: redis:6-alpine
     user: redis
     volumes:

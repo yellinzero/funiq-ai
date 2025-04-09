@@ -6,12 +6,13 @@ from fastapi.responses import ORJSONResponse
 from app.core.errors import register_exception_handlers
 from app_manager import app_manager
 from configs import funiq_ai_config
-from database import shutdown_database
 from infrastructure import (
     init_celery,
     init_email_service,
     setup_loguru,
     setup_sentry,
+    shutdown_database,
+    shutdown_redis,
 )
 from middleware import install_global_middlewares
 from utils.common.i18n import register_all_translation_domains
@@ -58,6 +59,7 @@ def create_app() -> FastAPI:
 async def lifespan(app: FastAPI):
     yield
     await shutdown_database()
+    await shutdown_redis()
 
 
 # Define a health check route

@@ -17,7 +17,12 @@ schema = {
     },
     "config_schema": {
         "type": "object",
-        "properties": {},
-        "required": []
+        "properties": {
+            "result": {
+                "type": "string",
+                "description": _("The final processed output"),
+            },
+        },
+        "required": ["result"]
     }
 }

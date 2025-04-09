@@ -4,7 +4,7 @@ from typing import Any
 from sqlalchemy import JSON, Boolean, ForeignKey, ForeignKeyConstraint, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database import DBBase, DBUUIDModelMixin
+from infrastructure import DBBase, DBUUIDModelMixin
 from providers.models.core.models.model import ConfigurateMethod, ModelFeature, ModelPropertyKey, ModelType, PriceConfig
 from providers.models.core.models.provider import ProviderDocs
 from utils.json_schema import JSONSchema, UiSchema

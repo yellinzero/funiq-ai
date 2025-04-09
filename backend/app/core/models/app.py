@@ -8,9 +8,10 @@ from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database import DBBase, DBUUIDModelMixin
+from infrastructure import DBBase, DBUUIDModelMixin
 
 if TYPE_CHECKING:
+    from app.core.models.workflow import Workflow
     pass
 
 # ---------- Enums ----------
@@ -51,7 +52,7 @@ class App(DBBase, DBUUIDModelMixin):
     name: Mapped[str] = mapped_column(String(100), nullable=False, comment="Name of the application")
     description: Mapped[str | None] = mapped_column(String(1000), comment="Description of the application")
     is_system: Mapped[bool] = mapped_column(default=False, comment="Whether this is a system application")
-    version: Mapped[str] = mapped_column(String(50), comment="Current version number")
+    version: Mapped[str | None] = mapped_column(String(50), nullable=True, comment="Current version number")
     last_run_at: Mapped[datetime | None] = mapped_column(DateTime, comment="Last execution timestamp")
 
     created_by: Mapped[uuid.UUID] = mapped_column(
@@ -64,6 +65,12 @@ class App(DBBase, DBUUIDModelMixin):
     versions: Mapped[list["AppVersion"]] = relationship(back_populates="app", cascade="all, delete-orphan")
     conversations: Mapped[list["Conversation"]] = relationship(back_populates="app", cascade="all, delete-orphan")
 
+    workflow: Mapped["Workflow"] = relationship(
+        "Workflow",
+        back_populates="app",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
     __table_args__ = (
         # Unique constraint for app name within tenant
         Index("uk_app_tenant_name", tenant_id, name, unique=True),

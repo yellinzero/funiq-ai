@@ -1,6 +1,6 @@
+from __future__ import annotations
+
 import enum
-import hashlib
-import json
 import uuid
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
@@ -10,8 +10,7 @@ from sqlalchemy import JSON, DateTime, Enum, ForeignKey, ForeignKeyConstraint, I
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database import DBAuditFieldsMixin, DBBase, DBUUIDModelMixin
-from utils.json_schema import JSONSchema
+from infrastructure import DBAuditFieldsMixin, DBBase, DBUUIDModelMixin
 
 if TYPE_CHECKING:
     from .app import App
@@ -68,21 +67,28 @@ class Workflow(DBBase, DBUUIDModelMixin):
     description: Mapped[str | None] = mapped_column(
         String(255), comment="Optional description of the workflow's purpose"
     )
-    version: Mapped[str] = mapped_column(
-        String(50), nullable=False, default="0.0.1", comment="Current version number of the workflow"
+    version: Mapped[str | None] = mapped_column(
+        String(50), nullable=True, comment="Current version number of the workflow"
     )
 
     # Relationships
-    app: Mapped["App"] = relationship("App", back_populates="workflow", uselist=False, single_parent=True)
-    nodes: Mapped[list["WorkflowNode"]] = relationship(
+    app: Mapped[App] = relationship("App", back_populates="workflow", uselist=False, single_parent=True)
+    nodes: Mapped[list[WorkflowNode]] = relationship(
         "WorkflowNode", back_populates="workflow", cascade="all, delete-orphan"
     )
-    edges: Mapped[list["WorkflowEdge"]] = relationship(
+    edges: Mapped[list[WorkflowEdge]] = relationship(
         "WorkflowEdge", back_populates="workflow", cascade="all, delete-orphan"
     )
-    versions: Mapped[list["WorkflowVersion"]] = relationship(
+    versions: Mapped[list[WorkflowVersion]] = relationship(
         "WorkflowVersion", back_populates="workflow", cascade="all, delete-orphan"
     )
+    snapshots: Mapped[list[WorkflowSnapshot]] = relationship(
+        "WorkflowSnapshot", back_populates="workflow", cascade="all, delete-orphan"
+    )
+
+    # Audit fields with default values
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    updated_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
 
     __table_args__ = (
         UniqueConstraint("app_id", "name", name="uq_workflow_app_name"),
@@ -92,22 +98,6 @@ class Workflow(DBBase, DBUUIDModelMixin):
 
     def __repr__(self) -> str:
         return f"<Workflow(app_id={self.app_id}, workflow_id={self.id}, name={self.name})>"
-
-    @property
-    def snapshot(self) -> dict[str, Any]:
-        """Get the snapshot of the workflow."""
-        return {
-            "name": self.name,
-            "description": self.description,
-            "nodes": [node.to_dict() for node in self.nodes],
-            "edges": [edge.to_dict() for edge in self.edges]
-        }
-
-    def get_snapshot_with_hash(self) -> tuple[dict[str, Any], str]:
-        """Get both snapshot and its hash in one call."""
-        snapshot_data = self.snapshot
-        snapshot_hash = hashlib.sha256(json.dumps(self.snapshot).encode()).hexdigest()
-        return snapshot_data, snapshot_hash
 
 
 class WorkflowNode(DBBase, DBAuditFieldsMixin):
@@ -137,14 +127,13 @@ class WorkflowNode(DBBase, DBAuditFieldsMixin):
     meta: Mapped[dict[str, Any] | None] = mapped_column(
         JSON, comment="Node metadata including UI properties (position, style, etc)"
     )
+
     config: Mapped[dict[str, Any] | None] = mapped_column(
         JSON, comment="Core configuration for node operation (parameters, settings)"
     )
+
     extended_config: Mapped[dict[str, Any] | None] = mapped_column(
         JSON, comment="Extended configuration specific to node type (e.g., LLM parameters)"
-    )
-    output_schema: Mapped[JSONSchema | None] = mapped_column(
-        JSON, comment="JSON schema defining expected node output format"
     )
 
     # Audit fields with default values
@@ -152,14 +141,14 @@ class WorkflowNode(DBBase, DBAuditFieldsMixin):
     updated_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
 
     # Relationships
-    workflow: Mapped["Workflow"] = relationship("Workflow", back_populates="nodes")
-    outgoing_edges: Mapped[list["WorkflowEdge"]] = relationship(
+    workflow: Mapped[Workflow] = relationship("Workflow", back_populates="nodes")
+    outgoing_edges: Mapped[list[WorkflowEdge]] = relationship(
         "WorkflowEdge",
         back_populates="source_node",
         foreign_keys="WorkflowEdge.source_node_key",
         cascade="all, delete-orphan",
     )
-    incoming_edges: Mapped[list["WorkflowEdge"]] = relationship(
+    incoming_edges: Mapped[list[WorkflowEdge]] = relationship(
         "WorkflowEdge",
         back_populates="target_node",
         foreign_keys="WorkflowEdge.target_node_key",
@@ -209,11 +198,11 @@ class WorkflowEdge(DBBase, DBAuditFieldsMixin):
     )
 
     # Relationships
-    workflow: Mapped["Workflow"] = relationship("Workflow", back_populates="edges")
-    source_node: Mapped["WorkflowNode"] = relationship(
+    workflow: Mapped[Workflow] = relationship("Workflow", back_populates="edges")
+    source_node: Mapped[WorkflowNode] = relationship(
         "WorkflowNode", back_populates="outgoing_edges", foreign_keys=[source_node_key]
     )
-    target_node: Mapped["WorkflowNode"] = relationship(
+    target_node: Mapped[WorkflowNode] = relationship(
         "WorkflowNode", back_populates="incoming_edges", foreign_keys=[target_node_key]
     )
 
@@ -265,6 +254,7 @@ class WorkflowVersion(DBBase):
     )
 
     snapshot: Mapped[dict[str, Any]] = mapped_column(JSON, comment="Snapshot of the workflow version")
+    snapshot_hash: Mapped[str] = mapped_column(String(256), nullable=False)
     description: Mapped[str] = mapped_column(String(255), comment="Description of changes in this version")
     published_at: Mapped[datetime] = mapped_column(
         default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
@@ -274,7 +264,7 @@ class WorkflowVersion(DBBase):
         UUID(as_uuid=True), nullable=False, comment="User ID who published this version"
     )
 
-    workflow: Mapped["Workflow"] = relationship("Workflow", back_populates="versions")
+    workflow: Mapped[Workflow] = relationship("Workflow", back_populates="versions")
 
     __table_args__ = (
         UniqueConstraint("workflow_id", "version", name="uq_workflow_version"),
@@ -302,18 +292,22 @@ class WorkflowExecution(DBBase):
         nullable=False,
         comment="Version of the workflow that was executed",
     )
+
     flow_run_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), nullable=False, comment="Prefect flow run identifier"
     )
     status: Mapped[StateType] = mapped_column(
         Enum(StateType), nullable=False, comment="Current status of the execution"
     )
-    start_time: Mapped[datetime] = mapped_column(DateTime, nullable=False, comment="When the execution started")
-    end_time: Mapped[datetime] = mapped_column(DateTime, nullable=False, comment="When the execution completed")
+    start_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, comment="When the execution started")
+    end_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, comment="When the execution completed")
     record_info: Mapped[dict[str, Any]] = mapped_column(JSON, comment="Additional execution metadata and results")
 
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+
     # Relationships
-    workflow_version: Mapped["WorkflowVersion"] = relationship(
+    workflow_version: Mapped[WorkflowVersion] = relationship(
         "WorkflowVersion", foreign_keys=[workflow_id, version], backref="executions"
     )
 
@@ -355,12 +349,18 @@ class WorkflowNodeExecution(DBBase):
     status: Mapped[StateType] = mapped_column(
         Enum(StateType), nullable=False, comment="Current status of the node execution"
     )
-    start_time: Mapped[datetime] = mapped_column(DateTime, nullable=False, comment="When the node execution started")
-    end_time: Mapped[datetime] = mapped_column(DateTime, nullable=False, comment="When the node execution completed")
+    start_time: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True, comment="When the node execution started"
+    )
+    end_time: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True, comment="When the node execution completed"
+    )
     record_info: Mapped[dict[str, Any]] = mapped_column(JSON, comment="Additional node execution metadata and results")
 
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     # Relationships
-    workflow_execution: Mapped["WorkflowExecution"] = relationship("WorkflowExecution", backref="node_executions")
+    workflow_execution: Mapped[WorkflowExecution] = relationship("WorkflowExecution", backref="node_executions")
 
     __table_args__ = (
         Index("idx_node_execution_flow", "flow_run_id", "status"),
@@ -373,7 +373,7 @@ class WorkflowSnapshot(DBBase):
 
     snapshot_timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False, primary_key=True)
     workflow_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, comment="Reference to the parent workflow"
+        ForeignKey("workflows.id", ondelete="CASCADE"), nullable=False, comment="Reference to the parent workflow"
     )
     snapshot: Mapped[dict[str, Any]] = mapped_column(JSON)
     created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
@@ -382,36 +382,45 @@ class WorkflowSnapshot(DBBase):
     snapshot_hash: Mapped[str] = mapped_column(String(256), nullable=False)
 
     # relationship
-    workflow: Mapped["Workflow"] = relationship("Workflow", back_populates="snapshots")
+    workflow: Mapped[Workflow] = relationship(
+        "Workflow",
+        back_populates="snapshots",
+    )
 
-    __table_args__ = (Index("idx_workflow_snapshot_workflow", "workflow_id"),)
+    __table_args__ = (
+        UniqueConstraint("workflow_id", "snapshot_timestamp", name="uq_workflow_snapshots_composite"),
+        Index("idx_workflow_snapshot_workflow", "workflow_id"),
+    )
 
 
 class WorkflowDebugExecution(DBBase):
     """Workflow debug execution model."""
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    workflow_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+    workflow_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workflows.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     snapshot_timestamp: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, comment="Timestamp of the workflow snapshot used for debugging"
     )
     flow_run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     status: Mapped[StateType] = mapped_column(Enum(StateType), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
-    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    start_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    end_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    start_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    end_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     record_info: Mapped[dict[str, Any]] = mapped_column(JSON)
 
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    
     # Relationships
-    workflow_snapshot: Mapped["WorkflowSnapshot"] = relationship(
-        "WorkflowSnapshot", foreign_keys=[workflow_id, snapshot_timestamp], backref="debug_executions"
+    workflow_snapshot: Mapped[WorkflowSnapshot] = relationship(
+        "WorkflowSnapshot", foreign_keys=[workflow_id, snapshot_timestamp]
     )
 
     __table_args__ = (
         ForeignKeyConstraint(
-            ["snapshot_timestamp"],
-            ["workflow_snapshots.snapshot_timestamp"],
+            ["workflow_id", "snapshot_timestamp"],
+            ["workflow_snapshots.workflow_id", "workflow_snapshots.snapshot_timestamp"],
             name="fk_debug_execution_snapshot",
             ondelete="CASCADE",
         ),
@@ -433,12 +442,15 @@ class WorkflowNodeDebugExecution(DBBase):
     flow_run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     task_run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     status: Mapped[StateType] = mapped_column(Enum(StateType), nullable=False)
-    start_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    end_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    start_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    end_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     record_info: Mapped[dict[str, Any]] = mapped_column(JSON)
 
+    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+
     # Relationships
-    workflow_debug_execution: Mapped["WorkflowDebugExecution"] = relationship(
+    workflow_debug_execution: Mapped[WorkflowDebugExecution] = relationship(
         "WorkflowDebugExecution", backref="node_executions"
     )
 

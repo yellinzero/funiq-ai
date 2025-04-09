@@ -1,21 +1,27 @@
 from typing import Dict
 
+from loguru import logger
+
 from ..core.base_operator import BaseOperator
 
 
 class StartOperator(BaseOperator):
     operator_name = "start"
     """Start operator implementation"""
-        
-    async def execute(self, input_data: Dict, config: Dict) -> Dict:
+
+    async def _execute(self, config: Dict, **kwargs) -> Dict:
         """
         Execute the start operator
-        
+
         Args:
-            input_data: Contains the initial question for the workflow
-            config: Not used in start operator as per schema
-            
+            config: Contains the initial question for the workflow
+
         Returns:
             Dict containing the question in the format {"question": str}
         """
-        return {"question": input_data.get("question", "")} 
+        logger.debug(f"Start operator config: {config}")
+        result = {"question": config.get("question", "")}
+        if not self.validate_output(result):
+            raise ValueError("Output validation failed")
+        logger.debug(f"Start operator result: {result}")
+        return result

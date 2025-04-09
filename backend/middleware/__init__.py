@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi_async_sqlalchemy import SQLAlchemyMiddleware
 
 from configs import funiq_ai_config
-from database import engine
+from infrastructure import engine
 from middleware.auth import TokenRefreshMiddleware
 from middleware.i18n import I18nMiddleware
 from middleware.request_context import RequestContextMiddleware

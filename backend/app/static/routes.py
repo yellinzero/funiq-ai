@@ -3,7 +3,7 @@ import os
 from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse
 
-from app.core.errors.common import CommonErrorCode
+from app.core.errors import CommonErrorCode
 
 static_router = APIRouter(prefix="/static", tags=["Static"])
 

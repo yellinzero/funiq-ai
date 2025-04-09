@@ -5,7 +5,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.security.utils import get_authorization_scheme_param
 from starlette.requests import HTTPConnection
 
-from app.core.errors.common import CommonErrorCode
+from app.core.errors import CommonErrorCode
 from utils.common.context import ContextStorage
 from utils.security.security import (
     decode_access_token,

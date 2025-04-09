@@ -8,10 +8,11 @@ import bcrypt
 from fastapi import Request, Response, status
 from jose import JWTError, jwt
 from pydantic import BaseModel, field_validator
+from redis import Redis
 
-from app.core.errors.account import AccountErrorCode
+from app.core.errors import AccountErrorCode
 from configs import funiq_ai_config
-from database import sync_redis
+from infrastructure import with_sync_redis
 from utils.common.datatime import utcnow
 
 # JWT configuration
@@ -103,7 +104,8 @@ def get_account_id_from_request(request: Request) -> str:
     return get_account_id_from_token(token)
 
 
-def create_token_pair(data: dict) -> Tuple[str, str]:
+@with_sync_redis
+def create_token_pair(data: dict, sync_redis: Redis) -> Tuple[str, str]:
     """Create both access and refresh tokens."""
     account_id = data["aid"]
 
@@ -125,7 +127,8 @@ def create_token_pair(data: dict) -> Tuple[str, str]:
     return access_token, refresh_token
 
 
-def verify_refresh_token(refresh_token: str) -> str:
+@with_sync_redis
+def verify_refresh_token(refresh_token: str, sync_redis: Redis) -> str:
     """Verify refresh token and return account ID."""
     for key in sync_redis.scan_iter("refresh_token:*"):
         stored_token = sync_redis.get(key)
@@ -134,7 +137,8 @@ def verify_refresh_token(refresh_token: str) -> str:
     raise AccountErrorCode.REFRESH_TOKEN_EXPIRED.exception(status_code=status.HTTP_401_UNAUTHORIZED)
 
 
-def invalidate_refresh_token(account_id: str | None = None, refresh_token: str | None = None):
+@with_sync_redis
+def invalidate_refresh_token(account_id: str | None = None, refresh_token: str | None = None, sync_redis: Redis = None):
     """Invalidate refresh token either by account_id or by token value."""
     if refresh_token:
         # if provide refresh token
@@ -202,7 +206,7 @@ def validate_password(password: str) -> str:
 
 class PasswordMixin(BaseModel):
     """A mixin class that adds password validation to a Pydantic model."""
-    
+
     @field_validator("password", "new_password", check_fields=False)
     @classmethod
     def validate_password_field(cls, v: Any) -> Any:

@@ -16,9 +16,7 @@ from app.auth.schemas import (
     SignupRequest,
     SignupVerifyRequest,
 )
-from app.core.errors.account import AccountErrorCode
-from app.core.errors.base import FuniqAIError
-from app.core.errors.common import CommonErrorCode
+from app.core.errors import AccountErrorCode, CommonErrorCode, FuniqAIError
 from app.core.models.account import (
     Account,
     AccountStatus,
@@ -29,7 +27,7 @@ from app.core.models.account import (
     TenantUserRole,
     User,
 )
-from database import RedisRateLimiter
+from infrastructure import RedisRateLimiter
 from tasks.email_tasks import (
     send_activate_account_email_task,
     send_reset_password_verification_email_task,

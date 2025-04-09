@@ -1,284 +1,500 @@
 # TODO implement workflow execution
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
-from uuid import UUID
 
 import networkx as nx
 from loguru import logger
-from prefect import get_client, task
-from prefect.client.schemas.actions import ArtifactCreate
+from prefect import flow, task
 from prefect.client.schemas.objects import StateType
 from prefect.logging import get_run_logger
-from prefect.runtime import task_run
-from sqlalchemy import select
+from prefect.runtime import flow_run, task_run
+from prefect.task_runners import ThreadPoolTaskRunner
+from redis.asyncio import Redis
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.models.workflow import (
-    Workflow,
     WorkflowDebugExecution,
-    WorkflowEdge,
     WorkflowExecution,
-    WorkflowNode,
     WorkflowNodeDebugExecution,
     WorkflowNodeExecution,
-    WorkflowSnapshot,
+    WorkflowNodeType,
 )
+from infrastructure import with_redis, with_session
 from providers.operators.core.operator_factory import OperatorFactory
+from utils.common.json import json_dumps, json_loads
 
 
 class WorkflowExecutorBase:
     """Base class for workflow execution."""
 
-    def __init__(self, workflow: Workflow, session: AsyncSession):
-        self.workflow = workflow
-        self.session = session
+    def __init__(
+        self,
+        workflow_id: str,
+        snapshot: Dict[str, Any],
+        snapshot_hash: str,
+        input_data: Dict[str, Any],
+        execution_context: Dict[str, Any],
+        cached_expiration: int = 24 * 60 * 60,
+    ):
+        self.workflow_id = workflow_id
+        self.snapshot = snapshot
+        self.workflow_name = self.snapshot.get("name")
+        self.snapshot_hash = snapshot_hash
+        self.input_data = input_data
+        self.execution_context = execution_context
         self.graph = None
         self.node_levels = None
-        self.task_registry: Dict[str, task] = {}
-        self.flow_run_id: Optional[UUID] = None
-        logger.info(f"Initializing WorkflowExecutor for workflow: {workflow.name}")
+        self.flow_run_id: Optional[str] = None
+        self.node_outputs = {}
+        self.cached_expiration = cached_expiration
+        self.execution_id: Optional[str] = None
+        self.snapshot_timestamp = None
+        self.version = None
+        self.cached_key = f"workflow:{self.workflow_id}:topology:{self.snapshot_hash}"
+        logger.info(f"Initializing WorkflowExecutor for workflow: {self.workflow_name}")
 
-    async def initialize(self):
-        """Initialize the executor by building the graph and calculating node levels."""
-        logger.info(f"Starting initialization for workflow: {self.workflow.name}")
-        self.graph = await self._build_graph()
-        self.node_levels = self._calculate_node_levels()
-        logger.debug(f"Node levels calculated: {self.node_levels}")
+    @with_redis
+    async def _get_cached_topology(self, redis: Redis) -> Optional[tuple[Dict[str, list[str]], Dict[str, int]]]:
+        """Get cached topology from redis."""
+        cached_data = await redis.get(self.cached_key)
+        if cached_data:
+            data = json_loads(cached_data)
+            return data["adjacency"], data["levels"], data["end_node_key"]
+        return None
 
-    async def _build_graph(self) -> nx.DiGraph:
-        """Build a NetworkX directed graph from workflow nodes and edges."""
-        logger.debug(f"Building graph for workflow: {self.workflow.name}")
+    @with_redis
+    async def _cache_topology(
+        self, redis: Redis, adjacency: Dict[str, list[str]], levels: Dict[str, int], end_node_key: str
+    ) -> None:
+        """Cache topology to redis."""
+        data = {
+            "adjacency": adjacency,  # store node's upstream and downstream nodes
+            "levels": levels,
+            "end_node_key": end_node_key,
+        }
+        await redis.setex(self.cached_key, self.cached_expiration, json_dumps(data))
+
+    async def _build_topology(self, snapshot: Dict[str, Any]) -> None:
+        """Build workflow topology."""
+        logger.debug(f"Building topology for workflow: {self.workflow_name}, snapshot: {snapshot}")
+
+        # try to get topology from cache
+        cached_data = await self._get_cached_topology()
+        if cached_data:
+            self.adjacency, self.node_levels, self.end_node_key = cached_data
+            logger.debug("Using cached topology")
+            return
+
+        # build new topology
         g = nx.DiGraph()
 
-        nodes_result = await self.session.execute(
-            select(WorkflowNode).where(WorkflowNode.workflow_id == self.workflow.id)
-        )
-        nodes = nodes_result.scalars().all()
-        logger.debug(f"Found {len(nodes)} nodes")
-
-        edges_result = await self.session.execute(
-            select(WorkflowEdge).where(WorkflowEdge.workflow_id == self.workflow.id)
-        )
-        edges = edges_result.scalars().all()
-        logger.debug(f"Found {len(edges)} edges")
-
+        # Find END node while building graph
+        self.end_node_key = None
+        nodes = snapshot.get("nodes", [])
         for node in nodes:
-            g.add_node(node.node_key, node=node)
+            g.add_node(node.get("node_key"))
+            if node.get("node_type") == WorkflowNodeType.END:
+                self.end_node_key = node.get("node_key")
+
+        if not self.end_node_key:
+            raise ValueError("Workflow must have an END node")
+
+        edges = snapshot.get("edges", [])
         for edge in edges:
-            g.add_edge(edge.source_node_key, edge.target_node_key, edge=edge)
+            g.add_edge(edge.get("source_node_key"), edge.get("target_node_key"))
 
-        logger.debug(f"Graph built with {g.number_of_nodes()} nodes and {g.number_of_edges()} edges")
-        return g
+        self.node_levels = self._calculate_node_levels(g)
 
-    def _calculate_node_levels(self) -> Dict[str, int]:
-        """Calculate the level of each node in the workflow graph."""
-        levels = {}
-        source_nodes = [n for n in self.graph.nodes() if self.graph.in_degree(n) == 0]
-        if not source_nodes:
-            raise ValueError("Workflow graph must have at least one source node")
+        self.adjacency = {
+            node: {"upstream": list(g.predecessors(node)), "downstream": list(g.successors(node))} for node in g.nodes()
+        }
 
-        for node in self.graph.nodes():
-            paths = []
-            for source in source_nodes:
-                try:
-                    paths.extend(nx.all_simple_paths(self.graph, source, node))
-                except nx.NetworkXNoPath:
-                    continue
+        # Cache all topology information
+        await self._cache_topology(self.adjacency, self.node_levels, self.end_node_key)
 
-            level = max((len(path) - 1 for path in paths), default=0)
-            levels[node] = level
+    def _calculate_node_levels(self, g: nx.DiGraph) -> list[list[str]]:
+        """Calculate topology levels of nodes using networkx's built-in function."""
+        # check if the graph is a DAG
+        if not nx.is_directed_acyclic_graph(g):
+            raise ValueError("Workflow graph must be acyclic")
+
+        # get node levels using networkx's topological_generations
+        levels = [list(nodes) for nodes in nx.topological_generations(g)]
+        logger.debug(f"Calculated node levels: {levels}")
         return levels
 
-    def _get_upstream_outputs(self, node_key: str, current_inputs: Dict[str, Any]) -> Dict[str, Any]:
-        """Get outputs from upstream nodes."""
+    def _get_upstream_outputs(self, node_key: str) -> Dict[str, Any]:
+        """Get outputs from upstream nodes using adjacency list."""
         prefect_logger = get_run_logger()
         upstream_outputs = {}
-        for edge in self.graph.edges(data=True):
-            if edge[1] == node_key:
-                source_key = edge[0]
-                if source_key in current_inputs:
-                    upstream_outputs[source_key] = current_inputs[source_key]
+        logger.debug(f"Node {node_key} adjacency: {self.adjacency} node_outputs: {self.node_outputs}")
+
+        # Get upstream nodes directly from adjacency list
+        upstream_nodes = self.adjacency[node_key]["upstream"]
+        for upstream_node in upstream_nodes:
+            if upstream_node in self.node_outputs:
+                upstream_outputs[upstream_node] = self.node_outputs[upstream_node]
+
         prefect_logger.debug(f"Node {node_key} upstream outputs: {upstream_outputs.keys()}")
         return upstream_outputs
 
-    async def _create_execution_record(self) -> None:
+    @with_session
+    async def _create_execution_record(self, session: AsyncSession) -> None:
         """Create execution record in database."""
         raise NotImplementedError
 
-    async def _update_execution_status(self, status: StateType) -> None:
+    @with_session
+    async def _update_execution_status(self, session: AsyncSession, status: StateType) -> None:
         """Update execution status in database."""
         raise NotImplementedError
 
-    async def _create_node_execution_record(self, node: WorkflowNode, task_run_id: UUID) -> None:
+    @with_session
+    async def _create_node_execution_record(
+        self, session: AsyncSession, node: Dict[str, Any], task_run_id: str
+    ) -> None:
         """Create node execution record in database."""
         raise NotImplementedError
 
-    async def _update_node_execution_status(self, node_key: str, task_run_id: UUID, status: StateType) -> None:
+    @with_session
+    async def _update_node_execution_status(
+        self, session: AsyncSession, node_key: str, task_run_id: str, status: StateType
+    ) -> None:
         """Update node execution status in database."""
         raise NotImplementedError
 
-    def _create_task_for_node(self, node: WorkflowNode) -> task:
+    def _create_task_for_node(self, node: Dict[str, Any]) -> task:
         """Create a Prefect task for a workflow node."""
-        logger.debug(f"Creating task for node: {node.name} (type: {node.node_type})")
+        node_name = node.get("name")
+        node_type = node.get("node_type")
+        node_key = node.get("node_key")
+        logger.debug(f"Creating task for node: {node_name} (type: {node_type})")
 
-        @task(name=node.name, timeout_seconds=60, tags=[node.name])
+        @task(name=node_name, timeout_seconds=60, tags=[node_type])
         async def node_task(**kwargs):
-            prefect_logger = get_run_logger()
             task_run_id = task_run.get_id()
 
             # Create node execution record
-            await self._create_node_execution_record(node, task_run_id)
+            await self._create_node_execution_record(node=node, task_run_id=task_run_id)
 
             try:
                 # Update status to running
-                await self._update_node_execution_status(node.node_key, task_run_id, StateType.RUNNING)
+                await self._update_node_execution_status(
+                    node_key=node_key, task_run_id=task_run_id, status=StateType.RUNNING
+                )
 
-                config = node.config or {}
-                upstream_outputs = self._get_upstream_outputs(node.node_key, kwargs)
+                config = node.get("config", {})
+                upstream_outputs = self._get_upstream_outputs(node_key)
 
-                operator = OperatorFactory.get_operator_instance(node.node_type)
+                operator = OperatorFactory.get_operator_instance(node_type)
                 if not operator:
-                    raise ValueError(f"No operator found for type: {node.node_type}")
+                    raise ValueError(f"No operator found for type: {node_type}")
 
-                result = await operator.execute(input_data=upstream_outputs, config=config)
-
-                # Create artifact
-                async with get_client() as client:
-                    artifact = await client.create_artifact(
-                        artifact=ArtifactCreate(
-                            key=f"{node.node_key}-result",
-                            data=result,
-                            description=f"Result for node {node.name}",
-                            task_run_id=task_run_id,
-                        )
-                    )
+                input_data = {
+                    **self.input_data,
+                    **upstream_outputs,
+                }
+                
+                logger.debug(f"Input data for node {node_key}: {input_data}")
+                result = await operator.execute(
+                    input_data=input_data,
+                    config=config,
+                    execution_context={
+                        "execution_id": self.execution_id,
+                        "flow_run_id": self.flow_run_id,
+                        "task_run_id": task_run_id,
+                        "node_key": node_key,
+                        "version": self.version,
+                        "snapshot_timestamp": self.snapshot_timestamp,
+                        **self.execution_context,
+                    },
+                )
+                self.node_outputs[node_key] = result
 
                 # Update status to completed
-                await self._update_node_execution_status(node.node_key, task_run_id, StateType.COMPLETED)
+                await self._update_node_execution_status(
+                    node_key=node_key, task_run_id=task_run_id, status=StateType.COMPLETED
+                )
                 return result
 
             except Exception as e:
                 # Update status to failed
-                await self._update_node_execution_status(node.node_key, task_run_id, StateType.FAILED)
+                await self._update_node_execution_status(
+                    node_key=node_key, task_run_id=task_run_id, status=StateType.FAILED
+                )
                 raise
 
         return node_task
+
+    async def initialize(self):
+        """Initialize the executor by building the topology."""
+        logger.info(f"Starting initialization for workflow: {self.workflow_name}")
+        await self._build_topology(self.snapshot)
+        logger.debug(f"Adjacency list: {self.adjacency}, node levels: {self.node_levels}")
+
+    def _create_flow(self):
+        """Create a Prefect flow for the workflow."""
+        logger.debug(f"Create flow for workflow: {self.workflow_name}")
+
+        @flow(name=self.workflow_name, task_runner=ThreadPoolTaskRunner(max_workers=10))
+        async def workflow_flow():
+            self.flow_run_id = flow_run.get_id()
+            try:
+                # Create execution record and update status to running
+                await self._create_execution_record()
+                await self._update_execution_status(status=StateType.RUNNING)
+
+                # Create and submit tasks by levels
+                task_futures = {}
+                for level_nodes in self.node_levels:
+                    logger.debug(f"Processing nodes: {level_nodes}")
+
+                    # Process nodes in same level in parallel
+                    for node_key in level_nodes:
+                        nodes = self.snapshot.get("nodes", [])
+                        node = next(n for n in nodes if n.get("node_key") == node_key)
+
+                        # Get upstream dependencies
+                        upstream_futures = []
+                        for source, targets in self.adjacency.items():
+                            if node_key in targets["downstream"]:
+                                upstream_futures.append(task_futures[source])
+
+                        # Create and submit task
+                        task = self._create_task_for_node(node)
+                        future = task.submit(wait_for=upstream_futures)
+                        task_futures[node_key] = future
+                        logger.debug(
+                            f"Created task for node {node_key} with {len(upstream_futures)} upstream dependencies"
+                        )
+
+                # Wait for and return only END node result
+                result = task_futures[self.end_node_key].result()
+                logger.debug("Workflow completed successfully")
+
+                await self._update_execution_status(status=StateType.COMPLETED)
+                return result
+
+            except Exception as e:
+                logger.error(f"Workflow execution failed: {e!s}")
+                await self._update_execution_status(status=StateType.FAILED)
+                raise
+
+        return workflow_flow
+
+    async def execute(self):
+        """Execute the workflow."""
+        logger.debug(f"Create flow run for workflow: {self.workflow_name}")
+
+        flow = self._create_flow()
+        return await flow()
 
 
 class WorkflowVersionExecutor(WorkflowExecutorBase):
     """Executor for published workflow versions."""
 
-    def __init__(self, workflow: Workflow, version: str, session: AsyncSession):
-        super().__init__(workflow, session)
+    def __init__(
+        self,
+        workflow_id: str,
+        version: str,
+        snapshot: Dict[str, Any],
+        snapshot_hash: str,
+        input_data: Dict[str, Any],
+        execution_context: Dict[str, Any],
+    ):
+        super().__init__(
+            workflow_id=workflow_id,
+            snapshot=snapshot,
+            snapshot_hash=snapshot_hash,
+            input_data=input_data,
+            execution_context=execution_context,
+        )
         self.version = version
-        self.execution_id: Optional[UUID] = None
+        self.execution_id: Optional[str] = None
 
-    async def _create_execution_record(self) -> None:
+    @with_session
+    async def _create_execution_record(self, session: AsyncSession) -> None:
         """Create workflow execution record."""
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
         execution = WorkflowExecution(
-            workflow_id=self.workflow.id,
+            workflow_id=self.workflow_id,
             version=self.version,
             flow_run_id=self.flow_run_id,
             status=StateType.PENDING,
-            start_time=now,
-            end_time=now,  # Will be updated when execution completes
             record_info={},
+            created_by=self.execution_context.get("user_id"),
+            created_at=datetime.now(timezone.utc).replace(tzinfo=None),
         )
-        self.session.add(execution)
-        await self.session.flush()
+        session.add(execution)
+        await session.flush()
+        await session.commit()
         self.execution_id = execution.id
 
-    async def _create_node_execution_record(self, node: WorkflowNode, task_run_id: UUID) -> None:
-        """Create node execution record."""
+    @with_session
+    async def _update_execution_status(self, session: AsyncSession, status: StateType) -> None:
+        """Update execution status in database."""
+        if not self.execution_id:
+            raise ValueError("Execution record not created")
+
         now = datetime.now(timezone.utc).replace(tzinfo=None)
+        update_values = {"status": status}
+
+        if status == StateType.RUNNING:
+            update_values["start_time"] = now
+        elif status in (StateType.COMPLETED, StateType.FAILED):
+            update_values["end_time"] = now
+
+        stmt = update(WorkflowExecution).where(WorkflowExecution.id == self.execution_id).values(**update_values)
+        await session.execute(stmt)
+        await session.flush()
+        await session.commit()
+
+    @with_session
+    async def _create_node_execution_record(
+        self, session: AsyncSession, node: Dict[str, Any], task_run_id: str
+    ) -> None:
+        """Create node execution record."""
         node_execution = WorkflowNodeExecution(
             execution_id=self.execution_id,
-            node_key=node.node_key,
+            node_key=node.get("node_key"),
             flow_run_id=self.flow_run_id,
             task_run_id=task_run_id,
             status=StateType.PENDING,
-            start_time=now,
-            end_time=now,  # Will be updated when node execution completes
             record_info={},
+            created_by=self.execution_context.get("user_id"),
+            created_at=datetime.now(timezone.utc).replace(tzinfo=None),
         )
-        self.session.add(node_execution)
-        await self.session.flush()
+        session.add(node_execution)
+        await session.flush()
+        await session.commit()
+
+    @with_session
+    async def _update_node_execution_status(
+        self, session: AsyncSession, node_key: str, task_run_id: str, status: StateType
+    ) -> None:
+        """Update node execution status in database."""
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        update_values = {"status": status}
+
+        if status == StateType.RUNNING:
+            update_values["start_time"] = now
+        elif status in (StateType.COMPLETED, StateType.FAILED):
+            update_values["end_time"] = now
+
+        stmt = (
+            update(WorkflowNodeExecution)
+            .where(
+                WorkflowNodeExecution.execution_id == self.execution_id,
+                WorkflowNodeExecution.node_key == node_key,
+                WorkflowNodeExecution.task_run_id == task_run_id,
+            )
+            .values(**update_values)
+        )
+        await session.execute(stmt)
+        await session.flush()
+        await session.commit()
 
 
 class WorkflowDebugExecutor(WorkflowExecutorBase):
     """Executor for workflow debugging."""
 
-    def __init__(self, workflow: Workflow, snapshot: WorkflowSnapshot, session: AsyncSession):
-        super().__init__(workflow, session)
-        self.snapshot = snapshot
-        self.debug_execution_id: Optional[UUID] = None
+    def __init__(
+        self,
+        workflow_id: str,
+        snapshot: Dict[str, Any],
+        snapshot_timestamp: datetime,
+        snapshot_hash: str,
+        input_data: Dict[str, Any],
+        execution_context: Dict[str, Any],
+    ):
+        super().__init__(
+            workflow_id=workflow_id,
+            snapshot=snapshot,
+            snapshot_hash=snapshot_hash,
+            input_data=input_data,
+            execution_context=execution_context,
+        )
+        self.snapshot_timestamp = snapshot_timestamp
+        self.debug_execution_id: Optional[str] = None
 
-    async def _create_execution_record(self) -> None:
+    @with_session
+    async def _create_execution_record(self, session: AsyncSession) -> None:
         """Create debug execution record."""
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
         debug_execution = WorkflowDebugExecution(
-            workflow_id=self.workflow.id,
-            snapshot_timestamp=self.snapshot.snapshot_timestamp,
+            workflow_id=self.workflow_id,
+            snapshot_timestamp=self.snapshot_timestamp,
             flow_run_id=self.flow_run_id,
             status=StateType.PENDING,
-            created_by=self.snapshot.created_by,
-            start_time=now,
-            end_time=now,  # Will be updated when execution completes
+            created_by=self.execution_context.get("user_id"),
+            created_at=datetime.now(timezone.utc).replace(tzinfo=None),
             record_info={},
         )
-        self.session.add(debug_execution)
-        await self.session.flush()
+        session.add(debug_execution)
+        await session.flush()
+        await session.commit()
         self.debug_execution_id = debug_execution.id
 
-    async def _create_node_execution_record(self, node: WorkflowNode, task_run_id: UUID) -> None:
-        """Create debug node execution record."""
+    @with_session
+    async def _update_execution_status(self, session: AsyncSession, status: StateType) -> None:
+        """Update execution status in database."""
+        if not self.debug_execution_id:
+            raise ValueError("Debug execution record not created")
+
         now = datetime.now(timezone.utc).replace(tzinfo=None)
+        update_values = {"status": status}
+
+        if status == StateType.RUNNING:
+            update_values["start_time"] = now
+        elif status in (StateType.COMPLETED, StateType.FAILED):
+            update_values["end_time"] = now
+        stmt = (
+            update(WorkflowDebugExecution)
+            .where(WorkflowDebugExecution.id == self.debug_execution_id)
+            .values(**update_values)
+        )
+        await session.execute(stmt)
+        await session.flush()
+        await session.commit()
+
+    @with_session
+    async def _create_node_execution_record(
+        self, session: AsyncSession, node: Dict[str, Any], task_run_id: str
+    ) -> None:
+        """Create debug node execution record."""
         node_execution = WorkflowNodeDebugExecution(
             execution_id=self.debug_execution_id,
-            node_key=node.node_key,
+            node_key=node.get("node_key"),
             flow_run_id=self.flow_run_id,
             task_run_id=task_run_id,
             status=StateType.PENDING,
-            start_time=now,
-            end_time=now,  # Will be updated when node execution completes
             record_info={},
+            created_by=self.execution_context.get("user_id"),
+            created_at=datetime.now(timezone.utc).replace(tzinfo=None),
         )
-        self.session.add(node_execution)
-        await self.session.flush()
+        session.add(node_execution)
+        await session.flush()
+        await session.commit()
 
+    @with_session
+    async def _update_node_execution_status(
+        self, session: AsyncSession, node_key: str, task_run_id: str, status: StateType
+    ) -> None:
+        """Update node execution status in database."""
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        update_values = {"status": status}
 
-class WorkflowExecutorFactory:
-    """Factory for creating appropriate workflow executors."""
-
-    @staticmethod
-    async def create_executor(
-        session: AsyncSession,
-        workflow_id: UUID,
-        version: Optional[str] = None,
-        snapshot_timestamp: Optional[datetime] = None,
-    ) -> WorkflowExecutorBase:
-        """Create appropriate workflow executor based on parameters."""
-        # Get workflow
-        workflow_result = await session.execute(select(Workflow).where(Workflow.id == workflow_id))
-        workflow = workflow_result.scalar_one_or_none()
-        if not workflow:
-            raise ValueError(f"Workflow {workflow_id} not found")
-
-        if version:
-            # Version execution
-            return WorkflowVersionExecutor(workflow, version, session)
-        elif snapshot_timestamp:
-            # Debug execution
-            snapshot_result = await session.execute(
-                select(WorkflowSnapshot).where(
-                    WorkflowSnapshot.workflow_id == workflow_id,
-                    WorkflowSnapshot.snapshot_timestamp == snapshot_timestamp,
-                )
+        if status == StateType.RUNNING:
+            update_values["start_time"] = now
+        elif status in (StateType.COMPLETED, StateType.FAILED):
+            update_values["end_time"] = now
+        stmt = (
+            update(WorkflowNodeDebugExecution)
+            .where(
+                WorkflowNodeDebugExecution.execution_id == self.debug_execution_id,
+                WorkflowNodeDebugExecution.node_key == node_key,
+                WorkflowNodeDebugExecution.task_run_id == task_run_id,
             )
-            snapshot = snapshot_result.scalar_one_or_none()
-            if not snapshot:
-                raise ValueError(f"Workflow snapshot not found for timestamp {snapshot_timestamp}")
-            return WorkflowDebugExecutor(workflow, snapshot, session)
-        else:
-            raise ValueError("Either version or snapshot_timestamp must be provided")
+            .values(**update_values)
+        )
+        await session.execute(stmt)
+        await session.flush()
+        await session.commit()

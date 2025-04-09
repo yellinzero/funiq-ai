@@ -5,8 +5,7 @@ from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.models.account import Account
-from database import get_session
-from infrastructure import setup_loguru
+from infrastructure import get_session, setup_loguru
 
 
 class DBInitializer:

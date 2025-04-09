@@ -3,7 +3,7 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from configs import funiq_ai_config
-from database import DBBase, load_models
+from infrastructure import DBBase, load_models
 from alembic import context
 
 load_models('app.core.models')

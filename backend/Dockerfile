@@ -1,5 +1,5 @@
 # Use Python 3.10 slim as base
-FROM python:3.10-slim-bookworm
+FROM python:3.10-slim-bookworm AS builder
 
 # Set the working directory
 WORKDIR /app
@@ -16,14 +16,24 @@ COPY pyproject.toml poetry.lock /app/
 # Install dependencies without creating a virtual environment
 RUN poetry config virtualenvs.create false \
     && poetry install --without dev --no-root --no-interaction --no-ansi \
-    && rm -rf ~/.cache/pypoetry
+    && rm -rf ~/.cache/pypoetry \
+    && rm -rf ~/.cache/pip
+
+# Start fresh from a smaller image
+FROM python:3.10-slim-bookworm
+
+WORKDIR /app
+
+# Copy only the necessary files from builder
+COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Copy the application code
+COPY . /app
 
 # Copy the entrypoint script and set executable permissions
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
-
-# Copy the application code last
-COPY . /app
 
 # Expose FastAPI port
 EXPOSE 5000

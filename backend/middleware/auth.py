@@ -5,7 +5,7 @@ from loguru import logger
 from redis import RedisError
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.core.errors.base import FuniqAIError
+from app.core.errors import FuniqAIError
 from app_manager import app_manager
 from utils.security import (
     decode_access_token,

@@ -117,13 +117,14 @@ class DBBase(AsyncAttrs, DeclarativeBase):
         """Get a list of all column names for the model."""
         return [col.key for col in cls.__table__.columns]
     
-    def save(self, session: AsyncSession) -> None:
+    async def save(self, session: AsyncSession) -> None:
         """Save the current instance to the database."""
         session.add(self)
+        await session.flush()
 
-    def delete(self, session: AsyncSession) -> None:
+    async def delete(self, session: AsyncSession) -> None:
         """Delete the current instance from the database."""
-        session.delete(self)
+        await session.delete(self)
 
 
 class DBAuditFieldsMixin:

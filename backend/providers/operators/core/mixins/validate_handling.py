@@ -8,14 +8,6 @@ from utils.json_schema import JSONSchema
 
 class ValidateHandlingMixin(ABC):
     """Mixin class for handling operator schemas and their configurations."""
-
-    def validate_input(self, data: Dict) -> bool:
-        """
-        Default implementation of validate_input that always returns True.
-        Child classes can override this method to implement specific validation logic.
-        """
-        return True
-
     @abstractmethod
     def get_output_schema(self) -> JSONSchema | None:
         """Get the output schema for validation"""

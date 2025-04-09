@@ -18,7 +18,13 @@ schema = {
     },
     "config_schema": {
         "type": "object",
-        "properties": {},
-        "required": []
+        "properties": {
+            "question": {
+                "type": "string",
+                "title": _("Question"),
+                "description": _("The question to start the workflow"),
+            },
+        },
+        "required": ["question"]
     }
 }

@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.app.service.app_service import AppService
-from app.core.errors.model_provider import ModelProviderErrorCode
+from app.core.errors import ModelProviderErrorCode
 from app.core.models.app import App
 from app.core.models.model_provider import Model, ModelProvider
 from configs import funiq_ai_config
@@ -391,7 +391,7 @@ class ProviderService:
                     session=session,
                     tenant_id=tenant_id,
                     model_name=model_name,
-                    model_id=model.id,
+                    model_id=str(model.id),
                 )
 
             await session.commit()

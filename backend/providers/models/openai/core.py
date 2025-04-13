@@ -3,7 +3,7 @@ from collections.abc import Mapping
 import openai
 from httpx import Timeout
 
-from providers.models.core.errors.invoke import (
+from providers.models.core.errors import (
     InvokeAuthorizationError,
     InvokeBadRequestError,
     InvokeConnectionError,

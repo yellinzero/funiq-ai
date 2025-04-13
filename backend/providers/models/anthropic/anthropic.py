@@ -1,8 +1,8 @@
 from loguru import logger
 
-from providers.models.core.errors.validate import CredentialsValidateFailedError
-from providers.models.core.model_provider import ModelProvider
-from providers.models.core.models.model import ModelType
+from providers.models.core import ModelProvider
+from providers.models.core.errors import CredentialsValidateFailedError
+from providers.models.core.models import ModelType
 
 
 class AnthropicProvider(ModelProvider):

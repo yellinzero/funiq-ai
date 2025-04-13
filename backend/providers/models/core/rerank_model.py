@@ -1,8 +1,7 @@
 from abc import abstractmethod
 
-from providers.models.core.base_model import AIModel
-from providers.models.core.models.model import ModelType
-from providers.models.core.models.rerank import RerankResult
+from providers.models.core import AIModel
+from providers.models.core.models import ModelType, RerankResult
 
 
 class RerankModel(AIModel):

@@ -1,15 +1,15 @@
 from typing import Dict
 
-from loguru import logger
+from providers.operators.core import OperatorName
 
 from ..core.base_operator import BaseOperator
 
 
 class StartOperator(BaseOperator):
-    operator_name = "start"
+    operator_name = OperatorName.START.value
     """Start operator implementation"""
 
-    async def _execute(self, config: Dict, **kwargs) -> Dict:
+    async def _execute(self, config: Dict | None, **kwargs) -> Dict:
         """
         Execute the start operator
 
@@ -19,9 +19,10 @@ class StartOperator(BaseOperator):
         Returns:
             Dict containing the question in the format {"question": str}
         """
-        logger.debug(f"Start operator config: {config}")
+        if not config:
+            raise ValueError("Config is required")
+
         result = {"question": config.get("question", "")}
         if not self.validate_output(result):
             raise ValueError("Output validation failed")
-        logger.debug(f"Start operator result: {result}")
         return result

@@ -138,7 +138,7 @@ class AccountService:
     ) -> tuple[str, str, str]:
         """Verify the email using the provided verification code."""
         # Verify token and code
-        token_data = await token_manager.get_signup_email_verification_data(payload.token)
+        token_data = await token_manager.get_signup_email_verification_data(token=payload.token)
         if not token_data:
             raise CommonErrorCode.EMAIL_VERIFICATION_CODE_EXPIRED.exception(status_code=status.HTTP_400_BAD_REQUEST)
 
@@ -162,7 +162,7 @@ class AccountService:
         await account.save(session)
 
         # Remove the token after successful verification
-        await token_manager.revoke_signup_email_verification_token(email)
+        await token_manager.revoke_signup_email_verification_token(email=email)
 
         # Handle authentication
         return await AccountService._handle_successful_auth(session, account, request)
@@ -174,19 +174,19 @@ class AccountService:
         :param account: Account object
         :return: Verification token
         """
-        if await AccountService.signup_email_verification_limit.check_limit_exceeded(account.email):
+        if await AccountService.signup_email_verification_limit.check_limit_exceeded(identifier=account.email):
             raise CommonErrorCode.EMAIL_VERIFICATION_TOO_FREQUENT.exception(
                 data={"email": account.email}, status_code=status.HTTP_429_TOO_MANY_REQUESTS
             )
 
         code = "".join([str(secrets.randbelow(10)) for _ in range(6)])
-        token = await token_manager.generate_signup_email_verification_token(account.email, code)
+        token = await token_manager.generate_signup_email_verification_token(email=account.email, code=code)
         send_signup_verification_email_task.delay(
             language=request.state.language or "en",
             to=account.email,
             code=code,
         )
-        await AccountService.signup_email_verification_limit.record_attempt(account.email)
+        await AccountService.signup_email_verification_limit.record_attempt(identifier=account.email)
         return token
 
     # endregion
@@ -297,19 +297,19 @@ class AccountService:
         :param account: Account object
         :return: Verification token
         """
-        if await AccountService.activate_account_limit.check_limit_exceeded(account.email):
+        if await AccountService.activate_account_limit.check_limit_exceeded(identifier=account.email):
             raise CommonErrorCode.EMAIL_VERIFICATION_TOO_FREQUENT.exception(
                 data={"email": account.email}, status_code=status.HTTP_429_TOO_MANY_REQUESTS
             )
 
         code = "".join([str(secrets.randbelow(10)) for _ in range(6)])
-        token = await token_manager.generate_activate_account_token(account.email, code)
+        token = await token_manager.generate_activate_account_token(email=account.email, code=code)
         send_activate_account_email_task.delay(
             language=request.state.language or account.language or "en",
             to=account.email,
             code=code,
         )
-        await AccountService.activate_account_limit.record_attempt(account.email)
+        await AccountService.activate_account_limit.record_attempt(identifier=account.email)
         return token
 
     @staticmethod
@@ -341,7 +341,7 @@ class AccountService:
     async def send_reset_password_email(session: AsyncSession, payload: ForgotPasswordRequest, request: Request) -> str:
         """Send password reset email with verification code."""
         # Check rate limiting
-        if await AccountService.reset_password_limit.check_limit_exceeded(payload.email):
+        if await AccountService.reset_password_limit.check_limit_exceeded(identifier=payload.email):
             raise CommonErrorCode.EMAIL_VERIFICATION_TOO_FREQUENT.exception(
                 data={"email": payload.email}, status_code=status.HTTP_429_TOO_MANY_REQUESTS
             )
@@ -357,7 +357,7 @@ class AccountService:
 
         # Generate verification code and token
         code = "".join([str(secrets.randbelow(10)) for _ in range(6)])
-        token = await token_manager.generate_reset_password_token(account.email, code)
+        token = await token_manager.generate_reset_password_token(email=account.email, code=code)
 
         # Send email
         send_reset_password_verification_email_task.delay(
@@ -366,7 +366,7 @@ class AccountService:
             code=code,
         )
 
-        await AccountService.reset_password_limit.record_attempt(account.email)
+        await AccountService.reset_password_limit.record_attempt(identifier=account.email)
         return token
 
     @staticmethod
@@ -375,7 +375,7 @@ class AccountService:
         logger.info("Starting password reset process")
 
         # Verify token and code
-        token_data = await token_manager.get_reset_password_verification_data(payload.token)
+        token_data = await token_manager.get_reset_password_verification_data(token=payload.token)
         if not token_data:
             logger.warning("Password reset failed - verification code expired")
             raise CommonErrorCode.EMAIL_VERIFICATION_CODE_EXPIRED.exception(status_code=status.HTTP_400_BAD_REQUEST)
@@ -406,7 +406,7 @@ class AccountService:
         logger.warning(f"Invalidated refresh tokens for account: {account.id}")
 
         # Revoke token and return new access token
-        await token_manager.revoke_reset_password_token(email)
+        await token_manager.revoke_reset_password_token(email=email)
 
     # endregion
 
@@ -446,7 +446,7 @@ class AccountService:
     ) -> tuple[str, str, str]:
         """Verify account activation using the provided verification code."""
         # Verify token and code
-        token_data = await token_manager.get_activate_account_verification_data(payload.token)
+        token_data = await token_manager.get_activate_account_verification_data(token=payload.token)
         if not token_data:
             raise CommonErrorCode.EMAIL_VERIFICATION_CODE_EXPIRED.exception(status_code=status.HTTP_400_BAD_REQUEST)
 
@@ -470,7 +470,7 @@ class AccountService:
         await account.save(session)
 
         # Revoke token
-        await token_manager.revoke_activate_account_verification_token(email)
+        await token_manager.revoke_activate_account_token(email=email)
 
         # Handle authentication
         return await AccountService._handle_successful_auth(session, account, request)

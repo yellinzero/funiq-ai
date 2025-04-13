@@ -106,12 +106,14 @@ async def _execute_workflow_async(
     try:
         # Get snapshot data based on execution type
         if version:
-            logger.info(f"Starting version workflow execution: {workflow_id} (version: {version})")
             snapshot_data, snapshot_hash = await _get_workflow_version_snapshot(
                 workflow_id=workflow_id,
                 version=version,
             )
-            logger.debug(f"Snapshot data: {snapshot_data}")
+            is_stream = snapshot_data.get("stream_mode", False)
+            if is_stream:
+                raise RuntimeError("Task run not supported for stream execution")
+            logger.info(f"Starting version workflow execution: {workflow_id} (version: {version})")
             executor = WorkflowVersionExecutor(
                 workflow_id=workflow_id,
                 version=version,
@@ -121,12 +123,15 @@ async def _execute_workflow_async(
                 execution_context=execution_context,
             )
         else:
-            logger.info(f"Starting debug workflow execution: {workflow_id} (timestamp: {snapshot_timestamp})")
+
             snapshot_data, snapshot_hash = await _get_workflow_debug_snapshot(
                 workflow_id=workflow_id,
                 snapshot_timestamp=snapshot_timestamp,
             )
-            logger.debug(f"Snapshot data: {snapshot_data}")
+            is_stream = snapshot_data.get("stream_mode", False)
+            if is_stream:
+                raise RuntimeError("Task run not supported for stream execution")
+            logger.info(f"Starting debug workflow execution: {workflow_id} (timestamp: {snapshot_timestamp})")
             executor = WorkflowDebugExecutor(
                 workflow_id=workflow_id,
                 snapshot=snapshot_data,

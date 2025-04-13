@@ -1,4 +1,3 @@
-from loguru import logger
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
@@ -12,7 +11,6 @@ class I18nMiddleware(BaseHTTPMiddleware):
             funiq_ai_config.LANGUAGE_HEADER_NAME, funiq_ai_config.DEFAULT_LOCALE
         )
         if locale_code:
-            logger.debug(f"I18nMiddleware: set locale to: {locale_code}")
             set_current_locale(locale_code)
 
         response = await call_next(request)

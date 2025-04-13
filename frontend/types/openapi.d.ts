@@ -382,6 +382,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/workflows/operators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Operators
+         * @description Get all available operators
+         */
+        get: operations["get_operators_workflows_operators_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workflows/{workflow_id}/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Execute Workflow
+         * @description Execute a workflow synchronously with specific version.
+         *
+         *     Args:
+         *         workflow_id: Workflow ID
+         *         execute_request: Execution request containing input data and version
+         */
+        post: operations["execute_workflow_workflows__workflow_id__execute_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workflows/{workflow_id}/debug": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Debug Workflow
+         * @description Debug a workflow asynchronously using a specific snapshot.
+         *
+         *     Args:
+         *         workflow_id: Workflow ID
+         *         debug_request: Debug request containing input data
+         */
+        post: operations["debug_workflow_workflows__workflow_id__debug_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/static/providers/{provider}/icon/{size}": {
         parameters: {
             query?: never;
@@ -406,26 +474,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/workflows/operators": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Operators
-         * @description Get all available operators
-         */
-        get: operations["get_operators_workflows_operators_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/health": {
         parameters: {
             query?: never;
@@ -435,6 +483,40 @@ export interface paths {
         };
         /** Health Check */
         get: operations["health_check_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stream Endpoint */
+        get: operations["stream_endpoint_stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mock/llm/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mock Llm Stream Endpoint */
+        get: operations["mock_llm_stream_endpoint_mock_llm_stream_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -676,10 +758,6 @@ export interface components {
          * @description Response schema for getting a model
          */
         ModelResponse: {
-            /** Id */
-            id: string;
-            /** Tenant Id */
-            tenant_id: string;
             /** Provider */
             provider: string;
             /** Model */
@@ -734,12 +812,16 @@ export interface components {
          * @description Model class for operator schema.
          */
         OperatorEntity: {
-            /** Name */
-            name: string;
+            name: components["schemas"]["OperatorName"];
             /** Label */
             label: string;
             type: components["schemas"]["OperatorType"];
-            status?: components["schemas"]["OperatorStatus"] | null;
+            /**
+             * Supports Input Stream
+             * @default false
+             */
+            supports_input_stream: boolean;
+            output_stream?: components["schemas"]["OutputStream"] | null;
             /** Description */
             description: string;
             output_schema: components["schemas"]["JSONSchema"];
@@ -747,15 +829,29 @@ export interface components {
             config_ui_schema?: components["schemas"]["UiSchema"] | null;
         };
         /**
-         * OperatorStatus
+         * OperatorName
+         * @description Operator type enum defining supported operator types.
          * @enum {string}
          */
-        OperatorStatus: "pending" | "running" | "failed" | "completed" | "warning";
+        OperatorName: "llm" | "end" | "start";
         /**
          * OperatorType
          * @enum {string}
          */
-        OperatorType: "ai" | "start" | "end" | "logic";
+        OperatorType: "task" | "start" | "end" | "logic";
+        /** OutputStream */
+        OutputStream: {
+            /** Enabled */
+            enabled: boolean;
+            type: components["schemas"]["OutputStreamType"];
+            /** Response Schema */
+            response_schema?: Record<string, never> | null;
+        };
+        /**
+         * OutputStreamType
+         * @enum {string}
+         */
+        OutputStreamType: "self" | "external";
         /**
          * PriceConfig
          * @description Model class for pricing info.
@@ -810,10 +906,6 @@ export interface components {
          * @description Response schema for getting a provider
          */
         ProviderResponse: {
-            /** Id */
-            id: string;
-            /** Tenant Id */
-            tenant_id: string;
             /** Provider */
             provider: string;
             /** Is System */
@@ -1030,20 +1122,6 @@ export interface components {
             msg: string;
             data: components["schemas"]["ResendVerificationCodeResponse"];
         };
-        /** ResponseModel[SaveModelResponse] */
-        ResponseModel_SaveModelResponse_: {
-            /**
-             * Code
-             * @default 0
-             */
-            code: string;
-            /**
-             * Msg
-             * @default success
-             */
-            msg: string;
-            data: components["schemas"]["SaveModelResponse"];
-        };
         /** ResponseModel[SignupResponse] */
         ResponseModel_SignupResponse_: {
             /**
@@ -1100,6 +1178,34 @@ export interface components {
             msg: string;
             data: components["schemas"]["UserResponse"];
         };
+        /** ResponseModel[WorkflowDebugResponse] */
+        ResponseModel_WorkflowDebugResponse_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["WorkflowDebugResponse"];
+        };
+        /** ResponseModel[WorkflowExecuteResponse] */
+        ResponseModel_WorkflowExecuteResponse_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["WorkflowExecuteResponse"];
+        };
         /** ResponseModel[list[TenantResponse]] */
         ResponseModel_list_TenantResponse__: {
             /**
@@ -1124,27 +1230,6 @@ export interface components {
             is_system: boolean;
             /** Is Enabled */
             is_enabled?: boolean | null;
-        };
-        /**
-         * SaveModelResponse
-         * @description Response schema for saving a model
-         */
-        SaveModelResponse: {
-            /** Id */
-            id: string;
-            /** Tenant Id */
-            tenant_id: string;
-            /** Provider */
-            provider: string;
-            /** Model */
-            model: string;
-            model_type: components["schemas"]["ModelType"];
-            /** Is System */
-            is_system: boolean;
-            /** Is Enabled */
-            is_enabled: boolean;
-            /** Last Used At */
-            last_used_at?: string | null;
         };
         /**
          * SaveProviderRequest
@@ -1507,6 +1592,33 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** WorkflowDebugRequest */
+        WorkflowDebugRequest: {
+            /** Input Data */
+            input_data: Record<string, never>;
+            /**
+             * Snapshot Timestamp
+             * Format: date-time
+             */
+            snapshot_timestamp: string;
+        };
+        /** WorkflowDebugResponse */
+        WorkflowDebugResponse: {
+            /** Task Id */
+            task_id: string;
+        };
+        /** WorkflowExecuteRequest */
+        WorkflowExecuteRequest: {
+            /** Input Data */
+            input_data: Record<string, never>;
+            /** Version */
+            version: string;
+        };
+        /** WorkflowExecuteResponse */
+        WorkflowExecuteResponse: {
+            /** Result */
+            result: string;
         };
     };
     responses: never;
@@ -2214,7 +2326,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResponseModel_SaveModelResponse_"];
+                    "application/json": components["schemas"]["ResponseModel_ModelResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -2260,6 +2372,96 @@ export interface operations {
             };
         };
     };
+    get_operators_workflows_operators_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_GetOperatorsResponse_"];
+                };
+            };
+        };
+    };
+    execute_workflow_workflows__workflow_id__execute_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workflow_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkflowExecuteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_WorkflowExecuteResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    debug_workflow_workflows__workflow_id__debug_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workflow_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkflowDebugRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_WorkflowDebugResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_provider_icon_static_providers__provider__icon__size__get: {
         parameters: {
             query?: never;
@@ -2292,7 +2494,7 @@ export interface operations {
             };
         };
     };
-    get_operators_workflows_operators_get: {
+    health_check_health_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -2307,12 +2509,32 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResponseModel_GetOperatorsResponse_"];
+                    "application/json": unknown;
                 };
             };
         };
     };
-    health_check_health_get: {
+    stream_endpoint_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    mock_llm_stream_endpoint_mock_llm_stream_get: {
         parameters: {
             query?: never;
             header?: never;

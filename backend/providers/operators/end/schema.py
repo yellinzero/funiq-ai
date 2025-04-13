@@ -1,10 +1,16 @@
+from providers.operators.core import OperatorName, OperatorType, OutputStreamType
 from utils.common.i18n import gettext_lazy as _
 
 schema = {
-    "name": "end",
+    "name": OperatorName.END.value,
     "label": _("End Operator"),
     "description": _("End operator"),
-    "type": 'end',
+    "type": OperatorType.END.value,
+    "supports_input_stream": True,
+    "output_stream": {
+        "enabled": True,
+        "type": OutputStreamType.EXTERNAL.value,
+    },
     "output_schema": {
         "type": "object",
         "properties": {

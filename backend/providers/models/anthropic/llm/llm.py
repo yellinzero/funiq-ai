@@ -20,8 +20,10 @@ from anthropic.types.beta.tools import ToolsBetaMessage
 from httpx import Timeout
 from PIL import Image
 
-from providers.models.core.callbacks.base_callback import Callback
-from providers.models.core.errors.invoke import (
+from providers.models.core import LargeLanguageModel
+from providers.models.core.callbacks import Callback
+from providers.models.core.errors import (
+    CredentialsValidateFailedError,
     InvokeAuthorizationError,
     InvokeBadRequestError,
     InvokeConnectionError,
@@ -29,12 +31,12 @@ from providers.models.core.errors.invoke import (
     InvokeRateLimitError,
     InvokeServerUnavailableError,
 )
-from providers.models.core.errors.validate import CredentialsValidateFailedError
-from providers.models.core.large_language_model import LargeLanguageModel
-from providers.models.core.models.llm import LLMResult, LLMResultChunk, LLMResultChunkDelta
-from providers.models.core.models.message import (
+from providers.models.core.models import (
     AssistantPromptMessage,
     ImagePromptMessageContent,
+    LLMResult,
+    LLMResultChunk,
+    LLMResultChunkDelta,
     PromptMessage,
     PromptMessageContentType,
     PromptMessageTool,
@@ -43,7 +45,7 @@ from providers.models.core.models.message import (
     ToolPromptMessage,
     UserPromptMessage,
 )
-from providers.models.core.prompts.defaults import BLOCK_MODE_PROMPT
+from providers.models.core.prompts import BLOCK_MODE_PROMPT
 
 
 class AnthropicLargeLanguageModel(LargeLanguageModel):

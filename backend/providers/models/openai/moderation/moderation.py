@@ -1,9 +1,9 @@
 from openai import OpenAI
 from openai.types import ModerationCreateResponse
 
-from providers.models.core.errors.validate import CredentialsValidateFailedError
-from providers.models.core.models.model import ModelPropertyKey
-from providers.models.core.moderation_model import ModerationModel
+from providers.models.core import ModerationModel
+from providers.models.core.errors import CredentialsValidateFailedError
+from providers.models.core.models import ModelPropertyKey
 from providers.models.openai.core import OpenAICore
 
 

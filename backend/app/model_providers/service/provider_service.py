@@ -10,8 +10,8 @@ from app.core.errors import ModelProviderErrorCode
 from app.core.models.app import App
 from app.core.models.model_provider import Model, ModelProvider
 from configs import funiq_ai_config
-from providers.models.core.models.model import ConfigurateMethod
-from providers.models.core.provider_factory import ProviderFactory
+from providers.models.core import ProviderFactory
+from providers.models.core.models import ConfigurateMethod
 
 from ..schemas import ModelInfo, ProviderInfo, SaveModelRequest, SaveProviderRequest
 
@@ -35,7 +35,6 @@ class ProviderService:
         for provider in providers:
             schema = provider.get_provider_schema()
             ui_schema = provider.get_provider_ui_schema()
-            logger.debug(f"Processing provider schema for {schema.provider}")
             # Transform icon paths to full URLs with domain
             if schema.icon:
                 base_url = funiq_ai_config.SERVER_URL.rstrip("/")
@@ -106,9 +105,6 @@ class ProviderService:
         # Merge other fields
         for field in fields_to_merge:
             db_value = getattr(db_model, field)
-            logger.debug(
-                f"Merging field: {field}, db_value: {db_value}, factory_value: {factory_model_info.get(field)}"
-            )
             merged_data[field] = db_value or factory_model_info.get(field)
 
         return merged_data

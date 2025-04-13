@@ -2,10 +2,9 @@ from typing import IO
 
 from openai import OpenAI
 
-from providers.models.core.errors.validate import CredentialsValidateFailedError
-from providers.models.core.models.model import AIModelEntity, ModelType
-from providers.models.core.models.provider import ConfigurateMethod
-from providers.models.core.speech2text_model import Speech2TextModel
+from providers.models.core import Speech2TextModel
+from providers.models.core.errors import CredentialsValidateFailedError
+from providers.models.core.models import AIModelEntity, ConfigurateMethod, ModelType
 from providers.models.openai.core import OpenAICore
 
 

@@ -1,7 +1,8 @@
 from decimal import Decimal
 from enum import Enum
+from typing import Annotated
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .message import AssistantPromptMessage, PromptMessage
 from .model import ModelUsage, PriceInfo
@@ -129,9 +130,9 @@ class LLMResultChunk(BaseModel):
     """
 
     model: str
-    prompt_messages: list[PromptMessage]
+    prompt_messages: Annotated[list[PromptMessage], Field(description="The prompt messages for this chunk")]
     system_fingerprint: str | None = None
-    delta: LLMResultChunkDelta
+    delta: Annotated[LLMResultChunkDelta, Field(description="The delta containing changes in this chunk")]
 
 
 class NumTokensResult(PriceInfo):

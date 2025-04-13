@@ -3,9 +3,8 @@ from typing import Any
 
 from openai import OpenAI
 
-from providers.models.core.errors.invoke import InvokeBadRequestError
-from providers.models.core.errors.validate import CredentialsValidateFailedError
-from providers.models.core.tts_model import TTSModel
+from providers.models.core import TTSModel
+from providers.models.core.errors import CredentialsValidateFailedError, InvokeBadRequestError
 from providers.models.openai.core import OpenAICore
 
 

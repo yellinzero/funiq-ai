@@ -76,20 +76,22 @@ class AccountTokenType(Enum):
 
 class AccountTokenManager(TokenManager):
     async def generate_token(self, token_type: str, email: str, additional_data: dict | None):
-        old_token = await self._get_current_token_for_account(email, token_type)
+        old_token = await self._get_current_token_for_account(email=email, token_type=token_type)
         if old_token:
             if isinstance(old_token, bytes):
                 old_token = old_token.decode("utf-8")
-            await self.revoke_token(old_token, token_type)
+            await self.revoke_token(email=old_token, token_type=token_type)
 
         token_data = {"email": email, "token_type": token_type}
         if additional_data:
             token_data.update(additional_data)
 
         expiry_seconds = funiq_ai_config.model_dump().get(f"{token_type.upper()}_TOKEN_EXPIRY_MINUTES") * 60
-        token = await super().generate_token(token_data, token_type, expiry_seconds)
+        token = await super().generate_token(data=token_data, namespace=token_type, expiry_seconds=expiry_seconds)
 
-        await self._set_current_token_for_account(email, token, token_type, expiry_seconds)
+        await self._set_current_token_for_account(
+            account_id=email, token=token, token_type=token_type, expiry_seconds=expiry_seconds
+        )
 
         return token
 
@@ -100,13 +102,15 @@ class AccountTokenManager(TokenManager):
         :param email: Account email
         :return: Generated token
         """
-        return await self.generate_token(AccountTokenType.SIGNUP_EMAIL.value, email, {"code": code})
+        return await self.generate_token(
+            token_type=AccountTokenType.SIGNUP_EMAIL.value, email=email, additional_data={"code": code}
+        )
 
     async def get_signup_email_verification_data(self, token: str) -> dict | None:
-        return await self.get_token_data(token, AccountTokenType.SIGNUP_EMAIL.value)
+        return await self.get_token_data(token=token, namespace=AccountTokenType.SIGNUP_EMAIL.value)
 
     async def revoke_signup_email_verification_token(self, email: str) -> None:
-        await self.revoke_token(email, AccountTokenType.SIGNUP_EMAIL.value)
+        await self.revoke_token(email=email, token_type=AccountTokenType.SIGNUP_EMAIL.value)
 
     async def generate_activate_account_token(self, email: str, code: str) -> str:
         """
@@ -116,7 +120,9 @@ class AccountTokenManager(TokenManager):
         :param code: Verification code
         :return: Generated token
         """
-        return await self.generate_token(AccountTokenType.ACTIVATE_ACCOUNT_EMAIL.value, email, {"code": code})
+        return await self.generate_token(
+            token_type=AccountTokenType.ACTIVATE_ACCOUNT_EMAIL.value, email=email, additional_data={"code": code}
+        )
 
     async def get_activate_account_verification_data(self, token: str) -> dict | None:
         """
@@ -125,7 +131,7 @@ class AccountTokenManager(TokenManager):
         :param token: Activation token
         :return: Token data if valid, else None
         """
-        return await self.get_token_data(token, AccountTokenType.ACTIVATE_ACCOUNT_EMAIL.value)
+        return await self.get_token_data(token=token, namespace=AccountTokenType.ACTIVATE_ACCOUNT_EMAIL.value)
 
     async def revoke_activate_account_token(self, email: str) -> None:
         """
@@ -133,7 +139,7 @@ class AccountTokenManager(TokenManager):
 
         :param email: Account email
         """
-        await self.revoke_token(email, AccountTokenType.ACTIVATE_ACCOUNT_EMAIL.value)
+        await self.revoke_token(email=email, token_type=AccountTokenType.ACTIVATE_ACCOUNT_EMAIL.value)
 
     async def generate_reset_password_token(self, email: str, code: str) -> str:
         """
@@ -143,7 +149,9 @@ class AccountTokenManager(TokenManager):
         :param code: Verification code
         :return: Generated token
         """
-        return await self.generate_token(AccountTokenType.RESET_PASSWORD_EMAIL.value, email, {"code": code})
+        return await self.generate_token(
+            token_type=AccountTokenType.RESET_PASSWORD_EMAIL.value, email=email, additional_data={"code": code}
+        )
 
     async def get_reset_password_verification_data(self, token: str) -> dict | None:
         """
@@ -152,7 +160,7 @@ class AccountTokenManager(TokenManager):
         :param token: Reset password token
         :return: Token data if valid, else None
         """
-        return await self.get_token_data(token, AccountTokenType.RESET_PASSWORD_EMAIL.value)
+        return await self.get_token_data(token=token, namespace=AccountTokenType.RESET_PASSWORD_EMAIL.value)
 
     async def revoke_reset_password_token(self, email: str) -> None:
         """
@@ -160,7 +168,7 @@ class AccountTokenManager(TokenManager):
 
         :param email: Account email
         """
-        await self.revoke_token(email, AccountTokenType.RESET_PASSWORD_EMAIL.value)
+        await self.revoke_token(email=email, token_type=AccountTokenType.RESET_PASSWORD_EMAIL.value)
 
     @with_redis
     async def _get_current_token_for_account(self, email: str, token_type: str, redis: Redis = None) -> str | None:
@@ -190,5 +198,7 @@ class AccountTokenManager(TokenManager):
         old_token = await redis.get(key)
 
         if old_token:
-            await super().revoke_token(old_token.decode("utf-8"), token_type)  # Remove token from storage
+            await super().revoke_token(
+                token=old_token.decode("utf-8"), namespace=token_type
+            )  # Remove token from storage
             await redis.delete(key)  # Remove reference to the token

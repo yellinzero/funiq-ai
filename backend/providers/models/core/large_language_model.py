@@ -753,7 +753,6 @@ class LargeLanguageModel(AIModel):
         
         # Convert schema to dict using model_dump
         schema_dict = parameter_rules_schema.model_dump(exclude_none=True)
-        logger.debug(f"Model: {model}, Schema: {schema_dict}")
         try:
             # Use jsonschema.validate to validate against the schema
             validate(instance=model_parameters, schema=schema_dict)

@@ -15,7 +15,7 @@ class WorkflowErrorCode(BaseErrorCode):
     WORKFLOW_VERSION_NOT_FOUND = ("W0002", "Workflow version not found with the specified version number")
     WORKFLOW_NODE_NOT_FOUND = ("W0003", "Workflow node not found with the specified key")
     WORKFLOW_EDGE_NOT_FOUND = ("W0004", "Workflow edge not found with the specified key")
-
+    WORKFLOW_SNAPSHOT_NOT_FOUND = ("W0005", "Workflow snapshot not found with the specified timestamp")
     # Duplicate Errors (W01xx)
     WORKFLOW_ALREADY_EXISTS = ("W0101", "A workflow with this name already exists in this tenant")
     WORKFLOW_VERSION_ALREADY_EXISTS = ("W0102", "This version number already exists for the workflow")

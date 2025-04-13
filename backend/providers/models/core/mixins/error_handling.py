@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Type
 
-from ..errors.invoke import InvokeAuthorizationError, InvokeError
+from ..errors import InvokeAuthorizationError, InvokeError
 
 
 class ErrorHandlingMixin(ABC):

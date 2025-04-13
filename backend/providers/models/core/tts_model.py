@@ -3,8 +3,8 @@ from abc import abstractmethod
 from collections.abc import Iterable
 from typing import Any
 
-from providers.models.core.base_model import AIModel
-from providers.models.core.models.model import ModelPropertyKey, ModelType
+from providers.models.core import AIModel
+from providers.models.core.models import ModelPropertyKey, ModelType
 
 
 class TTSModel(AIModel):

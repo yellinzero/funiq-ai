@@ -3,10 +3,9 @@ import sys
 
 from loguru import logger
 
-from providers.models.core.base_model import AIModel
-from providers.models.core.callbacks.base_callback import Callback
-from providers.models.core.models.llm import LLMResult, LLMResultChunk
-from providers.models.core.models.message import PromptMessage, PromptMessageTool
+from providers.models.core import AIModel
+from providers.models.core.callbacks import Callback
+from providers.models.core.models import LLMResult, LLMResultChunk, PromptMessage, PromptMessageTool
 
 
 class LoggingCallback(Callback):

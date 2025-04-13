@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 
-from providers.models.core.base_model import AIModel
-from providers.models.core.models.llm import LLMResult, LLMResultChunk
-from providers.models.core.models.message import PromptMessage, PromptMessageTool
+from providers.models.core import AIModel
+from providers.models.core.models import LLMResult, LLMResultChunk, PromptMessage, PromptMessageTool
 
 _TEXT_COLOR_MAPPING = {
     "blue": "36;1",

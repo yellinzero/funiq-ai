@@ -8,23 +8,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.models.model_provider import Model, ModelProvider
 from app.core.models.workflow import WorkflowNodeDebugExecution, WorkflowNodeExecution
 from infrastructure import with_session
-from providers.models.core.large_language_model import LargeLanguageModel
-from providers.models.core.models.llm import LLMResult
-from providers.models.core.models.message import UserPromptMessage
-from providers.models.core.models.model import ModelType
-from providers.models.core.provider_factory import ProviderFactory
+from providers.models.core import LargeLanguageModel, ProviderFactory
+from providers.models.core.models import LLMResult, ModelType, UserPromptMessage
 from utils.common.json import json_dumps
 
+from ..core import OperatorName
 from ..core.base_operator import BaseOperator
 
 
 class LLMOperator(BaseOperator):
     """LLM operator implementation"""
 
-    operator_name = "llm"
+    operator_name = OperatorName.LLM.value
 
     @with_session
-    async def _execute(self, config: Dict, session: AsyncSession, execution_context: Dict) -> Dict:
+    async def _execute(self, config: Dict | None, session: AsyncSession, **kwargs):
         """
         Execute the LLM operator
 
@@ -35,7 +33,9 @@ class LLMOperator(BaseOperator):
         Returns:
             Dict containing the LLM response and metadata
         """
-        logger.debug(f"LLM operator config: {config}")
+        if not config:
+            raise ValueError("Config is required")
+
         # Get model info from database using provided session
         model = await self._get_model(session, config["model_id"])
 
@@ -66,7 +66,6 @@ class LLMOperator(BaseOperator):
 
         # Extract model parameters from config
         model_parameters = config.get("model_parameters", {})
-
         # Execute model using invoke instead of _invoke
         result: Union[LLMResult, Generator] = model_instance.invoke(
             model=model.model,
@@ -75,23 +74,24 @@ class LLMOperator(BaseOperator):
             model_parameters=model_parameters,
             tools=None,
             stop=None,
-            stream=False,
+            stream=self.is_stream,
             user=None,
         )
+        
+        if self.is_stream:
+            if not isinstance(result, Generator):
+                raise ValueError("LLM operator stream result is not a generator")
+            
+            def generator():
+                yield from result
+            
+            return generator()
+        else:
+            # Return regular response
+            if not self.validate_output(result):
+                raise ValueError("Output validation failed")
 
-        output = {
-            "type": "text",
-            "answer": result.message.content,
-            "usage": result.usage.model_dump() if result.usage else None,
-        }
-
-        # Return regular response
-        if not self.validate_output(output):
-            raise ValueError("Output validation failed")
-
-        await self._update_node_execution_record(session=session, execution_context=execution_context, output=output)
-        logger.debug(f"LLM operator result: {output}")
-        return output
+            return result
 
     async def _get_model(self, session: AsyncSession, model_id: str) -> Model:
         """Get model info from database"""

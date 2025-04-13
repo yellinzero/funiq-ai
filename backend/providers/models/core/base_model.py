@@ -3,15 +3,15 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 
 from .mixins.error_handling import ErrorHandlingMixin
-from .mixins.price_handling import PriceHandling
+from .mixins.price_handling import PriceHandlingMixin
 from .mixins.schema_handling import SchemaHandlingMixin
-from .mixins.timing_handling import TimingHandling
+from .mixins.timing_handling import TimingHandlingMixin
 from .models.model import (
     ModelType,
 )
 
 
-class AIModel(ErrorHandlingMixin, TimingHandling, SchemaHandlingMixin, PriceHandling, ABC):
+class AIModel(ErrorHandlingMixin, TimingHandlingMixin, SchemaHandlingMixin, PriceHandlingMixin, ABC):
     """
     Base class for all AI model providers.
     

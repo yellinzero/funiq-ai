@@ -1,8 +1,7 @@
 from abc import abstractmethod
 
-from providers.models.core.base_model import AIModel
-from providers.models.core.models.model import ModelPropertyKey, ModelType
-from providers.models.core.models.text_embedding import EmbeddingInputType, TextEmbeddingResult
+from providers.models.core import AIModel
+from providers.models.core.models import EmbeddingInputType, ModelPropertyKey, ModelType, TextEmbeddingResult
 
 
 class TextEmbeddingModel(AIModel):

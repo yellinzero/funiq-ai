@@ -40,7 +40,7 @@ async def test_token_lifecycle(mock_redis, mock_redis_fixture):
     test_data = {"user_id": "123", "email": "test@example.com"}
     
     # Generate token
-    token = await token_manager.generate_token(test_data)
+    token = await token_manager.generate_token(data=test_data)
     assert token is not None
     
     # Verify setex was called with correct parameters
@@ -53,11 +53,11 @@ async def test_token_lifecycle(mock_redis, mock_redis_fixture):
     mock_redis.get.return_value = json.dumps(test_data)
     
     # Validate token
-    is_valid = await token_manager.validate_token(token)
+    is_valid = await token_manager.validate_token(token=token)
     assert is_valid is True
     
     # Get token data
-    retrieved_data = await token_manager.get_token_data(token)
+    retrieved_data = await token_manager.get_token_data(token=token)
     assert retrieved_data == test_data
     
     # Revoke token
@@ -68,7 +68,7 @@ async def test_token_lifecycle(mock_redis, mock_redis_fixture):
     mock_redis.exists.return_value = 0
     
     # Verify token is invalid after revocation
-    is_valid = await token_manager.validate_token(token)
+    is_valid = await token_manager.validate_token(token=token)
     assert is_valid is False
 
 

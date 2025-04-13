@@ -2,10 +2,10 @@ import decimal
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 
-from ..models.model import AIModelEntity, PriceInfo, PriceType
+from ..models import AIModelEntity, PriceInfo, PriceType
 
 
-class PriceHandling(ABC):
+class PriceHandlingMixin(ABC):
     """Mixin class for handling price calculations for model usage."""
     
     @property

@@ -10,14 +10,21 @@ from openai.types.chat import ChatCompletion, ChatCompletionChunk, ChatCompletio
 from openai.types.chat.chat_completion_chunk import ChoiceDeltaFunctionCall, ChoiceDeltaToolCall
 from openai.types.chat.chat_completion_message import FunctionCall
 
-from providers.models.core.callbacks.base_callback import Callback
-from providers.models.core.errors.validate import CredentialsValidateFailedError
-from providers.models.core.large_language_model import LargeLanguageModel
-from providers.models.core.models.llm import LLMMode, LLMResult, LLMResultChunk, LLMResultChunkDelta
-from providers.models.core.models.message import (
+from providers.models.core import LargeLanguageModel
+from providers.models.core.callbacks import Callback
+from providers.models.core.errors import CredentialsValidateFailedError
+from providers.models.core.models import (
+    AIModelEntity,
     AssistantPromptMessage,
     AudioPromptMessageContent,
+    ConfigurateMethod,
     ImagePromptMessageContent,
+    LLMMode,
+    LLMResult,
+    LLMResultChunk,
+    LLMResultChunkDelta,
+    ModelType,
+    PriceConfig,
     PromptMessage,
     PromptMessageContentType,
     PromptMessageTool,
@@ -26,9 +33,7 @@ from providers.models.core.models.message import (
     ToolPromptMessage,
     UserPromptMessage,
 )
-from providers.models.core.models.model import AIModelEntity, ModelType, PriceConfig
-from providers.models.core.models.provider import ConfigurateMethod
-from providers.models.core.prompts.defaults import BLOCK_MODE_PROMPT
+from providers.models.core.prompts import BLOCK_MODE_PROMPT
 from providers.models.openai.core import OpenAICore
 
 

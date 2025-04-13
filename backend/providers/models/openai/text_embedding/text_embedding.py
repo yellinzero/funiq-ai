@@ -5,10 +5,9 @@ import numpy as np
 import tiktoken
 from openai import OpenAI
 
-from providers.models.core.errors.validate import CredentialsValidateFailedError
-from providers.models.core.models.model import PriceType
-from providers.models.core.models.text_embedding import EmbeddingInputType, EmbeddingUsage, TextEmbeddingResult
-from providers.models.core.text_embedding_model import TextEmbeddingModel
+from providers.models.core import TextEmbeddingModel
+from providers.models.core.errors import CredentialsValidateFailedError
+from providers.models.core.models import EmbeddingInputType, EmbeddingUsage, PriceType, TextEmbeddingResult
 from providers.models.openai.core import OpenAICore
 
 

@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Dict
 
 from jsonschema import ValidationError, validate
@@ -8,19 +8,12 @@ from utils.json_schema import JSONSchema
 
 class ValidateHandlingMixin(ABC):
     """Mixin class for handling operator schemas and their configurations."""
-    @abstractmethod
-    def get_output_schema(self) -> JSONSchema | None:
-        """Get the output schema for validation"""
-        pass
-
-    @abstractmethod
-    def get_config_schema(self) -> JSONSchema | None:
-        """Get the config schema for validation"""
-        pass
+    config_schema: JSONSchema | None
+    output_schema: JSONSchema | None
 
     def validate_output(self, data: Dict) -> bool:
         """Validate output data against output schema"""
-        schema = self.get_output_schema().model_dump(exclude_none=True)
+        schema = self.output_schema.model_dump(exclude_none=True)
         if schema is None:
             return True
             
@@ -32,7 +25,7 @@ class ValidateHandlingMixin(ABC):
 
     def validate_config(self, config: Dict) -> bool:
         """Validate configuration data against config schema"""
-        schema = self.get_config_schema().model_dump(exclude_none=True)
+        schema = self.config_schema.model_dump(exclude_none=True)
         if schema is None:
             return True
             

@@ -1,7 +1,7 @@
 import time
 
 
-class TimingHandling:
+class TimingHandlingMixin:
     """Mixin class for tracking model invocation timing."""
     
     _invoke_start_time: float = 0

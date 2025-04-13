@@ -4,8 +4,8 @@ from typing import ClassVar, Sequence
 
 from loguru import logger
 
-from providers.models.core.model_provider import ModelProvider
-from providers.models.core.models.model import AIModelEntity, ModelType
+from providers.models.core import ModelProvider
+from providers.models.core.models import AIModelEntity, ModelType
 
 
 class ProviderFactory:

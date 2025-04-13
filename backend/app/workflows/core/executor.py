@@ -1,4 +1,3 @@
-# TODO implement workflow execution
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
@@ -18,10 +17,9 @@ from app.core.models.workflow import (
     WorkflowExecution,
     WorkflowNodeDebugExecution,
     WorkflowNodeExecution,
-    WorkflowNodeType,
 )
 from infrastructure import with_redis, with_session
-from providers.operators.core.operator_factory import OperatorFactory
+from providers.operators.core import OperatorFactory, OperatorName
 from utils.common.json import json_dumps, json_loads
 
 
@@ -40,6 +38,7 @@ class WorkflowExecutorBase:
         self.workflow_id = workflow_id
         self.snapshot = snapshot
         self.workflow_name = self.snapshot.get("name")
+        self.is_stream = self.snapshot.get("stream_mode", False)
         self.snapshot_hash = snapshot_hash
         self.input_data = input_data
         self.execution_context = execution_context
@@ -77,13 +76,10 @@ class WorkflowExecutorBase:
 
     async def _build_topology(self, snapshot: Dict[str, Any]) -> None:
         """Build workflow topology."""
-        logger.debug(f"Building topology for workflow: {self.workflow_name}, snapshot: {snapshot}")
-
         # try to get topology from cache
         cached_data = await self._get_cached_topology()
         if cached_data:
             self.adjacency, self.node_levels, self.end_node_key = cached_data
-            logger.debug("Using cached topology")
             return
 
         # build new topology
@@ -94,7 +90,7 @@ class WorkflowExecutorBase:
         nodes = snapshot.get("nodes", [])
         for node in nodes:
             g.add_node(node.get("node_key"))
-            if node.get("node_type") == WorkflowNodeType.END:
+            if node.get("node_type") == OperatorName.END:
                 self.end_node_key = node.get("node_key")
 
         if not self.end_node_key:
@@ -111,7 +107,7 @@ class WorkflowExecutorBase:
         }
 
         # Cache all topology information
-        await self._cache_topology(self.adjacency, self.node_levels, self.end_node_key)
+        await self._cache_topology(adjacency=self.adjacency, levels=self.node_levels, end_node_key=self.end_node_key)
 
     def _calculate_node_levels(self, g: nx.DiGraph) -> list[list[str]]:
         """Calculate topology levels of nodes using networkx's built-in function."""
@@ -121,14 +117,12 @@ class WorkflowExecutorBase:
 
         # get node levels using networkx's topological_generations
         levels = [list(nodes) for nodes in nx.topological_generations(g)]
-        logger.debug(f"Calculated node levels: {levels}")
         return levels
 
     def _get_upstream_outputs(self, node_key: str) -> Dict[str, Any]:
         """Get outputs from upstream nodes using adjacency list."""
         prefect_logger = get_run_logger()
         upstream_outputs = {}
-        logger.debug(f"Node {node_key} adjacency: {self.adjacency} node_outputs: {self.node_outputs}")
 
         # Get upstream nodes directly from adjacency list
         upstream_nodes = self.adjacency[node_key]["upstream"]
@@ -136,7 +130,6 @@ class WorkflowExecutorBase:
             if upstream_node in self.node_outputs:
                 upstream_outputs[upstream_node] = self.node_outputs[upstream_node]
 
-        prefect_logger.debug(f"Node {node_key} upstream outputs: {upstream_outputs.keys()}")
         return upstream_outputs
 
     @with_session
@@ -168,9 +161,12 @@ class WorkflowExecutorBase:
         node_name = node.get("name")
         node_type = node.get("node_type")
         node_key = node.get("node_key")
-        logger.debug(f"Creating task for node: {node_name} (type: {node_type})")
 
-        @task(name=node_name, timeout_seconds=60, tags=[node_type])
+        @task(
+            name=node_name,
+            timeout_seconds=5 * 60,
+            tags=[node_type],
+        )
         async def node_task(**kwargs):
             task_run_id = task_run.get_id()
 
@@ -194,8 +190,7 @@ class WorkflowExecutorBase:
                     **self.input_data,
                     **upstream_outputs,
                 }
-                
-                logger.debug(f"Input data for node {node_key}: {input_data}")
+
                 result = await operator.execute(
                     input_data=input_data,
                     config=config,
@@ -209,6 +204,7 @@ class WorkflowExecutorBase:
                         **self.execution_context,
                     },
                 )
+
                 self.node_outputs[node_key] = result
 
                 # Update status to completed
@@ -230,48 +226,33 @@ class WorkflowExecutorBase:
         """Initialize the executor by building the topology."""
         logger.info(f"Starting initialization for workflow: {self.workflow_name}")
         await self._build_topology(self.snapshot)
-        logger.debug(f"Adjacency list: {self.adjacency}, node levels: {self.node_levels}")
 
     def _create_flow(self):
-        """Create a Prefect flow for the workflow."""
-        logger.debug(f"Create flow for workflow: {self.workflow_name}")
+        """Create a normal Prefect flow for non-streaming workflow."""
 
         @flow(name=self.workflow_name, task_runner=ThreadPoolTaskRunner(max_workers=10))
         async def workflow_flow():
             self.flow_run_id = flow_run.get_id()
             try:
-                # Create execution record and update status to running
                 await self._create_execution_record()
                 await self._update_execution_status(status=StateType.RUNNING)
 
-                # Create and submit tasks by levels
                 task_futures = {}
                 for level_nodes in self.node_levels:
-                    logger.debug(f"Processing nodes: {level_nodes}")
-
-                    # Process nodes in same level in parallel
                     for node_key in level_nodes:
                         nodes = self.snapshot.get("nodes", [])
                         node = next(n for n in nodes if n.get("node_key") == node_key)
 
-                        # Get upstream dependencies
                         upstream_futures = []
                         for source, targets in self.adjacency.items():
                             if node_key in targets["downstream"]:
                                 upstream_futures.append(task_futures[source])
 
-                        # Create and submit task
                         task = self._create_task_for_node(node)
                         future = task.submit(wait_for=upstream_futures)
                         task_futures[node_key] = future
-                        logger.debug(
-                            f"Created task for node {node_key} with {len(upstream_futures)} upstream dependencies"
-                        )
 
-                # Wait for and return only END node result
                 result = task_futures[self.end_node_key].result()
-                logger.debug("Workflow completed successfully")
-
                 await self._update_execution_status(status=StateType.COMPLETED)
                 return result
 
@@ -284,9 +265,14 @@ class WorkflowExecutorBase:
 
     async def execute(self):
         """Execute the workflow."""
-        logger.debug(f"Create flow run for workflow: {self.workflow_name}")
-
+        if self.is_stream:
+            raise ValueError(
+                f"Workflow '{self.workflow_name}' is configured for streaming execution. "
+                "Please use the appropriate stream executor (WorkflowVersionStreamExecutor "
+                "or WorkflowDebugStreamExecutor) instead."
+            )
         flow = self._create_flow()
+
         return await flow()
 
 

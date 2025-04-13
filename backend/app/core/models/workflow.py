@@ -11,6 +11,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from infrastructure import DBAuditFieldsMixin, DBBase, DBUUIDModelMixin
+from providers.operators.core import OperatorName
 
 if TYPE_CHECKING:
     from .app import App
@@ -24,14 +25,6 @@ class WorkflowStatus(str, enum.Enum):
 
     DRAFT = "draft"  # Initial state, workflow is being edited
     PUBLISHED = "published"  # Workflow is finalized and ready for execution
-
-
-class WorkflowNodeType(str, enum.Enum):
-    """Workflow node type enum defining supported node types."""
-
-    LLM = "llm"  # Language Model operation node
-    END = "end"  # Terminal node marking workflow completion
-    START = "start"  # Entry point node of the workflow
 
 
 class WorkflowVersionStatus(str, enum.Enum):
@@ -117,8 +110,8 @@ class WorkflowNode(DBBase, DBAuditFieldsMixin):
     )
 
     # Node properties
-    node_type: Mapped[WorkflowNodeType] = mapped_column(
-        Enum(WorkflowNodeType), nullable=False, comment="Type of operation this node performs"
+    node_type: Mapped[OperatorName] = mapped_column(
+        Enum(OperatorName), nullable=False, comment="Type of operation this node performs"
     )
     name: Mapped[str] = mapped_column(String(100), nullable=False, comment="Display name of the node")
     description: Mapped[str | None] = mapped_column(String(255), comment="Optional description of the node's purpose")

@@ -5,8 +5,14 @@ from sqlalchemy import JSON, Boolean, ForeignKey, ForeignKeyConstraint, String, 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from infrastructure import DBBase, DBUUIDModelMixin
-from providers.models.core.models.model import ConfigurateMethod, ModelFeature, ModelPropertyKey, ModelType, PriceConfig
-from providers.models.core.models.provider import ProviderDocs
+from providers.models.core.models import (
+    ConfigurateMethod,
+    ModelFeature,
+    ModelPropertyKey,
+    ModelType,
+    PriceConfig,
+    ProviderDocs,
+)
 from utils.json_schema import JSONSchema, UiSchema
 
 

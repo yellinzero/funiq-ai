@@ -1,6 +1,6 @@
 from typing import List
 
-from providers.operators.core.operator_factory import OperatorFactory
+from providers.operators.core import OperatorFactory
 
 
 class OperatorService:

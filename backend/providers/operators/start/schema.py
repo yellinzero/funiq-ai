@@ -1,9 +1,10 @@
+from providers.operators.core import OperatorName, OperatorType
 from utils.common.i18n import gettext_lazy as _
 
 schema = {
-    "name": "start",
+    "name": OperatorName.START.value,
     "label": _("Start Operator"),
-    "type": 'start',
+    "type": OperatorType.START.value,
     "description": _("Starting point of the workflow"),
     "output_schema": {
         "type": "object",

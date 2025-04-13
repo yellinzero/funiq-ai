@@ -3,8 +3,7 @@ from typing import List
 
 from pydantic import BaseModel
 
-from providers.models.core.models.model import AIModelEntity, ModelType
-from providers.models.core.models.provider import ProviderEntity
+from providers.models.core.models import AIModelEntity, ModelType, ProviderEntity
 from utils.json_schema import UiSchema
 
 

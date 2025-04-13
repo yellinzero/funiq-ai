@@ -1,6 +1,6 @@
 import hashlib
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from fastapi import status
 from loguru import logger
@@ -14,11 +14,13 @@ from app.core.models.workflow import (
     Workflow,
     WorkflowEdge,
     WorkflowNode,
-    WorkflowNodeType,
+    WorkflowSnapshot,
     WorkflowStatus,
     WorkflowVersion,
     WorkflowVersionStatus,
 )
+from app.workflows.core import WorkflowDebugStreamExecutor, WorkflowVersionStreamExecutor
+from providers.operators.core import OperatorName
 from tasks.workflow_tasks import execute_workflow as celery_execute_workflow
 from utils.common.json import json_dumps
 
@@ -84,7 +86,7 @@ class WorkflowService:
             WorkflowNode(
                 workflow_id=workflow_id,
                 node_key=start_key,
-                node_type=WorkflowNodeType.START,
+                node_type=OperatorName.START.value,
                 name="Start",
                 config={
                     "question": "{{question}}",
@@ -95,11 +97,14 @@ class WorkflowService:
             WorkflowNode(
                 workflow_id=workflow_id,
                 node_key=llm_key,
-                node_type=WorkflowNodeType.LLM,
+                node_type=OperatorName.LLM.value,
                 name="LLM",
                 config={
                     "model_id": str(model_id),
                     "prompt": f"{{{{{start_key}.question}}}}",
+                },
+                extended_config={
+                    "stream_mode": True,
                 },
                 created_by=created_by,
                 updated_by=created_by,
@@ -107,9 +112,12 @@ class WorkflowService:
             WorkflowNode(
                 workflow_id=workflow_id,
                 node_key=end_key,
-                node_type=WorkflowNodeType.END,
+                node_type=OperatorName.END.value,
                 name="End",
-                config={"result": f"{{{{{llm_key}.answer}}}}"},
+                config={},
+                extended_config={
+                    "stream_mode": True,
+                },
                 created_by=created_by,
                 updated_by=created_by,
             ),
@@ -234,29 +242,45 @@ class WorkflowService:
             ) from e
 
     @staticmethod
-    async def execute_workflow_async(
+    async def _can_workflow_execute(
         session: AsyncSession,
         workflow_id: str,
-        input_data: Dict[str, Any],
-        execution_context: Dict[str, Any],
         version: Optional[str] = None,
         snapshot_timestamp: Optional[datetime] = None,
-    ) -> Dict[str, Any]:
-        """Execute a workflow asynchronously using Celery."""
+    ) -> Tuple[Dict[str, Any], str]:
+        """Validate if workflow can be executed and return its snapshot.
+
+        Args:
+            session: Database session
+            workflow_id: ID of the workflow
+            version: Optional version to execute
+            snapshot_timestamp: Optional snapshot timestamp for debug mode
+
+        Returns:
+            Tuple[Dict, str]: Returns (snapshot, snapshot_hash)
+
+        Raises:
+            WorkflowErrorCode: Various validation errors
+        """
         # Validate workflow exists
         result = await session.execute(select(Workflow).where(Workflow.id == workflow_id))
         workflow = result.scalar_one_or_none()
         if not workflow:
             raise WorkflowErrorCode.WORKFLOW_NOT_FOUND.exception(
-                data={
-                    "workflow_id": str(workflow_id),
-                    "message": "Workflow not found"
-                },
+                data={"workflow_id": str(workflow_id)},
                 status_code=status.HTTP_404_NOT_FOUND,
             )
 
-        # Validate version if specified
+        # Validate version XOR snapshot_timestamp
+        if bool(version) == bool(snapshot_timestamp):
+            raise WorkflowErrorCode.WORKFLOW_EXECUTION_ERROR.exception(
+                data={"message": "Either version or snapshot_timestamp must be provided, but not both"},
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Get snapshot based on execution mode
         if version:
+            # Version mode
             version_result = await session.execute(
                 select(WorkflowVersion).where(
                     WorkflowVersion.workflow_id == workflow_id,
@@ -266,12 +290,7 @@ class WorkflowService:
             workflow_version = version_result.scalar_one_or_none()
             if not workflow_version:
                 raise WorkflowErrorCode.WORKFLOW_VERSION_NOT_FOUND.exception(
-                    data={
-                        "workflow_id": str(workflow_id),
-                        "version": version,
-                        "message": "Specified version not found"
-                    },
-                    status_code=status.HTTP_404_NOT_FOUND,
+                    data={"workflow_id": str(workflow_id), "version": version}
                 )
             if workflow_version.status != WorkflowVersionStatus.ACTIVE:
                 raise WorkflowErrorCode.WORKFLOW_VERSION_NOT_ACTIVE.exception(
@@ -279,10 +298,136 @@ class WorkflowService:
                         "workflow_id": str(workflow_id),
                         "version": version,
                         "status": workflow_version.status,
-                        "message": "Specified version is not active"
-                    },
-                    status_code=status.HTTP_400_BAD_REQUEST,
+                    }
                 )
+            return workflow_version.snapshot, workflow_version.snapshot_hash
+        else:
+            # Debug mode (snapshot)
+            snapshot_result = await session.execute(
+                select(WorkflowSnapshot).where(
+                    WorkflowSnapshot.workflow_id == workflow_id,
+                    WorkflowSnapshot.snapshot_timestamp == snapshot_timestamp
+                )
+            )
+            workflow_snapshot = snapshot_result.scalar_one_or_none()
+            if not workflow_snapshot:
+                raise WorkflowErrorCode.WORKFLOW_SNAPSHOT_NOT_FOUND.exception(
+                    data={
+                        "workflow_id": str(workflow_id),
+                        "snapshot_timestamp": snapshot_timestamp
+                    }
+                )
+            return workflow_snapshot.snapshot, workflow_snapshot.snapshot_hash
+
+    @staticmethod
+    async def execute_workflow_stream(
+        session: AsyncSession,
+        workflow_id: str,
+        input_data: Dict[str, Any],
+        execution_context: Dict[str, Any],
+        version: Optional[str] = None,
+        snapshot_timestamp: Optional[datetime] = None,
+    ):
+        """Execute workflow in stream mode.
+
+        This method should be used for stream processing instead of Celery tasks.
+        """
+        # Validate and get snapshot
+        snapshot, snapshot_hash = await WorkflowService._can_workflow_execute(
+            session, workflow_id, version, snapshot_timestamp
+        )
+
+        # Validate stream mode
+        if not snapshot.get("stream_mode"):
+            raise WorkflowErrorCode.WORKFLOW_EXECUTION_ERROR.exception(
+                data={"message": "Workflow is not configured for streaming"}
+            )
+
+        # Create and execute appropriate executor
+        if version:
+            executor = WorkflowVersionStreamExecutor(
+                workflow_id=workflow_id,
+                version=version,
+                snapshot=snapshot,
+                snapshot_hash=snapshot_hash,
+                input_data=input_data,
+                execution_context=execution_context,
+            )
+        else:
+            executor = WorkflowDebugStreamExecutor(
+                workflow_id=workflow_id,
+                snapshot=snapshot,
+                snapshot_hash=snapshot_hash,
+                input_data=input_data,
+                execution_context=execution_context,
+                snapshot_timestamp=snapshot_timestamp,
+            )
+
+        await executor.initialize()
+        return executor.execute()
+    
+    @staticmethod
+    async def execute_workflow_sync(
+        session: AsyncSession,
+        workflow_id: str,
+        input_data: Dict[str, Any],
+        execution_context: Dict[str, Any],
+        version: Optional[str] = None,
+        snapshot_timestamp: Optional[datetime] = None,
+    ) -> Dict[str, Any]:
+        """Execute workflow synchronously.
+
+        This method should only be used for non-stream workflows.
+        """
+        # Validate and get snapshot
+        snapshot, _ = await WorkflowService._can_workflow_execute(
+            session, workflow_id, version, snapshot_timestamp
+        )
+
+        # Validate non-stream mode  
+        if snapshot.get("stream_mode"):
+            raise WorkflowErrorCode.WORKFLOW_EXECUTION_ERROR.exception(
+                data={"message": "Streaming workflows must use execute_workflow_stream"}
+            )
+
+        try:
+            task = celery_execute_workflow.delay(
+                workflow_id=workflow_id,
+                input_data=input_data,
+                execution_context=execution_context,
+                version=version,
+                snapshot_timestamp=snapshot_timestamp,
+            )
+        except Exception as e:
+            raise WorkflowErrorCode.WORKFLOW_EXECUTION_ERROR.exception(
+                data={"workflow_id": str(workflow_id), "error": str(e)}
+            ) from e
+
+        return task.get()
+        
+    @staticmethod
+    async def execute_workflow_async(
+        session: AsyncSession,
+        workflow_id: str,
+        input_data: Dict[str, Any],
+        execution_context: Dict[str, Any],
+        version: Optional[str] = None,
+        snapshot_timestamp: Optional[datetime] = None,
+    ) -> Dict[str, Any]:
+        """Execute workflow asynchronously using Celery.
+
+        This method should only be used for non-stream workflows.
+        """
+        # Validate and get snapshot
+        snapshot, _ = await WorkflowService._can_workflow_execute(
+            session, workflow_id, version, snapshot_timestamp
+        )
+
+        # Validate non-stream mode
+        if snapshot.get("stream_mode"):
+            raise WorkflowErrorCode.WORKFLOW_EXECUTION_ERROR.exception(
+                data={"message": "Streaming workflows must use execute_workflow_stream"}
+            )
 
         # Start async task
         try:
@@ -295,70 +440,11 @@ class WorkflowService:
             )
         except Exception as e:
             raise WorkflowErrorCode.WORKFLOW_EXECUTION_ERROR.exception(
-                data={
-                    "workflow_id": str(workflow_id),
-                    "error": str(e),
-                },
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                data={"workflow_id": str(workflow_id), "error": str(e)}
             ) from e
 
-        logger.info(f"Started async workflow execution: {task.id}")
         return {"task_id": task.id}
 
-    @staticmethod
-    def execute_workflow_sync(
-        session: AsyncSession,
-        workflow_id: str,
-        input_data: Dict[str, Any],
-        execution_context: Dict[str, Any],
-        version: Optional[str] = None,
-        snapshot_timestamp: Optional[datetime] = None,
-    ) -> Dict[str, Any]:
-        """Execute a workflow synchronously using Celery."""
-        # Start task
-        try:
-            task = celery_execute_workflow.delay(
-                workflow_id=workflow_id,
-                input_data=input_data,
-                execution_context=execution_context,
-                version=version,
-                snapshot_timestamp=snapshot_timestamp,
-            )
-        except Exception as e:
-            raise WorkflowErrorCode.WORKFLOW_EXECUTION_ERROR.exception(
-                data={
-                    "workflow_id": str(workflow_id),
-                    "error": str(e),
-                },
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            ) from e
-
-        logger.info(f"Started sync workflow execution: {task.id}")
-        
-        try:
-            result = task.get(timeout=600)  # 10 minutes timeout
-            return result
-        except TimeoutError as e:
-            raise WorkflowErrorCode.WORKFLOW_TASK_TIMEOUT.exception(
-                data={
-                    "workflow_id": str(workflow_id),
-                    "task_id": task.id,
-                    "message": "Task execution timed out after 10 minutes"
-                },
-                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-            ) from e
-        except Exception as task_error:
-            error_message = str(task_error)
-            raise WorkflowErrorCode.WORKFLOW_EXECUTION_ERROR.exception(
-                data={
-                    "workflow_id": str(workflow_id),
-                    "task_id": task.id,
-                    "error": error_message,
-                    "message": "Workflow execution failed"
-                },
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            ) from task_error
-            
     @staticmethod
     async def get_workflow_snapshot(session: AsyncSession, workflow_id: str) -> dict[str, Any]:
         """Get the snapshot of the workflow asynchronously."""
@@ -386,13 +472,16 @@ class WorkflowService:
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Check if the workflow is a stream according to the end node's stream mode
+        end_node = next((node for node in nodes if node.node_type == OperatorName.END.value), None)
+        is_stream = end_node and end_node.extended_config and end_node.extended_config.get('stream_mode', False)
         snapshot = {
             "name": workflow.name,
             "description": workflow.description,
+            "stream_mode": is_stream,
             "nodes": [serialize_workflow_node(node) for node in nodes],
             "edges": [serialize_workflow_edge(edge) for edge in edges],
         }
-        logger.debug(f"Snapshot: {snapshot}")
         # Create and return snapshot
         return snapshot
 
@@ -401,7 +490,6 @@ class WorkflowService:
         """Get the hash of the workflow snapshot asynchronously."""
         try:
             snapshot_hash = hashlib.sha256(json_dumps(snapshot).encode()).hexdigest()
-            logger.debug(f"Generated snapshot hash: {snapshot_hash}")
             return snapshot_hash
         except Exception as e:
             logger.error(f"Error calculating snapshot hash: {e!s}")

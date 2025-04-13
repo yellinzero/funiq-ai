@@ -3,7 +3,7 @@ from enum import Enum
 
 from pydantic import BaseModel
 
-from providers.models.core.models.model import ModelUsage
+from providers.models.core.models import ModelUsage
 
 
 class EmbeddingInputType(Enum):

@@ -2,9 +2,8 @@ import importlib
 from abc import ABC, abstractmethod
 from typing import ClassVar
 
-from providers.models.core.base_model import AIModel
-from providers.models.core.models.model import AIModelEntity, ModelType
-from providers.models.core.models.provider import ProviderEntity
+from providers.models.core import AIModel
+from providers.models.core.models import AIModelEntity, ModelType, ProviderEntity
 from utils.common.i18n import get_current_locale_code_with_territory
 from utils.json_schema import UiSchema
 

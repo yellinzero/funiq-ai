@@ -12,7 +12,7 @@ from .mixins import (
     TemplateHandlingMixin,
     ValidateHandlingMixin,
 )
-from .models import OperatorCallbackContext, OperatorState
+from .schemas import OperatorCallbackContext, OperatorState
 
 
 class BaseOperator(

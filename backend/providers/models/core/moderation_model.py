@@ -1,7 +1,7 @@
 from abc import abstractmethod
 
 from providers.models.core import AIModel
-from providers.models.core.models import ModelType
+from providers.models.core.schemas import ModelType
 
 
 class ModerationModel(AIModel):

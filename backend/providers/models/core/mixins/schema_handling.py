@@ -8,7 +8,7 @@ from loguru import logger
 from utils.common.i18n import get_current_locale_code_with_territory
 from utils.json_schema import JSONSchema
 
-from ..models import (
+from ..schemas import (
     PARAMETER_RULE_TEMPLATE,
     AIModelEntity,
     ConfigurateMethod,

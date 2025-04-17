@@ -5,50 +5,48 @@ from typing import ClassVar, Sequence
 from loguru import logger
 
 from providers.models.core import ModelProvider
-from providers.models.core.models import AIModelEntity, ModelType
+from providers.models.core.schemas import AIModelEntity, ModelType
 
 
 class ProviderFactory:
-    _provider_instance_map: ClassVar[dict[str, ModelProvider]] = {}
+    _provider_class_map: ClassVar[dict[str, type[ModelProvider]]] = {}
 
     @classmethod
     def get_provider_instance(cls, provider_name: str) -> ModelProvider:
         """
-        Get provider instance by provider name
+        Get provider instance by provider name.
+        Creates a new instance each time to avoid concurrency issues.
 
         :param provider_name: provider name (e.g. 'anthropic', 'deepseek')
         :return: ModelProvider instance
         """
-        # Check cache first
-        if provider_name in cls._provider_instance_map:
-            return cls._provider_instance_map[provider_name]
+        if provider_name in cls._provider_class_map:
+            return cls._provider_class_map[provider_name]()
 
         try:
-            # Construct module path
+            # construct module path
             module_path = f"providers.models.{provider_name}.{provider_name}"
-            # Import module
+            # import module
             module = importlib.import_module(module_path)
 
-            # Find provider class by looking for classes with provider_name attribute
+            # find provider class
+            provider_class = None
             for attr_name in dir(module):
                 attr = getattr(module, attr_name)
-                if (
-                    isinstance(attr, type)
-                    and issubclass(attr, ModelProvider)
-                    and getattr(attr, "provider_name", None) == provider_name
-                ):
+                if (isinstance(attr, type) 
+                    and issubclass(attr, ModelProvider) 
+                    and getattr(attr, "provider_name", None) == provider_name):
                     provider_class = attr
                     break
             else:
-                # Fallback to old naming convention if no provider_name found
+                # if not found, use old naming convention
                 class_name = f"{provider_name.capitalize()}Provider"
                 provider_class = getattr(module, class_name)
 
-            # Create instance
-            provider = provider_class()
-            # Cache instance
-            cls._provider_instance_map[provider_name] = provider
-            return provider
+            # cache class definition (not instance)
+            cls._provider_class_map[provider_name] = provider_class
+            # return new instance
+            return provider_class()
         except (ImportError, AttributeError) as e:
             raise ValueError(f"Could not load provider implementation for {provider_name}: {e!s}") from e
 

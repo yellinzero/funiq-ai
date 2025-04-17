@@ -11,7 +11,7 @@ from app.core.models.app import App
 from app.core.models.model_provider import Model, ModelProvider
 from configs import funiq_ai_config
 from providers.models.core import ProviderFactory
-from providers.models.core.models import ConfigurateMethod
+from providers.models.core.schemas import ConfigurateMethod
 
 from ..schemas import ModelInfo, ProviderInfo, SaveModelRequest, SaveProviderRequest
 

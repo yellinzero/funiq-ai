@@ -4,7 +4,7 @@ from openai import OpenAI
 
 from providers.models.core import Speech2TextModel
 from providers.models.core.errors import CredentialsValidateFailedError
-from providers.models.core.models import AIModelEntity, ConfigurateMethod, ModelType
+from providers.models.core.schemas import AIModelEntity, ConfigurateMethod, ModelType
 from providers.models.openai.core import OpenAICore
 
 

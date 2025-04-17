@@ -1,7 +1,7 @@
 
 from .base_operator import BaseOperator
-from .models import OperatorEntity, OperatorName, OperatorType, OutputStream, OutputStreamType
 from .operator_factory import OperatorFactory
+from .schemas import OperatorEntity, OperatorName, OperatorType, OutputStream, OutputStreamType
 
 __all__ = [
     "BaseOperator",

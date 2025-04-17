@@ -12,7 +12,7 @@ from app.core.models.workflow import (
 )
 from infrastructure import with_session
 from providers.operators.core import OperatorFactory
-from providers.operators.core.models import OperatorCallbackContext
+from providers.operators.core.schemas import OperatorCallbackContext
 from utils.common.datetime import utcnow
 
 from .lifecycle import LifecycleMixin

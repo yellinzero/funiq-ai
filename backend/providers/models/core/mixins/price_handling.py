@@ -2,7 +2,7 @@ import decimal
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 
-from ..models import AIModelEntity, PriceInfo, PriceType
+from ..schemas import AIModelEntity, PriceInfo, PriceType
 
 
 class PriceHandlingMixin(ABC):

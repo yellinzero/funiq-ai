@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import ClassVar
 
 from providers.models.core import AIModel
-from providers.models.core.models import AIModelEntity, ModelType, ProviderEntity
+from providers.models.core.schemas import AIModelEntity, ModelType, ProviderEntity
 from utils.common.i18n import get_current_locale_code_with_territory
 from utils.json_schema import UiSchema
 

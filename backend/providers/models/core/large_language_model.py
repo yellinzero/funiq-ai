@@ -12,6 +12,7 @@ from utils.json_schema import JSONSchema
 from .base_model import AIModel
 from .callbacks.base_callback import Callback
 from .callbacks.logging_callback import LoggingCallback
+from .prompts.defaults import BLOCK_MODE_PROMPT
 from .schemas.llm import LLMMode, LLMResult, LLMResultChunk, LLMResultChunkDelta, LLMUsage
 from .schemas.message import (
     AssistantPromptMessage,
@@ -22,7 +23,6 @@ from .schemas.message import (
     UserPromptMessage,
 )
 from .schemas.model import ModelType, PriceType
-from .prompts.defaults import BLOCK_MODE_PROMPT
 
 
 class LargeLanguageModel(AIModel):

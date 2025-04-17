@@ -31,6 +31,7 @@ from providers.models.core.errors import (
     InvokeRateLimitError,
     InvokeServerUnavailableError,
 )
+from providers.models.core.prompts import BLOCK_MODE_PROMPT
 from providers.models.core.schemas import (
     AssistantPromptMessage,
     ImagePromptMessageContent,
@@ -45,7 +46,6 @@ from providers.models.core.schemas import (
     ToolPromptMessage,
     UserPromptMessage,
 )
-from providers.models.core.prompts import BLOCK_MODE_PROMPT
 
 
 class AnthropicLargeLanguageModel(LargeLanguageModel):

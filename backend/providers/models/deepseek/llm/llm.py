@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 
 import tiktoken
 
-from providers.models.core.models import (
+from providers.models.core.schemas import (
     LLMResult,
     PromptMessage,
     PromptMessageTool,

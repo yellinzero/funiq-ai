@@ -7,7 +7,7 @@ from openai import OpenAI
 
 from providers.models.core import TextEmbeddingModel
 from providers.models.core.errors import CredentialsValidateFailedError
-from providers.models.core.models import EmbeddingInputType, EmbeddingUsage, PriceType, TextEmbeddingResult
+from providers.models.core.schemas import EmbeddingInputType, EmbeddingUsage, PriceType, TextEmbeddingResult
 from providers.models.openai.core import OpenAICore
 
 

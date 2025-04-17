@@ -3,7 +3,7 @@ from openai.types import ModerationCreateResponse
 
 from providers.models.core import ModerationModel
 from providers.models.core.errors import CredentialsValidateFailedError
-from providers.models.core.models import ModelPropertyKey
+from providers.models.core.schemas import ModelPropertyKey
 from providers.models.openai.core import OpenAICore
 
 

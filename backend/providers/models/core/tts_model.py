@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from typing import Any
 
 from providers.models.core import AIModel
-from providers.models.core.models import ModelPropertyKey, ModelType
+from providers.models.core.schemas import ModelPropertyKey, ModelType
 
 
 class TTSModel(AIModel):

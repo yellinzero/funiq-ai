@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Generator
 from typing import Any, ClassVar, Dict, List, Tuple
 
-from ..models import OperatorEntity, OutputStream
+from ..schemas import OperatorEntity, OutputStream
 
 
 class StreamHandlingMixin(ABC):

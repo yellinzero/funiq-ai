@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.models.model_provider import Model, ModelProvider
 from infrastructure import with_session
 from providers.models.core import LargeLanguageModel, ProviderFactory
-from providers.models.core.models import LLMResult, ModelType, UserPromptMessage
+from providers.models.core.schemas import LLMResult, ModelType, UserPromptMessage
 
 from ..core import OperatorName
 from ..core.base_operator import BaseOperator

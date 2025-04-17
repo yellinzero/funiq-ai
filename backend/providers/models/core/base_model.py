@@ -6,7 +6,7 @@ from .mixins.error_handling import ErrorHandlingMixin
 from .mixins.price_handling import PriceHandlingMixin
 from .mixins.schema_handling import SchemaHandlingMixin
 from .mixins.timing_handling import TimingHandlingMixin
-from .models.model import (
+from .schemas.model import (
     ModelType,
 )
 

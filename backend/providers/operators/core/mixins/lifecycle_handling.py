@@ -3,7 +3,7 @@ from typing import Callable, Coroutine, Union
 
 from loguru import logger
 
-from ..models import OperatorCallbackContext, OperatorName, OperatorState
+from ..schemas import OperatorCallbackContext, OperatorName, OperatorState
 
 
 class LifecycleHandlingMixin:

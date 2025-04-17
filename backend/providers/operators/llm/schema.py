@@ -1,4 +1,4 @@
-from providers.models.core.models import LLMResult, LLMResultChunk
+from providers.models.core.schemas import LLMResult, LLMResultChunk
 from providers.operators.core import OperatorName, OperatorType, OutputStreamType
 from utils.common.i18n import gettext_lazy as _
 

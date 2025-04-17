@@ -12,8 +12,8 @@ from utils.json_schema import JSONSchema
 from .base_model import AIModel
 from .callbacks.base_callback import Callback
 from .callbacks.logging_callback import LoggingCallback
-from .models.llm import LLMMode, LLMResult, LLMResultChunk, LLMResultChunkDelta, LLMUsage
-from .models.message import (
+from .schemas.llm import LLMMode, LLMResult, LLMResultChunk, LLMResultChunkDelta, LLMUsage
+from .schemas.message import (
     AssistantPromptMessage,
     PromptMessage,
     PromptMessageContentType,
@@ -21,7 +21,7 @@ from .models.message import (
     SystemPromptMessage,
     UserPromptMessage,
 )
-from .models.model import ModelType, PriceType
+from .schemas.model import ModelType, PriceType
 from .prompts.defaults import BLOCK_MODE_PROMPT
 
 

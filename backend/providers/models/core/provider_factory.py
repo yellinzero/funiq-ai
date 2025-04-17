@@ -5,7 +5,7 @@ from typing import ClassVar, Sequence
 from loguru import logger
 
 from providers.models.core import ModelProvider
-from providers.models.core.models import AIModelEntity, ModelType
+from providers.models.core.schemas import AIModelEntity, ModelType
 
 
 class ProviderFactory:

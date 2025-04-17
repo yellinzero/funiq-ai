@@ -2,7 +2,7 @@ from loguru import logger
 
 from providers.models.core import ModelProvider
 from providers.models.core.errors import CredentialsValidateFailedError
-from providers.models.core.models import ModelType
+from providers.models.core.schemas import ModelType
 
 
 class DeepSeekProvider(ModelProvider):

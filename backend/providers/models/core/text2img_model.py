@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import IO
 
 from providers.models.core import AIModel
-from providers.models.core.models import ModelType
+from providers.models.core.schemas import ModelType
 
 
 class Text2ImageModel(AIModel):

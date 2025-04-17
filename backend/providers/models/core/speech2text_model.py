@@ -5,7 +5,7 @@ from typing import IO
 from pydantic import ConfigDict
 
 from providers.models.core import AIModel
-from providers.models.core.models import ModelType
+from providers.models.core.schemas import ModelType
 
 
 class Speech2TextModel(AIModel):

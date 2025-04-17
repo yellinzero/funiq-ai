@@ -6,7 +6,7 @@ from loguru import logger
 
 from utils.common.i18n import get_current_locale_code_with_territory
 
-from ..models import OperatorEntity
+from ..schemas import OperatorEntity
 
 
 class SchemaHandlingMixin:

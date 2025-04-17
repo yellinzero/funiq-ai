@@ -31,7 +31,7 @@ from providers.models.core.errors import (
     InvokeRateLimitError,
     InvokeServerUnavailableError,
 )
-from providers.models.core.models import (
+from providers.models.core.schemas import (
     AssistantPromptMessage,
     ImagePromptMessageContent,
     LLMResult,

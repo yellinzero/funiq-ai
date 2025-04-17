@@ -13,7 +13,7 @@ from openai.types.chat.chat_completion_message import FunctionCall
 from providers.models.core import LargeLanguageModel
 from providers.models.core.callbacks import Callback
 from providers.models.core.errors import CredentialsValidateFailedError
-from providers.models.core.models import (
+from providers.models.core.schemas import (
     AIModelEntity,
     AssistantPromptMessage,
     AudioPromptMessageContent,

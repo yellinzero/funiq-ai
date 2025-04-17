@@ -5,7 +5,7 @@ from sqlalchemy import JSON, Boolean, ForeignKey, ForeignKeyConstraint, String, 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from infrastructure import DBBase, DBUUIDModelMixin
-from providers.models.core.models import (
+from providers.models.core.schemas import (
     ConfigurateMethod,
     ModelFeature,
     ModelPropertyKey,

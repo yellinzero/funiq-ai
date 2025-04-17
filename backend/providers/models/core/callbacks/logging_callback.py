@@ -5,7 +5,7 @@ from loguru import logger
 
 from providers.models.core import AIModel
 from providers.models.core.callbacks import Callback
-from providers.models.core.models import LLMResult, LLMResultChunk, PromptMessage, PromptMessageTool
+from providers.models.core.schemas import LLMResult, LLMResultChunk, PromptMessage, PromptMessageTool
 
 
 class LoggingCallback(Callback):

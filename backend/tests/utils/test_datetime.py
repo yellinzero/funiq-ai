@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 import pytz
 
-from utils.common.datatime import (
+from utils.common.datetime import (
     fromtimestamp,
     now,
     to_utc,

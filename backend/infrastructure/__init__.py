@@ -34,6 +34,7 @@ from .redis.core import (
     with_redis,
     with_sync_redis,
 )
+from .workflow_engine import WorkflowDebugEngine, WorkflowVersionEngine
 
 __all__ = [
     "AsyncSessionLocal",
@@ -42,6 +43,8 @@ __all__ = [
     "DBSoftDeleteMixin",
     "DBUUIDModelMixin",
     "RedisRateLimiter",
+    "WorkflowDebugEngine",
+    "WorkflowVersionEngine",
     "create_celery_app",
     "email_service",
     "engine",
@@ -59,5 +62,5 @@ __all__ = [
     "update_database_schema",
     "with_redis",
     "with_session",
-    "with_sync_redis",
+    "with_sync_redis"
 ]

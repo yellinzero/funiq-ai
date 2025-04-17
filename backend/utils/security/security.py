@@ -13,7 +13,7 @@ from redis import Redis
 from app.core.errors import AccountErrorCode
 from configs import funiq_ai_config
 from infrastructure import with_sync_redis
-from utils.common.datatime import utcnow
+from utils.common.datetime import utcnow
 
 # JWT configuration
 ALGORITHM = "HS256"

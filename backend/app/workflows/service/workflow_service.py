@@ -1,8 +1,9 @@
 import hashlib
+from collections.abc import AsyncGenerator, Generator
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Tuple
 
-from fastapi import status
+from fastapi import Request, status
 from loguru import logger
 from nanoid import generate
 from sqlalchemy import select
@@ -19,7 +20,7 @@ from app.core.models.workflow import (
     WorkflowVersion,
     WorkflowVersionStatus,
 )
-from app.workflows.core import WorkflowDebugStreamExecutor, WorkflowVersionStreamExecutor
+from infrastructure.workflow_engine import WorkflowDebugEngine, WorkflowVersionEngine
 from providers.operators.core import OperatorName
 from tasks.workflow_tasks import execute_workflow as celery_execute_workflow
 from utils.common.json import json_dumps
@@ -322,6 +323,7 @@ class WorkflowService:
     @staticmethod
     async def execute_workflow_stream(
         session: AsyncSession,
+        request: Request,
         workflow_id: str,
         input_data: Dict[str, Any],
         execution_context: Dict[str, Any],
@@ -345,7 +347,7 @@ class WorkflowService:
 
         # Create and execute appropriate executor
         if version:
-            executor = WorkflowVersionStreamExecutor(
+            executor = WorkflowVersionEngine(
                 workflow_id=workflow_id,
                 version=version,
                 snapshot=snapshot,
@@ -354,7 +356,7 @@ class WorkflowService:
                 execution_context=execution_context,
             )
         else:
-            executor = WorkflowDebugStreamExecutor(
+            executor = WorkflowDebugEngine(
                 workflow_id=workflow_id,
                 snapshot=snapshot,
                 snapshot_hash=snapshot_hash,
@@ -364,7 +366,31 @@ class WorkflowService:
             )
 
         await executor.initialize()
-        return executor.execute()
+        
+        stream = await executor.execute()
+            
+        async def generate():
+            all_chunks = []
+            try:
+                if isinstance(stream, Generator):
+                    for chunk in stream:
+                        all_chunks.append(chunk)
+                        yield f"data: {chunk.model_dump_json()}\n\n"
+                elif isinstance(stream, AsyncGenerator):    
+                    async for chunk in stream:
+                        all_chunks.append(chunk)
+                        yield f"data: {chunk.model_dump_json()}\n\n"
+            except Exception as e:
+                logger.error(f"Error in stream generation: {e!s}")
+                error_message = {"error": str(e)}
+                yield f"data: {json_dumps(error_message)}\n\n"
+            finally:
+                try:
+                    await executor.cancel()
+                    logger.info(f"Total chunks collected: {len(all_chunks)}")
+                except Exception as e:
+                    logger.error(f"Error while consuming remaining stream: {e}")
+        return generate
     
     @staticmethod
     async def execute_workflow_sync(

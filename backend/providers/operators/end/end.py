@@ -27,7 +27,10 @@ class EndOperator(BaseOperator):
             if not self.has_stream_inputs:
                 raise ValueError("End operator has no stream inputs")
             
-            return input_data[self.stream_node_ids[0]]
+            async def generator():
+                async for chunk in input_data[self.stream_node_ids[0]]:
+                    yield chunk
+            return generator()
         
         if not self.is_stream:
             if not config:

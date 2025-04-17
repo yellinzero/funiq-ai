@@ -11,8 +11,8 @@ from app.core.models.workflow import (
     WorkflowSnapshot,
     WorkflowVersion,
 )
-from app.workflows.core.executor import WorkflowDebugExecutor, WorkflowVersionExecutor
 from infrastructure import with_session
+from infrastructure.workflow_engine import WorkflowDebugEngine, WorkflowVersionEngine
 
 
 @with_session
@@ -114,7 +114,7 @@ async def _execute_workflow_async(
             if is_stream:
                 raise RuntimeError("Task run not supported for stream execution")
             logger.info(f"Starting version workflow execution: {workflow_id} (version: {version})")
-            executor = WorkflowVersionExecutor(
+            executor = WorkflowVersionEngine(
                 workflow_id=workflow_id,
                 version=version,
                 snapshot=snapshot_data,
@@ -132,7 +132,7 @@ async def _execute_workflow_async(
             if is_stream:
                 raise RuntimeError("Task run not supported for stream execution")
             logger.info(f"Starting debug workflow execution: {workflow_id} (timestamp: {snapshot_timestamp})")
-            executor = WorkflowDebugExecutor(
+            executor = WorkflowDebugEngine(
                 workflow_id=workflow_id,
                 snapshot=snapshot_data,
                 snapshot_hash=snapshot_hash,

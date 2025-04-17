@@ -1,9 +1,7 @@
-import json
 
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 from fastapi_async_sqlalchemy import db
-from loguru import logger
 
 from app.account.service.account_service import AccountService
 from app.account.service.tenant_service import TenantService
@@ -119,8 +117,9 @@ async def stream_workflow(
     account = await AccountService.get_account_info(db.session, request)
     user = await TenantService.get_user_by_account_id(db.session, tenant_id, account.id)
     
-    stream = await WorkflowService.execute_workflow_stream(
+    generate = await WorkflowService.execute_workflow_stream(
         session=db.session,
+        request=request,
         workflow_id=workflow_id,
         input_data=stream_request.input_data,
         execution_context={
@@ -130,15 +129,6 @@ async def stream_workflow(
         version=stream_request.version,
         snapshot_timestamp=stream_request.snapshot_timestamp
     )
-    
-    async def generate():
-        try:
-            async for chunk in stream:
-                yield f"data: {chunk.model_dump_json()}\n\n"
-        except Exception as e:
-            logger.error(f"Error in stream generation: {e!s}")
-            error_message = {"error": str(e)}
-            yield f"data: {json.dumps(error_message)}\n\n"
     
     return StreamingResponse(
         generate(),

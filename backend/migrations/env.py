@@ -7,6 +7,7 @@ from infrastructure import DBBase, load_models
 from alembic import context
 
 load_models('app.core.models')
+load_models('infrastructure.workflow_engine.core')
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config

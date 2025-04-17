@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.account.schemas import TenantResponse, UserResponse
 from app.core.errors import AccountErrorCode, CommonErrorCode
 from app.core.models.account import Account, Tenant, TenantInvite, TenantInviteStatus, TenantUserRole, User
-from utils.common.datatime import utcnow
+from utils.common.datetime import utcnow
 
 
 class TenantService:

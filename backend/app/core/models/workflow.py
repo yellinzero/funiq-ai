@@ -5,7 +5,6 @@ import uuid
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
-from prefect.client.schemas.objects import StateType
 from sqlalchemy import JSON, DateTime, Enum, ForeignKey, ForeignKeyConstraint, Index, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -266,101 +265,6 @@ class WorkflowVersion(DBBase):
     )
 
 
-class WorkflowExecution(DBBase):
-    """Workflow execution tracking model.
-
-    Records details about each execution of a workflow, including timing,
-    status, and execution results.
-    """
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, comment="Unique identifier for this execution"
-    )
-    workflow_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("workflows.id", ondelete="CASCADE"), nullable=False, comment="Reference to the executed workflow"
-    )
-    version: Mapped[str] = mapped_column(
-        String(50),
-        ForeignKey("workflow_versions.version", ondelete="CASCADE"),
-        nullable=False,
-        comment="Version of the workflow that was executed",
-    )
-
-    flow_run_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, comment="Prefect flow run identifier"
-    )
-    status: Mapped[StateType] = mapped_column(
-        Enum(StateType), nullable=False, comment="Current status of the execution"
-    )
-    start_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, comment="When the execution started")
-    end_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, comment="When the execution completed")
-    record_info: Mapped[dict[str, Any]] = mapped_column(JSON, comment="Additional execution metadata and results")
-
-    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
-    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-
-    # Relationships
-    workflow_version: Mapped[WorkflowVersion] = relationship(
-        "WorkflowVersion", foreign_keys=[workflow_id, version], backref="executions"
-    )
-
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ["workflow_id", "version"],
-            ["workflow_versions.workflow_id", "workflow_versions.version"],
-            name="fk_execution_version",
-            ondelete="CASCADE",
-        ),
-        Index("idx_execution_workflow_status", "workflow_id", "status"),
-        Index("idx_execution_start_time", "start_time"),
-        Index("idx_execution_version", "workflow_id", "version"),
-    )
-
-
-class WorkflowNodeExecution(DBBase):
-    """Individual node execution tracking model.
-
-    Records details about the execution of each node within a workflow run,
-    including timing, status, and execution results.
-    """
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, comment="Unique identifier for this node execution"
-    )
-    execution_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("workflow_executions.id", ondelete="CASCADE"),
-        nullable=False,
-        comment="Reference to the parent workflow execution",
-    )
-    node_key: Mapped[str] = mapped_column(String(10), nullable=False, comment="Reference to the executed node")
-    flow_run_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, comment="Prefect flow run identifier"
-    )
-    task_run_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, comment="Prefect task run identifier"
-    )
-    status: Mapped[StateType] = mapped_column(
-        Enum(StateType), nullable=False, comment="Current status of the node execution"
-    )
-    start_time: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True, comment="When the node execution started"
-    )
-    end_time: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True, comment="When the node execution completed"
-    )
-    record_info: Mapped[dict[str, Any]] = mapped_column(JSON, comment="Additional node execution metadata and results")
-
-    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
-    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    # Relationships
-    workflow_execution: Mapped[WorkflowExecution] = relationship("WorkflowExecution", backref="node_executions")
-
-    __table_args__ = (
-        Index("idx_node_execution_flow", "flow_run_id", "status"),
-        Index("idx_node_execution_workflow", "execution_id"),
-    )
-
-
 class WorkflowSnapshot(DBBase):
     """Workflow snapshot model."""
 
@@ -386,65 +290,3 @@ class WorkflowSnapshot(DBBase):
     )
 
 
-class WorkflowDebugExecution(DBBase):
-    """Workflow debug execution model."""
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    workflow_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("workflows.id", ondelete="CASCADE"), nullable=False, index=True
-    )
-    snapshot_timestamp: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, comment="Timestamp of the workflow snapshot used for debugging"
-    )
-    flow_run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    status: Mapped[StateType] = mapped_column(Enum(StateType), nullable=False)
-    start_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    end_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    record_info: Mapped[dict[str, Any]] = mapped_column(JSON)
-
-    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
-    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    
-    # Relationships
-    workflow_snapshot: Mapped[WorkflowSnapshot] = relationship(
-        "WorkflowSnapshot", foreign_keys=[workflow_id, snapshot_timestamp]
-    )
-
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ["workflow_id", "snapshot_timestamp"],
-            ["workflow_snapshots.workflow_id", "workflow_snapshots.snapshot_timestamp"],
-            name="fk_debug_execution_snapshot",
-            ondelete="CASCADE",
-        ),
-        Index("idx_debug_execution_workflow", "workflow_id"),
-        Index("idx_debug_execution_snapshot", "workflow_id", "snapshot_timestamp"),
-    )
-
-
-class WorkflowNodeDebugExecution(DBBase):
-    """Workflow node debug execution model."""
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    execution_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("workflow_debug_executions.id", ondelete="CASCADE"),
-        nullable=False,
-        comment="Reference to the parent workflow debug execution",
-    )
-    node_key: Mapped[str] = mapped_column(String(10), nullable=False)
-    flow_run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    task_run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    status: Mapped[StateType] = mapped_column(Enum(StateType), nullable=False)
-    start_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    end_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    record_info: Mapped[dict[str, Any]] = mapped_column(JSON)
-
-    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
-    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-
-    # Relationships
-    workflow_debug_execution: Mapped[WorkflowDebugExecution] = relationship(
-        "WorkflowDebugExecution", backref="node_executions"
-    )
-
-    __table_args__ = (Index("idx_node_debug_execution_workflow", "execution_id"),)

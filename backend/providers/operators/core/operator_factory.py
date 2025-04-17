@@ -8,27 +8,29 @@ from .base_operator import BaseOperator
 
 
 class OperatorFactory:
-    _operator_instance_map: ClassVar[dict[str, BaseOperator]] = {}
+    _operator_class_map: ClassVar[dict[str, type[BaseOperator]]] = {}
 
     @classmethod
-    def get_operator_instance(cls, operator_name: str) -> BaseOperator:
+    def get_operator_instance(cls, operator_name: str, **kwargs) -> BaseOperator:
         """
-        Get operator instance by operator type
+        Get a new operator instance by operator type.
+        Creates a new instance each time to avoid concurrency issues.
 
         :param operator_name: operator type (e.g. 'start', 'llm', 'end')
         :return: BaseOperator instance
         """
-        # Check cache first
-        if operator_name in cls._operator_instance_map:
-            return cls._operator_instance_map[operator_name]
+        # get from cache
+        if operator_name in cls._operator_class_map:
+            return cls._operator_class_map[operator_name](**kwargs)
 
         try:
-            # Construct module path
+            # construct module path
             module_path = f"providers.operators.{operator_name}.{operator_name}"
-            # Import module
+            # import module
             module = importlib.import_module(module_path)
             
-            # Find operator class by looking for classes with operator_name attribute
+            # find operator class
+            operator_class = None
             for attr_name in dir(module):
                 attr = getattr(module, attr_name)
                 if (isinstance(attr, type) and 
@@ -38,15 +40,14 @@ class OperatorFactory:
                     operator_class = attr
                     break
             else:
-                # Fallback to old naming convention if no operator_name found
+                # if not found, use old naming convention
                 class_name = f"{operator_name.capitalize()}Operator"
                 operator_class = getattr(module, class_name)
             
-            # Create instance
-            operator = operator_class()
-            # Cache instance
-            cls._operator_instance_map[operator_name] = operator
-            return operator
+            # cache class definition (not instance)
+            cls._operator_class_map[operator_name] = operator_class
+            # return new instance
+            return operator_class(**kwargs)
         except (ImportError, AttributeError) as e:
             raise ValueError(f"Could not load operator implementation for {operator_name}: {e!s}") from e
 

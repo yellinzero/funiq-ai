@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from pydantic import BaseModel
 
@@ -15,14 +15,21 @@ class OperatorName(str, Enum):
     START = "start"  # Entry point node of the workflow
     
 
-class OperatorType(Enum): 
+class OperatorState(str, Enum):
+    CREATED = "created"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class OperatorType(str, Enum): 
     TASK = "task"
     START = "start"
     END = "end"
     LOGIC = "logic"
 
 
-class OutputStreamType(Enum):
+class OutputStreamType(str, Enum):
     SELF = "self"
     EXTERNAL = "external"
 
@@ -44,3 +51,30 @@ class OperatorEntity(BaseModel):
     output_schema: JSONSchema
     config_schema: JSONSchema
     config_ui_schema: UiSchema | None = None 
+    
+
+if TYPE_CHECKING:
+    from providers.operators.core.base_operator import BaseOperator
+
+
+class OperatorCallbackContext:
+    """Callback context containing operator execution information."""
+    def __init__(
+        self,
+        operator: 'BaseOperator',
+        input_data: dict[str, Any] | None = None,
+        config: dict[str, Any] | None = None,
+        execution_context: dict[str, Any] | None = None,
+        result: Any = None,
+        error: Exception | None = None
+    ):
+        self.operator = operator
+        self.input_data = input_data
+        self.config = config
+        self.execution_context = execution_context
+        self.result = result
+        self.error = error
+
+    @property
+    def state(self) -> 'OperatorState':
+        return self.operator.state

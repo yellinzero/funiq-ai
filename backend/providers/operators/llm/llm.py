@@ -1,16 +1,13 @@
 from collections.abc import Generator
 from typing import Dict, Union
 
-from loguru import logger
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.models.model_provider import Model, ModelProvider
-from app.core.models.workflow import WorkflowNodeDebugExecution, WorkflowNodeExecution
 from infrastructure import with_session
 from providers.models.core import LargeLanguageModel, ProviderFactory
 from providers.models.core.models import LLMResult, ModelType, UserPromptMessage
-from utils.common.json import json_dumps
 
 from ..core import OperatorName
 from ..core.base_operator import BaseOperator
@@ -99,46 +96,3 @@ class LLMOperator(BaseOperator):
         result = await session.execute(stmt)
         model = result.scalar_one_or_none()
         return model
-
-    async def _update_node_execution_record(self, session: AsyncSession, execution_context: Dict, output: Dict) -> None:
-        """Update node execution record with LLM specific information.
-
-        Args:
-            session: Database session
-            execution_context: Execution context containing execution details
-            output: Output from LLM execution
-        """
-        # Extract the information needed for the execution record
-        record_info = json_dumps({"type": output["type"], "usage": output["usage"]})
-
-        # according to whether there is a snapshot_timestamp to determine whether it is a debug execution
-        if "snapshot_timestamp" in execution_context:
-            # debug execution
-            stmt = (
-                update(WorkflowNodeDebugExecution)
-                .where(
-                    WorkflowNodeDebugExecution.execution_id == execution_context["execution_id"],
-                    WorkflowNodeDebugExecution.node_key == execution_context["node_key"],
-                    WorkflowNodeDebugExecution.task_run_id == execution_context["task_run_id"],
-                )
-                .values(record_info=record_info)
-            )
-        else:
-            # normal execution record
-            stmt = (
-                update(WorkflowNodeExecution)
-                .where(
-                    WorkflowNodeExecution.execution_id == execution_context["execution_id"],
-                    WorkflowNodeExecution.node_key == execution_context["node_key"],
-                    WorkflowNodeExecution.task_run_id == execution_context["task_run_id"],
-                )
-                .values(record_info=record_info)
-            )
-
-        try:
-            await session.execute(stmt)
-            await session.commit()
-        except Exception as e:
-            logger.error(f"Failed to update node execution record: {e}")
-            await session.rollback()
-            raise

@@ -33,7 +33,7 @@ from tasks.email_tasks import (
     send_reset_password_verification_email_task,
     send_signup_verification_email_task,
 )
-from utils.common.datatime import utcnow
+from utils.common.datetime import utcnow
 from utils.security import (
     AccountTokenManager,
     AccountTokenType,

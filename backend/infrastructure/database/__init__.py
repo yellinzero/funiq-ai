@@ -2,18 +2,12 @@ import importlib
 import pkgutil
 
 from .core import (
-    # Session and Engine
-    AsyncSessionLocal,
-    # Rate limiting
     create_transient_session,
-    engine,
-    # Session management
+    get_engine,
     get_session,
-    # Database management functions
+    get_sync_engine,
     init_database,
-    # Redis clients
     shutdown_database,
-    sync_engine,
     update_database_schema,
     with_session,
 )
@@ -44,7 +38,6 @@ def load_models(package_name: str) -> None:
 
 
 __all__ = [
-    "AsyncSessionLocal",
     "DBAuditFieldsMixin",
     "DBBase",
     "DBBaseModelMixin",
@@ -52,13 +45,13 @@ __all__ = [
     "DBSoftDeleteMixin",
     "DBUUIDModelMixin",
     "create_transient_session",
-    "engine",
+    "get_engine",
     "get_session",
+    "get_sync_engine",
     "init_database",
     "load_models",
     "resolve_table_name",
     "shutdown_database",
-    "sync_engine",
     "update_database_schema",
     "with_session",
 ]

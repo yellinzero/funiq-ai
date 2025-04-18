@@ -10,20 +10,21 @@ LOG_DIR = Path("logs")
 LOG_DIR.mkdir(exist_ok=True)
 
 # Common constants
-DEFAULT_LOG_FORMAT = (
+DETAILED_LOG_FORMAT = (
     "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
     "<level>{level: <8}</level> | "
-    "<cyan>{process}</cyan>:<cyan>{thread}</cyan> | "
-    "<blue>{name}</blue> | "
-    "<cyan>{file}:{function}:{line}</cyan> | "
+    "process=<cyan>{process.name}({process.id})</cyan> | "
+    "thread=<cyan>{thread.name}({thread.id})</cyan> | "
+    "<blue>{name}</blue>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
+    "file=<blue>{file.path}</blue> | "
     "<level>{message}</level>"
+    "{exception}\n"
 )
-
 # Console 
 CONSOLE_LOG_FORMAT = (
     "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
     "<level>{level: <8}</level> | "
-    "<cyan>{name}</cyan>:<cyan>{function}</cyan> | "
+    "<blue>{name}</blue>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
     "<level>{message}</level>"
 )
 
@@ -34,7 +35,7 @@ class LogConfig(BaseSettings):
     """
     # Basic logging settings
     LOG_LEVEL: str = Field(default="INFO", description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)")
-    LOG_FORMAT: str = Field(default=DEFAULT_LOG_FORMAT, description="Log format string")
+    LOG_FORMAT: str = Field(default=DETAILED_LOG_FORMAT, description="Log format string")
     
     # File logging settings
     LOG_FILENAME: str = Field(

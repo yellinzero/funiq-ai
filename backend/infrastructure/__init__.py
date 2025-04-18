@@ -3,13 +3,13 @@ from .celery.celery import (
     init_celery,
 )
 from .database import (
-    AsyncSessionLocal,
     DBAuditFieldsMixin,
     DBBase,
     DBSoftDeleteMixin,
     DBUUIDModelMixin,
-    engine,
+    get_engine,
     get_session,
+    get_sync_engine,
     init_database,
     load_models,
     shutdown_database,
@@ -34,23 +34,38 @@ from .redis.core import (
     with_redis,
     with_sync_redis,
 )
-from .workflow_engine import WorkflowDebugEngine, WorkflowVersionEngine
+from .workflow_engine import (
+    WorkflowDebugEngine,
+    WorkflowDebugExecution,
+    WorkflowDebugLog,
+    WorkflowExecution,
+    WorkflowExecutionLog,
+    WorkflowFlow,
+    WorkflowTask,
+    WorkflowVersionEngine,
+)
 
 __all__ = [
-    "AsyncSessionLocal",
     "DBAuditFieldsMixin",
     "DBBase",
     "DBSoftDeleteMixin",
     "DBUUIDModelMixin",
     "RedisRateLimiter",
     "WorkflowDebugEngine",
+    "WorkflowDebugExecution",
+    "WorkflowDebugLog",
+    "WorkflowExecution",
+    "WorkflowExecutionLog",
+    "WorkflowFlow",
+    "WorkflowTask",
     "WorkflowVersionEngine",
     "create_celery_app",
     "email_service",
-    "engine",
+    "get_engine",
     "get_redis_client",
     "get_redis_connection_pool",
     "get_session",
+    "get_sync_engine",
     "init_celery",
     "init_database",
     "init_email_service",
@@ -62,5 +77,5 @@ __all__ = [
     "update_database_schema",
     "with_redis",
     "with_session",
-    "with_sync_redis"
+    "with_sync_redis",
 ]

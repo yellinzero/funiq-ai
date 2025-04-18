@@ -20,7 +20,7 @@ from app.core.models.workflow import (
     WorkflowVersion,
     WorkflowVersionStatus,
 )
-from infrastructure.workflow_engine import WorkflowDebugEngine, WorkflowVersionEngine
+from infrastructure import WorkflowDebugEngine, WorkflowVersionEngine
 from providers.operators.core import OperatorName
 from tasks.workflow_tasks import execute_workflow as celery_execute_workflow
 from utils.common.json import json_dumps

@@ -1,9 +1,10 @@
 import contextlib
 import functools
 from collections.abc import Awaitable, Callable
-from typing import Any, TypeVar
+from typing import Any, Optional, TypeVar
 
-from sqlalchemy import create_engine
+from loguru import logger
+from sqlalchemy import Engine, create_engine
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
 from configs import funiq_ai_config
@@ -14,38 +15,46 @@ from .models import DBBase
 T = TypeVar("T")
 R = TypeVar("R")
 
-# Database engine and session factory
-sync_engine = create_engine(
-    url=funiq_ai_config.SYNC_DATABASE_URL,
-    echo=funiq_ai_config.DATABASE_ECHO,
-    pool_size=funiq_ai_config.SYNC_DATABASE_POOL_SIZE,
-    pool_pre_ping=True,
-    json_serializer=json_dumps,
-    json_deserializer=json_loads,
-)
+# Global engine instance
+_engine: Optional[AsyncEngine] = None
+_sync_engine: Optional[Engine] = None
 
-engine: AsyncEngine = create_async_engine(
-    url=funiq_ai_config.ASYNC_DATABASE_URL,
-    echo=funiq_ai_config.DATABASE_ECHO,
-    pool_size=funiq_ai_config.ASYNC_DATABASE_POOL_SIZE,
-    pool_pre_ping=True,
-    json_serializer=json_dumps,
-    json_deserializer=json_loads,
-)
 
-AsyncSessionLocal = async_sessionmaker(
-    bind=engine,
-    autoflush=False,
-    expire_on_commit=False,
-    class_=AsyncSession,
-)
+def get_engine() -> AsyncEngine:
+    """Delay initialization and get the engine"""
+    global _engine
+    if _engine is None:
+        _engine = create_async_engine(
+            url=funiq_ai_config.ASYNC_DATABASE_URL,
+            echo=funiq_ai_config.DATABASE_ECHO,
+            pool_size=funiq_ai_config.ASYNC_DATABASE_POOL_SIZE,
+            pool_pre_ping=True,
+            json_serializer=json_dumps,
+            json_deserializer=json_loads,
+        )
+    return _engine
+
+
+def get_sync_engine():
+    """Delay initialization and get the synchronous engine"""
+    global _sync_engine
+    if _sync_engine is None:
+        _sync_engine = create_engine(
+            url=funiq_ai_config.SYNC_DATABASE_URL,
+            echo=funiq_ai_config.DATABASE_ECHO,
+            pool_size=funiq_ai_config.SYNC_DATABASE_POOL_SIZE,
+            pool_pre_ping=True,
+            json_serializer=json_dumps,
+            json_deserializer=json_loads,
+        )
+    return _sync_engine
 
 
 async def init_database():
     """
     Initialize the database: create tables if they don't exist.
     """
-    async with engine.begin() as conn:
+    async with get_engine().begin() as conn:
         await conn.run_sync(DBBase.metadata.create_all)
 
 
@@ -53,24 +62,36 @@ async def update_database_schema():
     """
     Update the database schema without dropping existing tables.
     """
-    async with engine.begin() as conn:
+    async with get_engine().begin() as conn:
         await conn.run_sync(DBBase.metadata.create_all, checkfirst=True)
 
 
 async def shutdown_database():
-    """
-    Properly close the database and Redis connections during application shutdown.
-    """
+    """Shutdown the database connection"""
+    global _engine, _sync_engine
     try:
-        await engine.dispose()
+        if _engine:
+            await _engine.dispose()
+        if _sync_engine:
+            _sync_engine.dispose()
     except Exception as e:
-        print(f"Error during shutdown: {e}")
+        logger.exception(f"Error during database shutdown: {e}")
+    finally:
+        _engine = None
+        _sync_engine = None
 
 
 @contextlib.asynccontextmanager
 async def get_session():
-    """Context manager for getting a database session."""
-    async with AsyncSessionLocal() as session:
+    """Context manager for getting a database session"""
+    engine = get_engine()
+    async_session = async_sessionmaker(
+        bind=engine,
+        autoflush=False,
+        expire_on_commit=False,
+        class_=AsyncSession,
+    )
+    async with async_session() as session:
         try:
             yield session
             await session.commit()
@@ -80,26 +101,17 @@ async def get_session():
 
 
 def create_transient_session():
-    """
-    Creates a transient async session factory for use in synchronous environments.
-
-    This function creates a separate engine and session maker that can be used
-    for one-off database operations, typically run with asyncio.run().
-
-    Example usage:
-        async def do_something():
-            async with create_transient_session() as session:
-                result = await session.execute(select(...))
-                return result.scalars().one()
-
-        result = asyncio.run(do_something())
-
-    Returns:
-        An async context manager that yields a session and handles cleanup
-    """
-    transient_engine = create_async_engine(funiq_ai_config.ASYNC_DATABASE_URL, pool_pre_ping=True, pool_recycle=3600)
+    """Create a transient session for synchronous operations"""
+    transient_engine = create_async_engine(
+        funiq_ai_config.ASYNC_DATABASE_URL, 
+        pool_pre_ping=True, 
+        pool_recycle=3600
+    )
     transient_session = async_sessionmaker(
-        bind=transient_engine, autoflush=False, autocommit=False, expire_on_commit=False
+        bind=transient_engine, 
+        autoflush=False, 
+        autocommit=False, 
+        expire_on_commit=False
     )
 
     @contextlib.asynccontextmanager

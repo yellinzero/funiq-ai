@@ -65,6 +65,10 @@ def setup_loguru() -> None:
     """
     Configure loguru logger with console and file handlers
     """
+    # Prevent multiple initializations
+    if getattr(setup_loguru, '_initialized', False):
+        return
+    
     # Get config from settings
     config = funiq_ai_config.LOGGING_CONFIG
     # Set log level based on DEBUG flag
@@ -86,4 +90,5 @@ def setup_loguru() -> None:
     # Set specific levels for some loggers
     logging.getLogger("uvicorn.access").setLevel(getattr(logging, funiq_ai_config.UVICORN_ACCESS_LOG_LEVEL))
 
+    setup_loguru._initialized = True
     logger.info("Loguru logging system initialized")

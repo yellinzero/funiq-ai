@@ -34,35 +34,34 @@ class LoggingCallback(Callback):
         :param stream: is stream response
         :param user: unique user id
         """
-        self.print_text("\n[on_llm_before_invoke]\n", color="blue")
-        self.print_text(f"Model: {model}\n", color="blue")
-        self.print_text("Parameters:\n", color="blue")
+        logger.info("\n[on_llm_before_invoke]")
+        logger.info(f"Model: {model}")
+        logger.info("Parameters:")
         for key, value in model_parameters.items():
-            self.print_text(f"\t{key}: {value}\n", color="blue")
+            logger.info(f"\t{key}: {value}")
 
         if stop:
-            self.print_text(f"\tstop: {stop}\n", color="blue")
+            logger.info(f"\tstop: {stop}")
 
         if tools:
-            self.print_text("\tTools:\n", color="blue")
+            logger.info("\tTools:")
             for tool in tools:
-                self.print_text(f"\t\t{tool.name}\n", color="blue")
+                logger.info(f"\t\t{tool.name}")
 
-        self.print_text(f"Stream: {stream}\n", color="blue")
+        logger.info(f"Stream: {stream}")
 
         if user:
-            self.print_text(f"User: {user}\n", color="blue")
+            logger.info(f"User: {user}")
 
-        self.print_text("Prompt messages:\n", color="blue")
+        logger.info("Prompt messages:")
         for prompt_message in prompt_messages:
             if prompt_message.name:
-                self.print_text(f"\tname: {prompt_message.name}\n", color="blue")
-
-            self.print_text(f"\trole: {prompt_message.role.value}\n", color="blue")
-            self.print_text(f"\tcontent: {prompt_message.content}\n", color="blue")
+                logger.info(f"\tname: {prompt_message.name}")
+            logger.info(f"\trole: {prompt_message.role.value}")
+            logger.info(f"\tcontent: {prompt_message.content}")
 
         if stream:
-            self.print_text("\n[on_llm_new_chunk]")
+            logger.info("\n[on_llm_new_chunk]")
 
     def on_new_chunk(
         self,
@@ -121,19 +120,19 @@ class LoggingCallback(Callback):
         :param stream: is stream response
         :param user: unique user id
         """
-        self.print_text("\n[on_llm_after_invoke]\n", color="yellow")
-        self.print_text(f"Content: {result.message.content}\n", color="yellow")
+        logger.info("\n[on_llm_after_invoke]")
+        logger.info(f"Content: {result.message.content}")
 
         if result.message.tool_calls:
-            self.print_text("Tool calls:\n", color="yellow")
+            logger.info("Tool calls:")
             for tool_call in result.message.tool_calls:
-                self.print_text(f"\t{tool_call.id}\n", color="yellow")
-                self.print_text(f"\t{tool_call.function.name}\n", color="yellow")
-                self.print_text(f"\t{json.dumps(tool_call.function.arguments)}\n", color="yellow")
+                logger.info(f"\t{tool_call.id}")
+                logger.info(f"\t{tool_call.function.name}")
+                logger.info(f"\t{json.dumps(tool_call.function.arguments)}")
 
-        self.print_text(f"Model: {result.model}\n", color="yellow")
-        self.print_text(f"Usage: {result.usage}\n", color="yellow")
-        self.print_text(f"System Fingerprint: {result.system_fingerprint}\n", color="yellow")
+        logger.info(f"Model: {result.model}")
+        logger.info(f"Usage: {result.usage}")
+        logger.info(f"System Fingerprint: {result.system_fingerprint}")
 
     def on_invoke_error(
         self,
@@ -162,5 +161,5 @@ class LoggingCallback(Callback):
         :param stream: is stream response
         :param user: unique user id
         """
-        self.print_text("\n[on_llm_invoke_error]\n", color="red")
+        logger.error("\n[on_llm_invoke_error]")
         logger.exception(ex)

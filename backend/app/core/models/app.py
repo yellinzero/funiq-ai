@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, String
+from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -12,7 +12,6 @@ from infrastructure import DBBase, DBUUIDModelMixin
 
 if TYPE_CHECKING:
     from app.core.models.workflow import Workflow
-    pass
 
 # ---------- Enums ----------
 
@@ -138,7 +137,7 @@ class Conversation(DBBase, DBUUIDModelMixin):
     )
     version: Mapped[str] = mapped_column(String(50), nullable=False, comment="Application version used")
     name: Mapped[str] = mapped_column(String(100), nullable=False, comment="Conversation name")
-    summary: Mapped[str | None] = mapped_column(String(1000), comment="Conversation summary")
+    summary: Mapped[str | None] = mapped_column(String(500), comment="Conversation summary")
     status: Mapped[ConversationStatus] = mapped_column(
         SQLAlchemyEnum(ConversationStatus),
         nullable=False,
@@ -152,6 +151,14 @@ class Conversation(DBBase, DBUUIDModelMixin):
         UUID(as_uuid=True), nullable=False, comment="User who updated the conversation"
     )
 
+    message_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, comment="Number of messages in the conversation"
+    )
+
+    last_message_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, comment="Last message id"
+    )
+
     # Relationships
     app: Mapped["App"] = relationship(back_populates="conversations")
     messages: Mapped[list["Message"]] = relationship(back_populates="conversation", cascade="all, delete-orphan")
@@ -162,16 +169,6 @@ class Conversation(DBBase, DBUUIDModelMixin):
         Index("idx_conversation_status", status),
         Index("idx_conversation_user", created_by),
     )
-
-    @property
-    def message_count(self) -> int:
-        """Get the total number of messages in the conversation"""
-        return len(self.messages)
-
-    @property
-    def last_message(self) -> "Message | None":
-        """Get the last message in the conversation"""
-        return self.messages[-1] if self.messages else None
 
     def archive(self) -> None:
         """Archive the conversation"""
@@ -185,13 +182,16 @@ class Conversation(DBBase, DBUUIDModelMixin):
 class Message(DBBase):
     """Message model that represents individual messages in a conversation"""
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, comment="Unique identifier for the message"
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, comment="Unique identifier for the message"
     )
     conversation_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("conversations.id", ondelete="CASCADE"),
         nullable=False,
         comment="Reference to the parent conversation",
+    )
+    execution_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, comment="Execution id"
     )
     message_from: Mapped[MessageFrom] = mapped_column(
         SQLAlchemyEnum(MessageFrom), nullable=False, comment="Message source (user or app)"
@@ -207,7 +207,10 @@ class Message(DBBase):
     created_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), comment="User who created the message (only for user messages)"
     )
-    message: Mapped[dict] = mapped_column(JSON, nullable=False, comment="Message content in JSON format")
+    content: Mapped[str] = mapped_column(Text, nullable=False, comment="Message content")
+    search_results: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True, comment="Search results")
+    thinking_content: Mapped[str | None] = mapped_column(Text, nullable=True, comment="Thinking process")
+    files: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True, comment="Files")
 
     # Relationships
     conversation: Mapped["Conversation"] = relationship(back_populates="messages")
@@ -228,8 +231,3 @@ class Message(DBBase):
     def is_from_app(self) -> bool:
         """Check if the message is from the bot"""
         return self.message_from == MessageFrom.APP
-
-    @property
-    def content(self) -> str:
-        """Get the message content as string"""
-        return str(self.message.get("content", ""))

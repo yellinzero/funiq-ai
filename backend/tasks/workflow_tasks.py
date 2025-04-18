@@ -11,8 +11,7 @@ from app.core.models.workflow import (
     WorkflowSnapshot,
     WorkflowVersion,
 )
-from infrastructure import with_session
-from infrastructure.workflow_engine import WorkflowDebugEngine, WorkflowVersionEngine
+from infrastructure import WorkflowDebugEngine, WorkflowVersionEngine, with_session
 
 
 @with_session

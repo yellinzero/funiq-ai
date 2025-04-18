@@ -23,6 +23,10 @@ def create_app() -> FastAPI:
     """
     Create and configure the FastAPI application.
     """
+    
+    # Initialize logging and Sentry
+    setup_loguru()
+    
     app = FastAPI(
         title="FuniqAI",  # Title for the API documentation
         default_response_class=ORJSONResponse,  # Use ORJSON for faster JSON serialization
@@ -31,8 +35,6 @@ def create_app() -> FastAPI:
     
     # Register i18n
     register_all_translation_domains()
-    # Initialize logging and Sentry
-    setup_loguru()
     setup_sentry()
 
     # Register exception handlers

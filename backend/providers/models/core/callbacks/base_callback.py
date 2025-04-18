@@ -3,14 +3,6 @@ from abc import ABC, abstractmethod
 from providers.models.core import AIModel
 from providers.models.core.schemas import LLMResult, LLMResultChunk, PromptMessage, PromptMessageTool
 
-_TEXT_COLOR_MAPPING = {
-    "blue": "36;1",
-    "yellow": "33;1",
-    "pink": "38;5;200",
-    "green": "32;1",
-    "red": "31;1",
-}
-
 
 class Callback(ABC):
     """
@@ -137,13 +129,3 @@ class Callback(ABC):
         :param user: unique user id
         """
         raise NotImplementedError()
-
-    def print_text(self, text: str, color: str | None = None, end: str = "") -> None:
-        """Print text with highlighting and no end characters."""
-        text_to_print = self._get_colored_text(text, color) if color else text
-        print(text_to_print, end=end)
-
-    def _get_colored_text(self, text: str, color: str) -> str:
-        """Get colored text."""
-        color_str = _TEXT_COLOR_MAPPING[color]
-        return f"\u001b[{color_str}m\033[1;3m{text}\u001b[0m"

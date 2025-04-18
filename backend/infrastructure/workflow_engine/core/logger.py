@@ -11,7 +11,7 @@ from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from infrastructure.database.core import with_session
+from infrastructure import with_session
 from utils.common.json import json_loads
 
 from .models import WorkflowDebugExecution, WorkflowDebugLog, WorkflowExecution, WorkflowExecutionLog

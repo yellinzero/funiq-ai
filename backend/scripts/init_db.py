@@ -5,7 +5,7 @@ from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.models.account import Account
-from infrastructure import get_session, setup_loguru
+from infrastructure import get_session
 
 
 class DBInitializer:
@@ -51,11 +51,11 @@ class DBInitializer:
             # For example: default tenants, workflow templates, etc.
             
             # await self.session.commit()
-            print("Successfully initialized default data")
+            logger("Successfully initialized default data")
             
         except Exception as e:
             await self.session.rollback()
-            print(f"Error initializing data: {e}")
+            logger(f"Error initializing data: {e}")
             raise
 
 
@@ -69,7 +69,6 @@ async def main(args: list[str] | None = None) -> None:
     Raises:
         Exception: If initialization fails
     """
-    setup_loguru()
     logger.info("Starting database initialization...")
     
     try:

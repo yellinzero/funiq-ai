@@ -1,4 +1,12 @@
-from .core import ExecutionStates
+from .core import (
+    ExecutionStates,
+    WorkflowDebugExecution,
+    WorkflowDebugLog,
+    WorkflowExecution,
+    WorkflowExecutionLog,
+    WorkflowFlow,
+    WorkflowTask,
+)
 from .engine import (
     WorkflowDebugEngine,
     WorkflowVersionEngine,
@@ -7,5 +15,11 @@ from .engine import (
 __all__ = [
     "ExecutionStates",
     "WorkflowDebugEngine",
+    "WorkflowDebugExecution",
+    "WorkflowDebugLog",
+    "WorkflowExecution",
+    "WorkflowExecutionLog",
+    "WorkflowFlow",
+    "WorkflowTask",
     "WorkflowVersionEngine",
 ]

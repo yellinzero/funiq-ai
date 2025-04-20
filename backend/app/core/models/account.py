@@ -94,7 +94,6 @@ class Account(DBBase, DBUUIDModelMixin, DBSoftDeleteMixin):
                 status=AccountStatus.ACTIVE
             )
             session.add(system_account)
-            await session.commit()
         return system_account
 
     @property

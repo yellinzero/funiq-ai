@@ -126,7 +126,11 @@ async def enable_model(request: Request, provider_name: str, model_name: str):
     Enable a model and create its associated system app if it doesn't exist
     """
     model = await ProviderService.enable_model(
-        session=db.session, tenant_id=request.state.tenant_id, provider_name=provider_name, model_name=model_name
+        session=db.session,
+        tenant_id=request.state.tenant_id,
+        provider_name=provider_name,
+        model_name=model_name,
+        request=request,
     )
     return ResponseModel(
         data={

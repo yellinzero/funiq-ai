@@ -1,5 +1,5 @@
 
-from app.model_providers import app
+from app.model_provider import app
 
 from .routes import model_providers_router
 

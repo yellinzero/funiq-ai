@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Generic, Type, TypeVar, Union
 
 import inflect
@@ -11,6 +11,8 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 from sqlalchemy.sql import Select
 from sqlalchemy_utils import generic_repr
+
+from utils.common.datetime import utcnow
 
 # Type variable for the generic DBBase
 T = TypeVar("T", bound="DBBase")
@@ -133,18 +135,18 @@ class DBAuditFieldsMixin:
     All timestamps are stored in UTC.
     """
     created_at: Mapped[datetime] = mapped_column(
-        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+        default=lambda: utcnow().replace(tzinfo=None),
         index=True
     )
     updated_at: Mapped[datetime] = mapped_column(
-        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
-        onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+        default=lambda: utcnow().replace(tzinfo=None),
+        onupdate=lambda: utcnow().replace(tzinfo=None),
         index=True
     )
     
     def refresh_updated_at(self) -> None:
         """Manually refresh the updated_at field to the current timestamp."""
-        self.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        self.updated_at = utcnow().replace(tzinfo=None)
 
 
 class DBSoftDeleteMixin:
@@ -165,7 +167,7 @@ class DBSoftDeleteMixin:
         Mark the record as deleted in memory.
         Does not persist changes to database - transaction management should be handled by the caller.
         """
-        self.deleted_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        self.deleted_at = utcnow().replace(tzinfo=None)
         self.deleted_by = deleted_by
 
 

@@ -1,5 +1,7 @@
 from .core import (
     ExecutionStates,
+    FlowExecutionCallbackContext,
+    TaskExecutionCallbackContext,
     WorkflowDebugExecution,
     WorkflowDebugLog,
     WorkflowExecution,
@@ -14,6 +16,8 @@ from .engine import (
 
 __all__ = [
     "ExecutionStates",
+    "FlowExecutionCallbackContext",
+    "TaskExecutionCallbackContext",
     "WorkflowDebugEngine",
     "WorkflowDebugExecution",
     "WorkflowDebugLog",

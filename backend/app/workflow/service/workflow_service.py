@@ -1,15 +1,15 @@
 import hashlib
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import Callable
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Coroutine, Dict, Optional, Tuple
 
 from fastapi import Request, status
 from loguru import logger
 from nanoid import generate
-from sqlalchemy import select
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.errors import WorkflowErrorCode
+from app.core.errors import AccountErrorCode, WorkflowErrorCode
 from app.core.models.account import Account
 from app.core.models.workflow import (
     Workflow,
@@ -21,6 +21,7 @@ from app.core.models.workflow import (
     WorkflowVersionStatus,
 )
 from infrastructure import WorkflowDebugEngine, WorkflowVersionEngine
+from infrastructure.workflow_engine import FlowExecutionCallbackContext
 from providers.operators.core import OperatorName
 from tasks.workflow_tasks import execute_workflow as celery_execute_workflow
 from utils.common.json import json_dumps
@@ -216,13 +217,28 @@ class WorkflowService:
             await WorkflowService._create_system_workflow_edges(
                 session, str(workflow.id), nodes, str(system_account.id)
             )
-
+            
+            start_node_key = next((node.node_key for node in nodes if node.node_type == OperatorName.START.value), None)
+            if not start_node_key:
+                raise WorkflowErrorCode.WORKFLOW_CREATE_ERROR.exception(
+                    data={"message": "Workflow start node not found"},
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            end_node_key = next((node.node_key for node in nodes if node.node_type == OperatorName.END.value), None)
+            if not end_node_key:
+                raise WorkflowErrorCode.WORKFLOW_CREATE_ERROR.exception(
+                    data={"message": "Workflow end node not found"},
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            
             # Publish initial workflow version
             await WorkflowService.publish_workflow(
-                session,
-                str(workflow.id),
+                session=session,
+                workflow_id=str(workflow.id),
                 version="1.0.0",
                 description="Initial system workflow version",
+                start_node_key=start_node_key,
+                end_node_key=end_node_key,
                 published_by=str(system_account.id),
             )
 
@@ -329,11 +345,26 @@ class WorkflowService:
         execution_context: Dict[str, Any],
         version: Optional[str] = None,
         snapshot_timestamp: Optional[datetime] = None,
+        on_created: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
+        on_pending: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
+        on_running: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
+        on_completed: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
+        on_failed: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
+        on_cancelling: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
+        on_cancelled: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
+        on_paused: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
     ):
         """Execute workflow in stream mode.
 
         This method should be used for stream processing instead of Celery tasks.
         """
+        
+        account_id = request.state.account_id
+        if not account_id:
+            raise AccountErrorCode.ACCOUNT_NOT_FOUND.exception(
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        
         # Validate and get snapshot
         snapshot, snapshot_hash = await WorkflowService._can_workflow_execute(
             session, workflow_id, version, snapshot_timestamp
@@ -344,6 +375,11 @@ class WorkflowService:
             raise WorkflowErrorCode.WORKFLOW_EXECUTION_ERROR.exception(
                 data={"message": "Workflow is not configured for streaming"}
             )
+        
+        execution_context = {
+            **(execution_context or {}),
+            "user_id": account_id,
+        }
 
         # Create and execute appropriate executor
         if version:
@@ -354,6 +390,14 @@ class WorkflowService:
                 snapshot_hash=snapshot_hash,
                 input_data=input_data,
                 execution_context=execution_context,
+                on_created=on_created,
+                on_pending=on_pending,
+                on_running=on_running,
+                on_completed=on_completed,
+                on_failed=on_failed,
+                on_cancelling=on_cancelling,
+                on_cancelled=on_cancelled,
+                on_paused=on_paused,
             )
         else:
             executor = WorkflowDebugEngine(
@@ -363,34 +407,17 @@ class WorkflowService:
                 input_data=input_data,
                 execution_context=execution_context,
                 snapshot_timestamp=snapshot_timestamp,
+                on_created=on_created,
+                on_pending=on_pending,
+                on_running=on_running,
+                on_completed=on_completed,
+                on_failed=on_failed,
+                on_cancelling=on_cancelling,
+                on_cancelled=on_cancelled,
+                on_paused=on_paused,
             )
 
-        await executor.initialize()
-        
-        stream = await executor.execute()
-            
-        async def generate():
-            all_chunks = []
-            try:
-                if isinstance(stream, Generator):
-                    for chunk in stream:
-                        all_chunks.append(chunk)
-                        yield f"data: {chunk.model_dump_json()}\n\n"
-                elif isinstance(stream, AsyncGenerator):    
-                    async for chunk in stream:
-                        all_chunks.append(chunk)
-                        yield f"data: {chunk.model_dump_json()}\n\n"
-            except Exception as e:
-                logger.error(f"Error in stream generation: {e!s}")
-                error_message = {"error": str(e)}
-                yield f"data: {json_dumps(error_message)}\n\n"
-            finally:
-                try:
-                    await executor.cancel()
-                    logger.info(f"Total chunks collected: {len(all_chunks)}")
-                except Exception as e:
-                    logger.error(f"Error while consuming remaining stream: {e}")
-        return generate
+        return executor
     
     @staticmethod
     async def execute_workflow_sync(
@@ -530,6 +557,8 @@ class WorkflowService:
         workflow_id: str,
         version: str,
         description: str,
+        start_node_key: str,
+        end_node_key: str,
         published_by: str,
     ) -> WorkflowVersion:
         """
@@ -594,6 +623,8 @@ class WorkflowService:
                     published_by=published_by,
                     snapshot=snapshot,
                     snapshot_hash=snapshot_hash,
+                    start_node_key=start_node_key,
+                    end_node_key=end_node_key,
                 )
                 await workflow_version.save(session)
 
@@ -633,3 +664,120 @@ class WorkflowService:
                 },
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ) from e
+
+    @staticmethod
+    async def create_workflow(
+        session: AsyncSession,
+        name: str,
+        description: str,
+        app_id: str,
+        request: Request
+    ) -> Workflow:
+        """Create a new workflow"""
+        tenant_id = request.state.tenant_id
+        if not tenant_id:
+            raise AccountErrorCode.TENANT_NOT_FOUND.exception(
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        
+        account_id = request.state.account_id
+        if not account_id:
+            raise AccountErrorCode.ACCOUNT_NOT_FOUND.exception(
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+
+        # Check if the name already exists
+        result = await session.execute(
+            select(Workflow).where(
+                and_(
+                    Workflow.tenant_id == tenant_id,
+                    Workflow.name == name
+                )
+            )
+        )
+        if result.scalar_one_or_none():
+            raise WorkflowErrorCode.WORKFLOW_ALREADY_EXISTS.exception(
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            workflow = Workflow(
+                tenant_id=tenant_id,
+                name=name,
+                app_id=app_id,
+                description=description,
+                status=WorkflowStatus.DRAFT,
+                is_system=False,
+                created_by=account_id,
+                updated_by=account_id
+            )
+            await workflow.save(session)
+            session.flush()
+            
+            # Create system workflow nodes and edges
+            start_node_key = generate_node_or_edge_key()
+            end_node_key = generate_node_or_edge_key()
+            start_node = WorkflowNode(
+                workflow_id=workflow.id,
+                node_key=start_node_key,
+                node_type=OperatorName.START.value,
+                created_by=account_id,
+                updated_by=account_id
+            )
+            await start_node.save(session)
+            end_node = WorkflowNode(
+                workflow_id=workflow.id,
+                node_key=end_node_key,
+                node_type=OperatorName.END.value,
+                created_by=account_id,
+                updated_by=account_id
+            )
+            await end_node.save(session)
+            
+            edge = WorkflowEdge(
+                workflow_id=workflow.id,
+                edge_key=generate_node_or_edge_key(),
+                source_node_key=start_node_key,
+                target_node_key=end_node_key,
+                created_by=account_id,
+                updated_by=account_id
+            )
+            await edge.save(session)
+            
+            return workflow
+        except Exception as e:
+            logger.error(f"Error creating workflow: {e}")
+            await session.rollback()
+            raise WorkflowErrorCode.WORKFLOW_CREATE_ERROR.exception(
+                data={
+                    "workflow_name": name,
+                    "error": str(e),
+                    "message": "Failed to create workflow",
+                },
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+            
+    @staticmethod
+    async def get_workflow_version(
+        session: AsyncSession,
+        workflow_id: str,
+        workflow_version: str,
+    ) -> WorkflowVersion:
+        result = await session.execute(
+            select(WorkflowVersion).where(
+                and_(
+                    WorkflowVersion.workflow_id == workflow_id,
+                    WorkflowVersion.version == workflow_version
+                )
+            )
+        )
+        
+        version = result.scalar_one_or_none()
+        if not version:
+            raise WorkflowErrorCode.WORKFLOW_VERSION_NOT_FOUND.exception(
+                data={
+                    "workflow_id": workflow_id,
+                    "workflow_version": workflow_version
+                }
+            )
+        return version

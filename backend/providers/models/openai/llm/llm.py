@@ -740,7 +740,7 @@ class OpenAILargeLanguageModel(OpenAICore, LargeLanguageModel):
         :return: llm response chunk generator
         """
         full_assistant_content = ""
-        delta_assistant_message_function_call_storage: ChoiceDeltaFunctionCall = None
+        delta_assistant_message_function_call_storage: ChoiceDeltaFunctionCall | None = None
         prompt_tokens = 0
         completion_tokens = 0
         final_tool_calls = []
@@ -785,14 +785,13 @@ class OpenAILargeLanguageModel(OpenAICore, LargeLanguageModel):
                     # message has ended
                     assistant_message_function_call = delta_assistant_message_function_call_storage
                     delta_assistant_message_function_call_storage = None
-            else:
-                if assistant_message_function_call:
-                    # start of stream function call
-                    delta_assistant_message_function_call_storage = assistant_message_function_call
-                    if delta_assistant_message_function_call_storage.arguments is None:
-                        delta_assistant_message_function_call_storage.arguments = ""
-                    if not has_finish_reason:
-                        continue
+            elif assistant_message_function_call:
+                # start of stream function call
+                delta_assistant_message_function_call_storage = assistant_message_function_call
+                if delta_assistant_message_function_call_storage.arguments is None:
+                    delta_assistant_message_function_call_storage.arguments = ""
+                if not has_finish_reason:
+                    continue
 
             # tool_calls = self._extract_response_tool_calls(assistant_message_tool_calls)
             function_call = self._extract_response_function_call(assistant_message_function_call)

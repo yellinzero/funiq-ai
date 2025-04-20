@@ -1,7 +1,11 @@
 
+from collections.abc import AsyncGenerator, Generator
+from json import dumps as json_dumps
+
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 from fastapi_async_sqlalchemy import db
+from loguru import logger
 
 from app.account.service.account_service import AccountService
 from app.account.service.tenant_service import TenantService
@@ -18,10 +22,10 @@ from .schemas import (
 from .service.operator_service import OperatorService
 from .service.workflow_service import WorkflowService
 
-workflows_router = APIRouter(prefix="/workflows", tags=["workflows"])
+workflow_router = APIRouter(prefix="/workflows", tags=["Workflows"])
 
 
-@workflows_router.get(
+@workflow_router.get(
     "/operators", response_model=ResponseModel[GetOperatorsResponse], response_model_exclude_none=True
 )
 async def get_operators(request: Request):
@@ -32,7 +36,7 @@ async def get_operators(request: Request):
     return ResponseModel(data={"operators": operators, "total": len(operators)})
 
 
-@workflows_router.post(
+@workflow_router.post(
     "/{workflow_id}/execute",
     response_model=ResponseModel[WorkflowExecuteResponse],
     response_model_exclude_none=True
@@ -65,7 +69,7 @@ async def execute_workflow(
     return ResponseModel(data=WorkflowExecuteResponse(result=result["result"]))
 
 
-@workflows_router.post(
+@workflow_router.post(
     "/{workflow_id}/debug",
     response_model=ResponseModel[WorkflowDebugResponse],
     response_model_exclude_none=True
@@ -98,7 +102,7 @@ async def debug_workflow(
     return ResponseModel(data=WorkflowDebugResponse(task_id=result["task_id"]))
 
 
-@workflows_router.post("/{workflow_id}/stream")
+@workflow_router.post("/{workflow_id}/stream")
 async def stream_workflow(
     request: Request,
     workflow_id: str,
@@ -117,7 +121,7 @@ async def stream_workflow(
     account = await AccountService.get_account_info(db.session, request)
     user = await TenantService.get_user_by_account_id(db.session, tenant_id, account.id)
     
-    generate = await WorkflowService.execute_workflow_stream(
+    executor = await WorkflowService.execute_workflow_stream(
         session=db.session,
         request=request,
         workflow_id=workflow_id,
@@ -130,6 +134,32 @@ async def stream_workflow(
         snapshot_timestamp=stream_request.snapshot_timestamp
     )
     
+    await executor.initialize()
+        
+    stream = await executor.execute()
+            
+    async def generate():
+        all_chunks = []
+        try:
+            if isinstance(stream, Generator):
+                for chunk in stream:
+                    all_chunks.append(chunk)
+                    yield f"data: {chunk.model_dump_json()}\n\n"
+            elif isinstance(stream, AsyncGenerator):    
+                async for chunk in stream:
+                    all_chunks.append(chunk)
+                    yield f"data: {chunk.model_dump_json()}\n\n"
+        except Exception as e:
+            logger.error(f"Error in stream generation: {e!s}")
+            error_message = {"error": str(e)}
+            yield f"data: {json_dumps(error_message)}\n\n"
+        finally:
+            try:
+                await executor.cancel()
+                logger.info(f"Total chunks collected: {len(all_chunks)}")
+            except Exception as e:
+                logger.error(f"Error while consuming remaining stream: {e}")
+
     return StreamingResponse(
         generate(),
         media_type="text/event-stream",

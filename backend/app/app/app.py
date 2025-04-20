@@ -1,5 +1,5 @@
 
-from app.workflows import app
+from app.app import app
 
 from .routes import app_router
 

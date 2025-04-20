@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import status
+from fastapi import Request, status
 from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -208,6 +208,7 @@ class ProviderService:
         provider = ModelProvider(**provider_data)
         await provider.save(session)
 
+        await session.commit()
         logger.info("Created new provider configuration", extra={"provider_id": str(provider.id)})
         return provider
 
@@ -267,6 +268,7 @@ class ProviderService:
         model = Model(**model_data)
         await model.save(session)
 
+        await session.commit()
         logger.info("Created new model configuration", extra={"model_id": str(model.id)})
         return model
 
@@ -337,6 +339,7 @@ class ProviderService:
         tenant_id: str,
         provider_name: str,
         model_name: str,
+        request: Request
     ) -> Model:
         """
         Enable a model and create its associated system app if it doesn't exist
@@ -385,6 +388,7 @@ class ProviderService:
             if not app:
                 await AppService.create_system_app(
                     session=session,
+                    request=request,
                     tenant_id=tenant_id,
                     model_name=model_name,
                     model_id=str(model.id),

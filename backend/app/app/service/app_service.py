@@ -1,113 +1,313 @@
-from datetime import datetime, timezone
+from typing import List
 
-from fastapi import status
+from fastapi import Request, status
 from loguru import logger
-from sqlalchemy import select
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
-from app.core.errors import AppErrorCode
+from app.app.schemas import AppUpdate
+from app.core.errors import AccountErrorCode, AppErrorCode
 from app.core.models.account import Account
 from app.core.models.app import App, AppVersion, AppVersionStatus
-from app.workflows.service.workflow_service import WorkflowService
+from app.workflow.service.workflow_service import WorkflowService
+from utils.common.datetime import utcnow
 
 
 class AppService:
+    @staticmethod
+    async def get_apps(
+        session: AsyncSession,
+        request: Request
+    ) -> List[App]:
+        """Get all apps for a tenant"""
+        tenant_id = request.state.tenant_id
+        if not tenant_id:
+            raise AccountErrorCode.TENANT_NOT_FOUND.exception(
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        
+        result = await session.execute(
+            select(App)
+            .where(App.tenant_id == tenant_id)
+            .order_by(App.created_at.desc())
+        )
+        return result.scalars().all()
+
+    @staticmethod
+    async def get_app(
+        session: AsyncSession, 
+        app_id: str, 
+        request: Request
+    ) -> App:
+        """Get a single app details"""
+        tenant_id = request.state.tenant_id
+        if not tenant_id:
+            raise AccountErrorCode.TENANT_NOT_FOUND.exception(
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        
+        result = await session.execute(
+            select(App).where(
+                and_(
+                    App.tenant_id == tenant_id,
+                    App.id == app_id
+                )
+            ).options(joinedload(App.workflow))
+        )
+        
+        app = result.scalar_one_or_none()
+        if not app:
+            raise AppErrorCode.APP_NOT_FOUND.exception(
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        
+        if not app.workflow:
+            raise AppErrorCode.APP_WORKFLOW_NOT_FOUND.exception(
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        
+        return app
+
+    @staticmethod
+    async def create_app(
+        session: AsyncSession,
+        name: str,
+        description: str,
+        request: Request
+    ) -> App:
+        """Create a new app"""
+        tenant_id = request.state.tenant_id
+        if not tenant_id:
+            raise AccountErrorCode.TENANT_NOT_FOUND.exception(
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        
+        account_id = request.state.account_id
+        if not account_id:
+            raise AccountErrorCode.ACCOUNT_NOT_FOUND.exception(
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+
+        # Check if the name already exists
+        result = await session.execute(
+            select(App).where(
+                and_(
+                    App.tenant_id == tenant_id,
+                    App.name == name
+                )
+            )
+        )
+        if result.scalar_one_or_none():
+            raise AppErrorCode.APP_ALREADY_EXISTS.exception(
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            app = App(
+                tenant_id=tenant_id,
+                name=name,
+                description=description,
+                is_system=False,
+                created_by=account_id,
+                updated_by=account_id
+            )
+            await app.save(session)
+            await session.flush()
+            
+            await WorkflowService.create_workflow(
+                session=session,
+                app_id=str(app.id),
+                name=name,
+                description=description,
+                request=request
+            )
+            
+            await session.commit()
+            await session.refresh(app)
+            
+            return app
+        except Exception as e:
+            logger.error(f"Error creating app: {e}")
+            await session.rollback()
+            raise AppErrorCode.APP_CREATE_ERROR.exception(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def update_app(
+        session: AsyncSession,
+        app_id: str,
+        app_update: AppUpdate,
+        request: Request
+    ) -> App:
+        """Update app information"""
+        app = await AppService.get_app(session, app_id, request)
+        
+        account_id = request.state.account_id
+        if not account_id:
+            raise AccountErrorCode.ACCOUNT_NOT_FOUND.exception(
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+
+        # Check if new name conflicts with other apps
+        if app_update.name != app.name:
+            result = await session.execute(
+                select(App).where(
+                    and_(
+                        App.tenant_id == app.tenant_id,
+                        App.name == app_update.name,
+                        App.id != app_id
+                    )
+                )
+            )
+            if result.scalar_one_or_none():
+                raise AppErrorCode.APP_ALREADY_EXISTS.exception(
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
+
+        try:
+            app.name = app_update.name
+            app.description = app_update.description
+            app.updated_by = account_id
+            app.updated_at = utcnow().replace(tzinfo=None)
+            
+            return app
+        except Exception as e:
+            logger.error(f"Error updating app: {e}")
+            await session.rollback()
+            raise AppErrorCode.APP_UPDATE_ERROR.exception(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def delete_app(
+        session: AsyncSession,
+        app_id: str,
+        request: Request
+    ) -> None:
+        """Delete app"""
+        app = await AppService.get_app(session, app_id, request)
+        
+        try:
+            await app.delete(session)
+        except Exception as e:
+            logger.error(f"Error deleting app: {e}")
+            await session.rollback()
+            raise AppErrorCode.APP_DELETE_ERROR.exception(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def get_app_versions(
+        session: AsyncSession,
+        app_id: str,
+        request: Request
+    ) -> List[AppVersion]:
+        """Get all versions of an app"""
+        result = await session.execute(
+            select(AppVersion)
+            .where(AppVersion.app_id == app_id)
+            .order_by(AppVersion.published_at.desc())
+        )
+        return result.scalars().all()
+
+    @staticmethod
+    async def get_apps_with_versions(
+        session: AsyncSession,
+        request: Request
+    ) -> List[App]:
+        """Get app tree (includes version information)"""
+        tenant_id = request.state.tenant_id
+        if not tenant_id:
+            raise AccountErrorCode.TENANT_NOT_FOUND.exception(
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        
+        result = await session.execute(
+            select(App)
+            .where(App.tenant_id == tenant_id)
+            .options(joinedload(App.versions))
+            .order_by(App.created_at.desc())
+        )
+        return result.scalars().all()
+    
+    @staticmethod
+    async def get_app_version(
+        session: AsyncSession,
+        app_version_id: str,
+    ) -> AppVersion:
+        """Get a single app version details"""
+        result = await session.execute(
+            select(AppVersion).where(AppVersion.id == app_version_id)
+        )
+        
+        version = result.scalar_one_or_none()
+        if not version:
+            raise AppErrorCode.APP_VERSION_NOT_FOUND.exception(
+                status_code=status.HTTP_404_NOT_FOUND
+            )
+        
+        return version
+    
     @staticmethod
     async def publish_app(
         session: AsyncSession,
         app_id: str,
         version: str,
         workflow_version: str,
-        published_by: str,
+        request: Request
     ) -> AppVersion:
-        """
-        Publish a new version of an app.
-
-        Args:
-            session: Database session
-            app_id: ID of the app to publish
-            version: Version string for the app (e.g., "1.0.0")
-            workflow_version: Associated workflow version
-            published_by: ID of the user publishing the version
-
-        Returns:
-            AppVersion: Created app version object
-
-        Raises:
-            AppErrorCode.APP_NOT_FOUND: If app doesn't exist
-            AppErrorCode.APP_VERSION_ALREADY_EXISTS: If version already exists
-            AppErrorCode.APP_VERSION_PUBLISH_ERROR: If publishing fails
-        """
-        # Check if app exists
-        result = await session.execute(
-            select(App).where(App.id == app_id)
-        )
-        app = result.scalar_one_or_none()
-        if not app:
-            raise AppErrorCode.APP_NOT_FOUND.exception(
-                data={
-                    "app_id": str(app_id),
-                    "message": "Unable to find app for version publishing"
-                },
+        """Publish a new version"""
+        app = await AppService.get_app(session, app_id, request)
+        
+        account_id = request.state.account_id
+        if not account_id:
+            raise AccountErrorCode.ACCOUNT_NOT_FOUND.exception(
                 status_code=status.HTTP_404_NOT_FOUND
             )
 
         # Check if version already exists
         result = await session.execute(
             select(AppVersion).where(
-                AppVersion.app_id == app_id,
-                AppVersion.version == version
+                and_(
+                    AppVersion.app_id == app_id,
+                    AppVersion.version == version
+                )
             )
         )
-        existing_version = result.scalar_one_or_none()
-        if existing_version:
+        if result.scalar_one_or_none():
             raise AppErrorCode.APP_VERSION_ALREADY_EXISTS.exception(
-                data={
-                    "app_id": str(app_id),
-                    "version": version,
-                    "message": "This version number is already in use"
-                },
                 status_code=status.HTTP_400_BAD_REQUEST
             )
 
         try:
-            # Create new app version
+            # Create new version
             app_version = AppVersion(
                 app_id=app_id,
                 version=version,
+                workflow_id=app.workflow.id,
                 workflow_version=workflow_version,
-                published_at=datetime.now(timezone.utc).replace(tzinfo=None),
-                published_by=published_by,
+                published_at=utcnow().replace(tzinfo=None),
+                published_by=account_id,
                 status=AppVersionStatus.ACTIVE,
                 snapshot=app.snapshot,
             )
             await app_version.save(session)
 
-            # Update app's current version
+            # Update app current version
             app.version = version
-            await app.save(session)
-
-            # Commit all changes
+            app.updated_by = account_id
+            app.updated_at = utcnow().replace(tzinfo=None)
+            
             await session.commit()
-
-            logger.info(
-                f"Published app version {version} for app {app_id} "
-                f"with workflow version {workflow_version}"
-            )
-
+            await session.refresh(app)
+            
             return app_version
-
         except Exception as e:
             logger.error(f"Error publishing app version: {e}")
             await session.rollback()
             raise AppErrorCode.APP_VERSION_PUBLISH_ERROR.exception(
-                data={
-                    "app_id": str(app_id),
-                    "version": version,
-                    "workflow_version": workflow_version,
-                    "error": str(e),
-                    "message": "Failed to publish app version"
-                },
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
             ) from e
 
@@ -116,7 +316,8 @@ class AppService:
         session: AsyncSession,
         tenant_id: str,
         model_name: str,
-        model_id: str
+        model_id: str,
+        request: Request
     ) -> App:
         """
         Create a system app for a model.
@@ -181,8 +382,11 @@ class AppService:
                 app_id=str(app.id),
                 version="1.0.0",
                 workflow_version=workflow.version,
-                published_by=str(system_account.id)
+                request=request
             )
+            
+            await session.commit()
+            await session.refresh(app)
 
             return app
 

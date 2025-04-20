@@ -22,6 +22,7 @@ class PriceHandlingMixin(ABC):
         """
         raise NotImplementedError
 
+    # TODO need refactor, calculate price for each different model
     def calculate_price(self, model: str, credentials: dict, price_type: PriceType, tokens: int) -> PriceInfo:
         """
         Calculate price for given model usage.

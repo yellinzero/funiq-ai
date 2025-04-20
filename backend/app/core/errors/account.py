@@ -3,7 +3,7 @@ from app.core.errors.base import BaseErrorCode
 
 class AccountErrorCode(BaseErrorCode):
     """
-    User errors (Category B)
+    User errors
     """
     EMAIL_ALREADY_REGISTERED = ("B0001", "The email address is already registered")
     NAME_ALREADY_REGISTERED = ("B0002", "The username is already registered")

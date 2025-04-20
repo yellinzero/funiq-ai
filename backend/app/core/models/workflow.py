@@ -244,6 +244,8 @@ class WorkflowVersion(DBBase):
         default=WorkflowVersionStatus.ACTIVE,
         comment="Current status of the workflow version",
     )
+    end_node_key: Mapped[str] = mapped_column(String(10), nullable=False, comment="Reference to the end node")
+    start_node_key: Mapped[str] = mapped_column(String(10), nullable=False, comment="Reference to the start node")
 
     snapshot: Mapped[dict[str, Any]] = mapped_column(JSON, comment="Snapshot of the workflow version")
     snapshot_hash: Mapped[str] = mapped_column(String(256), nullable=False)
@@ -263,6 +265,52 @@ class WorkflowVersion(DBBase):
         Index("idx_workflow_version_workflow", "workflow_id"),
         Index("idx_workflow_version_status", "status"),
     )
+    
+    @property
+    def is_active(self) -> bool:
+        return self.status == WorkflowVersionStatus.ACTIVE
+    
+    @property
+    def is_deprecated(self) -> bool:
+        return self.status == WorkflowVersionStatus.DEPRECATED
+    
+    @property
+    def is_archived(self) -> bool:
+        return self.status == WorkflowVersionStatus.ARCHIVED
+    
+    @property
+    def is_inactive(self) -> bool:
+        return self.status == WorkflowVersionStatus.INACTIVE
+    
+    @property
+    def nodes(self) -> list[WorkflowNode]:
+        if not self.snapshot:
+            raise ValueError("Snapshot is not available")
+        return self.snapshot["nodes"]
+    
+    @property
+    def edges(self) -> list[WorkflowEdge]:
+        if not self.snapshot:
+            raise ValueError("Snapshot is not available")
+        return self.snapshot["edges"]
+    
+    @property
+    def end_node(self) -> WorkflowNode:
+        if not self.nodes:
+            raise ValueError("Nodes are not available")
+        node = next((node for node in self.nodes if node["node_key"] == self.end_node_key), None)
+        if not node:
+            raise ValueError("End node not found")
+        return node
+    
+    @property
+    def start_node(self) -> WorkflowNode:
+        if not self.nodes:
+            raise ValueError("Nodes are not available")
+        node = next((node for node in self.nodes if node["node_key"] == self.start_node_key), None)
+        if not node:
+            raise ValueError("Start node not found")
+        return node
 
 
 class WorkflowSnapshot(DBBase):
@@ -277,6 +325,8 @@ class WorkflowSnapshot(DBBase):
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     snapshot_hash: Mapped[str] = mapped_column(String(256), nullable=False)
+    end_node_key: Mapped[str] = mapped_column(String(10), nullable=False)
+    start_node_key: Mapped[str] = mapped_column(String(10), nullable=False)
 
     # relationship
     workflow: Mapped[Workflow] = relationship(
@@ -289,4 +339,32 @@ class WorkflowSnapshot(DBBase):
         Index("idx_workflow_snapshot_workflow", "workflow_id"),
     )
 
-
+    @property
+    def nodes(self) -> list[WorkflowNode]:
+        if not self.snapshot:
+            raise ValueError("Snapshot is not available")
+        return self.snapshot["nodes"]
+    
+    @property
+    def edges(self) -> list[WorkflowEdge]:
+        if not self.snapshot:
+            raise ValueError("Snapshot is not available")
+        return self.snapshot["edges"]
+    
+    @property
+    def end_node(self) -> WorkflowNode:
+        if not self.nodes:
+            raise ValueError("Nodes are not available")
+        node = next((node for node in self.nodes if node["node_key"] == self.end_node_key), None)
+        if not node:
+            raise ValueError("End node not found")
+        return node
+    
+    @property
+    def start_node(self) -> WorkflowNode:
+        if not self.nodes:
+            raise ValueError("Nodes are not available")
+        node = next((node for node in self.nodes if node["node_key"] == self.start_node_key), None)
+        if not node:
+            raise ValueError("Start node not found")
+        return node

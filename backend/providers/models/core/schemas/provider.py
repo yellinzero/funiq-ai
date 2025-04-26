@@ -4,7 +4,6 @@ from typing import Literal, Union
 from pydantic import BaseModel
 
 from utils.common.i18n import TranslatableText
-from utils.json_schema import JSONSchema
 
 from .model import ConfigurateMethod, ModelType
 
@@ -36,4 +35,4 @@ class ProviderEntity(SimpleProviderEntity):
     """
     description: Union[str, TranslatableText] | None = None
     configurate_methods: list[ConfigurateMethod]
-    credential_schema: JSONSchema | None
+    credential_schema: dict | None

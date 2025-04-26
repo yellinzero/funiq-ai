@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 
 class WorkflowErrorCode(Enum):
@@ -13,7 +13,7 @@ class WorkflowErrorCode(Enum):
 
 
 class WorkflowError(Exception):
-    def __init__(self, code: WorkflowErrorCode, message: str, details: Optional[dict[str, Any]] = None):
+    def __init__(self, code: WorkflowErrorCode, message: str, details: dict[str, Any] | None = None):
         self.code = code
         self.message = message
         self.details = details or {}

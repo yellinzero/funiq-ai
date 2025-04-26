@@ -26,14 +26,14 @@ class UserRoleUpdateRequest(BaseModel):
     role: TenantUserRole
 
 
-class UserResponse(BaseModel):
+class UpdateUserResponse(BaseModel):
     id: str
     account_id: str
     tenant_id: str
     role: TenantUserRole
-
-
-class AccountResponse(BaseModel):
+    
+    
+class UserInfo(BaseModel):
     id: str
     email: str
     name: str

@@ -30,7 +30,6 @@ class TokenRefreshMiddleware(BaseHTTPMiddleware):
                 request.url.path.startswith(prefix) for prefix in self.public_paths
             ):
                 return await call_next(request)
-
             auth_header = request.headers.get("Authorization")
             refresh_token = get_refresh_token_from_cookie(request)
 

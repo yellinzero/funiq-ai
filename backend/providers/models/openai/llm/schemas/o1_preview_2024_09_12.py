@@ -4,6 +4,7 @@ schema = {
     "model": "o1-preview-2024-09-12",
     "label": "o1-preview-2024-09-12",
     "model_type": "llm",
+    "group": "o1",
     "features": [
         "agent-thought",
     ],
@@ -28,11 +29,13 @@ schema = {
             ],
         },
     },
-    "pricing": {
-        "input": "15.00",
-        "output": "60.00",
-        "unit": "0.000001",
-        "currency": "USD",
-    },
+    "pricing": [
+        {
+            "input": "15.00",
+            "output": "60.00",
+            "unit": "0.000001",
+            "currency": "USD",
+        },
+    ],
 }
 

@@ -227,39 +227,67 @@ class WorkflowEdge(DBBase, DBAuditFieldsMixin):
         )
 
 
-class WorkflowVersion(DBBase):
-    """Workflow version history tracking model.
-
-    Maintains a record of all published versions of a workflow, including
-    metadata about when and by whom the version was published.
-    """
-
-    version: Mapped[str] = mapped_column(String(50), primary_key=True, comment="Version identifier (e.g., v1.0.0)")
+class BaseWorkflowSnapshotModel(DBBase):
+    """Base class for workflow snapshot models with common fields and properties."""
+    
+    snapshot: Mapped[dict[str, Any]] = mapped_column(JSON, comment="Snapshot data")
+    snapshot_hash: Mapped[str] = mapped_column(String(256), nullable=False)
+    start_node_key: Mapped[str] = mapped_column(String(10), nullable=False)
+    end_node_key: Mapped[str] = mapped_column(String(10), nullable=False)
     workflow_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("workflows.id", ondelete="CASCADE"), nullable=False, comment="Reference to the parent workflow"
+        ForeignKey("workflows.id", ondelete="CASCADE"), 
+        nullable=False, 
+        comment="Reference to the parent workflow"
     )
+    
+    __abstract__ = True
+    
+    @property
+    def nodes(self) -> list[WorkflowNode]:
+        if not self.snapshot:
+            raise ValueError("Snapshot is not available")
+        return self.snapshot["nodes"]
+    
+    @property
+    def edges(self) -> list[WorkflowEdge]:
+        if not self.snapshot:
+            raise ValueError("Snapshot is not available")
+        return self.snapshot["edges"]
+    
+    @property
+    def end_node(self) -> WorkflowNode:
+        if not self.nodes:
+            raise ValueError("Nodes are not available")
+        node = next((node for node in self.nodes if node["node_key"] == self.end_node_key), None)
+        if not node:
+            raise ValueError("End node not found")
+        return node
+    
+    @property
+    def start_node(self) -> WorkflowNode:
+        if not self.nodes:
+            raise ValueError("Nodes are not available")
+        node = next((node for node in self.nodes if node["node_key"] == self.start_node_key), None)
+        if not node:
+            raise ValueError("Start node not found")
+        return node
+
+
+class WorkflowVersion(BaseWorkflowSnapshotModel):
+    version: Mapped[str] = mapped_column(String(50), primary_key=True)
     status: Mapped[WorkflowVersionStatus] = mapped_column(
         Enum(WorkflowVersionStatus),
         nullable=False,
-        default=WorkflowVersionStatus.ACTIVE,
-        comment="Current status of the workflow version",
+        default=WorkflowVersionStatus.ACTIVE
     )
-    end_node_key: Mapped[str] = mapped_column(String(10), nullable=False, comment="Reference to the end node")
-    start_node_key: Mapped[str] = mapped_column(String(10), nullable=False, comment="Reference to the start node")
-
-    snapshot: Mapped[dict[str, Any]] = mapped_column(JSON, comment="Snapshot of the workflow version")
-    snapshot_hash: Mapped[str] = mapped_column(String(256), nullable=False)
-    description: Mapped[str] = mapped_column(String(255), comment="Description of changes in this version")
+    description: Mapped[str] = mapped_column(String(255))
     published_at: Mapped[datetime] = mapped_column(
-        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
-        comment="Timestamp when this version was published",
+        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
     )
-    published_by: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, comment="User ID who published this version"
-    )
-
+    published_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    
     workflow: Mapped[Workflow] = relationship("Workflow", back_populates="versions")
-
+    
     __table_args__ = (
         UniqueConstraint("workflow_id", "version", name="uq_workflow_version"),
         Index("idx_workflow_version_workflow", "workflow_id"),
@@ -281,90 +309,17 @@ class WorkflowVersion(DBBase):
     @property
     def is_inactive(self) -> bool:
         return self.status == WorkflowVersionStatus.INACTIVE
-    
-    @property
-    def nodes(self) -> list[WorkflowNode]:
-        if not self.snapshot:
-            raise ValueError("Snapshot is not available")
-        return self.snapshot["nodes"]
-    
-    @property
-    def edges(self) -> list[WorkflowEdge]:
-        if not self.snapshot:
-            raise ValueError("Snapshot is not available")
-        return self.snapshot["edges"]
-    
-    @property
-    def end_node(self) -> WorkflowNode:
-        if not self.nodes:
-            raise ValueError("Nodes are not available")
-        node = next((node for node in self.nodes if node["node_key"] == self.end_node_key), None)
-        if not node:
-            raise ValueError("End node not found")
-        return node
-    
-    @property
-    def start_node(self) -> WorkflowNode:
-        if not self.nodes:
-            raise ValueError("Nodes are not available")
-        node = next((node for node in self.nodes if node["node_key"] == self.start_node_key), None)
-        if not node:
-            raise ValueError("Start node not found")
-        return node
 
 
-class WorkflowSnapshot(DBBase):
-    """Workflow snapshot model."""
-
+class WorkflowSnapshot(BaseWorkflowSnapshotModel):
     snapshot_timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False, primary_key=True)
-    workflow_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("workflows.id", ondelete="CASCADE"), nullable=False, comment="Reference to the parent workflow"
-    )
-    snapshot: Mapped[dict[str, Any]] = mapped_column(JSON)
     created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    snapshot_hash: Mapped[str] = mapped_column(String(256), nullable=False)
-    end_node_key: Mapped[str] = mapped_column(String(10), nullable=False)
-    start_node_key: Mapped[str] = mapped_column(String(10), nullable=False)
-
-    # relationship
-    workflow: Mapped[Workflow] = relationship(
-        "Workflow",
-        back_populates="snapshots",
-    )
-
+    
+    workflow: Mapped[Workflow] = relationship("Workflow", back_populates="snapshots")
+    
     __table_args__ = (
         UniqueConstraint("workflow_id", "snapshot_timestamp", name="uq_workflow_snapshots_composite"),
         Index("idx_workflow_snapshot_workflow", "workflow_id"),
     )
-
-    @property
-    def nodes(self) -> list[WorkflowNode]:
-        if not self.snapshot:
-            raise ValueError("Snapshot is not available")
-        return self.snapshot["nodes"]
-    
-    @property
-    def edges(self) -> list[WorkflowEdge]:
-        if not self.snapshot:
-            raise ValueError("Snapshot is not available")
-        return self.snapshot["edges"]
-    
-    @property
-    def end_node(self) -> WorkflowNode:
-        if not self.nodes:
-            raise ValueError("Nodes are not available")
-        node = next((node for node in self.nodes if node["node_key"] == self.end_node_key), None)
-        if not node:
-            raise ValueError("End node not found")
-        return node
-    
-    @property
-    def start_node(self) -> WorkflowNode:
-        if not self.nodes:
-            raise ValueError("Nodes are not available")
-        node = next((node for node in self.nodes if node["node_key"] == self.start_node_key), None)
-        if not node:
-            raise ValueError("Start node not found")
-        return node

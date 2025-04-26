@@ -4,6 +4,7 @@ schema = {
     "model": "chatgpt-4o-latest",
     "label": "chatgpt-4o-latest",
     "model_type": "llm",
+    "group": "gpt-4o",
     "features": [
         "multi-tool-call",
         "agent-thought",
@@ -43,11 +44,11 @@ schema = {
             ],
         },
     },
-    "pricing": {
-        "input": "2.50",
-        "output": "10.00",
+    "pricing": [{
+        "input": "5",
+        "output": "15",
         "unit": "0.000001",
         "currency": "USD",
-    },
+    }],
 }
 

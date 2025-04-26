@@ -4,7 +4,7 @@ import threading
 import time
 from collections.abc import Awaitable, Callable
 from functools import wraps
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 from redis import ConnectionPool as SyncConnectionPool
 from redis import Redis as SyncRedis
@@ -19,8 +19,8 @@ T = TypeVar("T")
 _local = threading.local()
 
 # Global connection pools
-_async_pool: Optional[BlockingConnectionPool] = None
-_sync_pool: Optional[SyncConnectionPool] = None
+_async_pool: BlockingConnectionPool | None = None
+_sync_pool: SyncConnectionPool | None = None
 
 
 def get_redis_connection_pool() -> BlockingConnectionPool:

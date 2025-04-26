@@ -4,11 +4,10 @@ from fastapi_async_sqlalchemy import db
 from app.core.schemas import ResponseModel
 
 from .schemas import (
+    ActiveModelProviderWithModels,
     GetModelProvidersResponse,
     GetModelsResponse,
-    ModelResponse,
     ProviderResponse,
-    SaveModelRequest,
     SaveProviderRequest,
 )
 from .service.provider_service import ProviderService
@@ -40,6 +39,19 @@ async def get_models(request: Request, provider_name: str):
     return ResponseModel(data={"models": models, "total": len(models)})
 
 
+@model_providers_router.get(
+    "/active-providers",
+    response_model=ResponseModel[list[ActiveModelProviderWithModels]],
+    response_model_exclude_none=True,
+)
+async def get_active_providers(request: Request):
+    """
+    Get all active model providers with their models
+    """
+    providers = await ProviderService.get_active_providers(session=db.session, tenant_id=request.state.tenant_id)
+    return ResponseModel(data=providers)
+
+
 @model_providers_router.get("/{provider_name}", response_model=ResponseModel[ProviderResponse])
 async def get_provider(request: Request, provider_name: str):
     """
@@ -51,7 +63,6 @@ async def get_provider(request: Request, provider_name: str):
     return ResponseModel(
         data={
             "provider": provider.provider,
-            "is_system": provider.is_system,
             "credentials": provider.credentials,
             "is_active": provider.is_active,
         }
@@ -69,76 +80,7 @@ async def save_provider(request: Request, provider_name: str, payload: SaveProvi
     return ResponseModel(
         data={
             "provider": provider.provider,
-            "is_system": provider.is_system,
             "credentials": provider.credentials,
             "is_active": provider.is_active,
-        }
-    )
-
-
-@model_providers_router.get("/{provider_name}/models/{model_name}", response_model=ResponseModel[ModelResponse])
-async def get_model(request: Request, provider_name: str, model_name: str):
-    """
-    Get a model configuration by name
-    """
-    model = await ProviderService.get_model(
-        session=db.session, tenant_id=request.state.tenant_id, provider_name=provider_name, model_name=model_name
-    )
-    return ResponseModel(
-        data={
-            "provider": model.provider,
-            "model": model.model,
-            "model_type": model.model_type,
-            "is_system": model.is_system,
-            "is_enabled": model.is_enabled,
-            "last_used_at": model.last_used_at,
-        }
-    )
-
-
-@model_providers_router.post("/{provider_name}/models/{model_name}", response_model=ResponseModel[ModelResponse])
-async def save_model(request: Request, provider_name: str, model_name: str, payload: SaveModelRequest):
-    """
-    Save a model configuration
-    """
-    model = await ProviderService.save_model(
-        session=db.session,
-        tenant_id=request.state.tenant_id,
-        provider_name=provider_name,
-        model_name=model_name,
-        payload=payload,
-    )
-    return ResponseModel(
-        data={
-            "provider": model.provider,
-            "model": model.model,
-            "model_type": model.model_type,
-            "is_system": model.is_system,
-            "is_enabled": model.is_enabled,
-            "last_used_at": model.last_used_at,
-        }
-    )
-
-
-@model_providers_router.post("/{provider_name}/models/{model_name}/enable", response_model=ResponseModel[ModelResponse])
-async def enable_model(request: Request, provider_name: str, model_name: str):
-    """
-    Enable a model and create its associated system app if it doesn't exist
-    """
-    model = await ProviderService.enable_model(
-        session=db.session,
-        tenant_id=request.state.tenant_id,
-        provider_name=provider_name,
-        model_name=model_name,
-        request=request,
-    )
-    return ResponseModel(
-        data={
-            "provider": model.provider,
-            "model": model.model,
-            "model_type": model.model_type,
-            "is_system": model.is_system,
-            "is_enabled": model.is_enabled,
-            "last_used_at": model.last_used_at,
         }
     )

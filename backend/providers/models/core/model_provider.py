@@ -5,7 +5,6 @@ from typing import ClassVar
 from providers.models.core import AIModel
 from providers.models.core.schemas import AIModelEntity, ModelType, ProviderEntity
 from utils.common.i18n import get_current_locale_code_with_territory
-from utils.json_schema import UiSchema
 
 
 class ModelProvider(ABC):
@@ -59,10 +58,7 @@ class ModelProvider(ABC):
 
             # Load and cache UI schema if available
             if hasattr(schema_module, "ui_schema"):
-                self._provider_ui_schemas[provider_name][locale_code] = UiSchema(**schema_module.ui_schema).model_dump(
-                    by_alias=True,
-                    exclude_none=True
-                )
+                self._provider_ui_schemas[provider_name][locale_code] = {**schema_module.ui_schema}
 
         except Exception as e:
             raise Exception(f"Invalid provider schema for {provider_name}: {e!s}") from e

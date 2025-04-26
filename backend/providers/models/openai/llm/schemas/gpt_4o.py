@@ -4,6 +4,7 @@ schema = {
     "model": "gpt-4o",
     "label": "gpt-4o",
     "model_type": "llm",
+    "group": "gpt-4o",
     "features": [
         "multi-tool-call",
         "agent-thought",
@@ -43,10 +44,10 @@ schema = {
             ],
         },
     },
-    "pricing": {
-        "input": "5.00",
-        "output": "15.00",
+    "pricing": [{
+        "input": "2.50",
+        "output": "10.00",
         "unit": "0.000001",
         "currency": "USD",
-    },
+    }],
 }

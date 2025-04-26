@@ -10,6 +10,7 @@ from .llm import (
 from .message import (
     AssistantPromptMessage,
     AudioPromptMessageContent,
+    FilePromptMessageContent,
     ImagePromptMessageContent,
     PromptMessage,
     PromptMessageContent,
@@ -61,6 +62,7 @@ __all__ = [
     "ConfigurateMethod",
     "EmbeddingInputType",
     "EmbeddingUsage",
+    "FilePromptMessageContent",
     "ImagePromptMessageContent",
     "LLMMode",
     "LLMResult",

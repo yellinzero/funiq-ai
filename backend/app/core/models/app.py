@@ -36,10 +36,15 @@ class App(DBBase, DBUUIDModelMixin):
     )
     name: Mapped[str] = mapped_column(String(100), nullable=False, comment="Name of the application")
     description: Mapped[str | None] = mapped_column(String(1000), comment="Description of the application")
-    is_system: Mapped[bool] = mapped_column(default=False, comment="Whether this is a system application")
     version: Mapped[str | None] = mapped_column(String(50), nullable=True, comment="Current version number")
     last_run_at: Mapped[datetime | None] = mapped_column(DateTime, comment="Last execution timestamp")
 
+    support_file: Mapped[bool] = mapped_column(default=False, comment="Whether the application supports file")
+    support_image: Mapped[bool] = mapped_column(default=False, comment="Whether the application supports image")
+    support_audio: Mapped[bool] = mapped_column(default=False, comment="Whether the application supports audio")
+    support_thinking: Mapped[bool] = mapped_column(default=False, comment="Whether the application supports thinking")
+    support_tool: Mapped[bool] = mapped_column(default=False, comment="Whether the application supports tool")
+    
     created_by: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), nullable=False, comment="User who created the application"
     )
@@ -60,12 +65,11 @@ class App(DBBase, DBUUIDModelMixin):
         Index("uk_app_tenant_name", tenant_id, name, unique=True),
         # Query indexes
         Index("idx_app_tenant", tenant_id),
-        Index("idx_app_system", is_system),
         Index("idx_app_version", version),
     )
 
     def __repr__(self) -> str:
-        return f"<App(id={self.id}, name={self.name}, is_system={self.is_system})>"
+        return f"<App(id={self.id}, name={self.name})>"
 
     @property
     def snapshot(self) -> dict[str, Any]:
@@ -73,6 +77,11 @@ class App(DBBase, DBUUIDModelMixin):
         return {
             "name": self.name,
             "description": self.description,
+            "support_file": self.support_file,
+            "support_image": self.support_image,
+            "support_audio": self.support_audio,
+            "support_thinking": self.support_thinking,
+            "support_tool": self.support_tool,
         }
 
 

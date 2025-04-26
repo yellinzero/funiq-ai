@@ -1,12 +1,9 @@
 import enum
 from datetime import datetime, timezone
-from typing import ClassVar
 
 from sqlalchemy import JSON, ForeignKey, String, UniqueConstraint
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from configs import funiq_ai_config
 from infrastructure import DBBase, DBSoftDeleteMixin, DBUUIDModelMixin
 from utils.security import hash_password, verify_password
 
@@ -38,12 +35,6 @@ class OAuthProviderName(str, enum.Enum):
     GITHUB = "github"
 
 
-class AccountType(str, enum.Enum):
-    """Account type enum defining the nature of the account."""
-    SYSTEM = "system"    # System account for automated operations
-    REGULAR = "regular"  # Regular user account
-
-
 # ---------- Models ----------
 
 
@@ -51,21 +42,6 @@ class Account(DBBase, DBUUIDModelMixin, DBSoftDeleteMixin):
     """
     Account stores global authentication information.
     """
-
-    # System account constant
-    SYSTEM_ACCOUNT_ID: ClassVar[str] = "00000000-0000-0000-0000-000000000000"
-    SYSTEM_ACCOUNT_EMAIL: ClassVar[str] = funiq_ai_config.SMTP_USERNAME
-    SYSTEM_ACCOUNT_NAME: ClassVar[str] = "System"
-
-    # Add account type field
-    account_type: Mapped[AccountType] = mapped_column(
-        String(50), 
-        default=AccountType.REGULAR,
-        nullable=False,
-        index=True,
-        comment="Type of account (system or regular)"
-    )
-
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     password_hash: Mapped[str | None] = mapped_column(String(255))
@@ -80,26 +56,6 @@ class Account(DBBase, DBUUIDModelMixin, DBSoftDeleteMixin):
     )
     users: Mapped[list["User"]] = relationship("User", back_populates="account", cascade="all, delete-orphan")
     last_login_tenant: Mapped["Tenant | None"] = relationship("Tenant", foreign_keys=[last_login_tenant_id])
-
-    @classmethod
-    async def get_system_account(cls, session: AsyncSession) -> "Account":
-        """Get or create the system account."""
-        system_account = await session.get(cls, cls.SYSTEM_ACCOUNT_ID)
-        if not system_account:
-            system_account = cls(
-                id=cls.SYSTEM_ACCOUNT_ID,
-                name=cls.SYSTEM_ACCOUNT_NAME,
-                email=cls.SYSTEM_ACCOUNT_EMAIL,
-                account_type=AccountType.SYSTEM,
-                status=AccountStatus.ACTIVE
-            )
-            session.add(system_account)
-        return system_account
-
-    @property
-    def is_system(self) -> bool:
-        """Check if this is the system account."""
-        return self.account_type == AccountType.SYSTEM
 
     def set_password(self, password: str):
         """Hash and set the password."""
@@ -123,12 +79,6 @@ class Tenant(DBBase, DBUUIDModelMixin, DBSoftDeleteMixin):
     invites: Mapped[list["TenantInvite"]] = relationship(
         "TenantInvite", back_populates="tenant", cascade="all, delete-orphan"
     )
-
-    def get_user_role(self, account_id: str) -> TenantUserRole | None:
-        for user in self.users:
-            if user.account_id == account_id:
-                return user.role
-        return None
 
 
 class User(DBBase, DBUUIDModelMixin, DBSoftDeleteMixin):

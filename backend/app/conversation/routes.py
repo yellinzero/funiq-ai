@@ -5,6 +5,7 @@ from fastapi.responses import StreamingResponse
 from fastapi_async_sqlalchemy import db
 
 from app.conversation.schemas import (
+    CompletionRequest,
     ConversationCreate,
     ConversationResponse,
     ConversationUpdate,
@@ -139,19 +140,19 @@ async def list_messages(
 @conversation_router.post("/{conversation_id}/completion")
 async def completion(
     conversation_id: str,
-    message: str,
     app_version_id: str,
     request: Request,
+    completion_request: CompletionRequest,
 ):
-    generator = await ConversationService.completation(
-        message=message,
+    generator = await ConversationService.completion(
+        message=completion_request.message,
         session=db.session,
         conversation_id=str(conversation_id),
         app_version_id=str(app_version_id),
         request=request,
     )
     return StreamingResponse(
-        generator(),
+        generator,
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

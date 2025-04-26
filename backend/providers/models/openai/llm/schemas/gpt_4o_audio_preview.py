@@ -4,6 +4,7 @@ schema = {
     "model": "gpt-4o-audio-preview",
     "label": "gpt-4o-audio-preview",
     "model_type": "llm",
+    "group": "gpt-4o-audio-preview",
     "features": [
         "multi-tool-call",
         "agent-thought",
@@ -43,10 +44,10 @@ schema = {
             ],
         },
     },
-    "pricing": {
-        "input": "5.00",
-        "output": "15.00",
+    "pricing": [{
+        "input": "5",
+        "output": "15",
         "unit": "0.000001",
         "currency": "USD",
-    },
+    }],
 }

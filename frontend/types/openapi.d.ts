@@ -246,7 +246,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Get Tenant Users */
+        get: operations["get_tenant_users_account_tenants__tenant_id__users_get"];
         put?: never;
         /** Add Tenant User */
         post: operations["add_tenant_user_account_tenants__tenant_id__users_post"];
@@ -263,7 +264,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Get Tenant User */
+        get: operations["get_tenant_user_account_tenants__tenant_id__users__user_id__get"];
         /** Update User Role */
         put: operations["update_user_role_account_tenants__tenant_id__users__user_id__put"];
         post?: never;
@@ -314,6 +316,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/model-providers/active-providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Active Providers
+         * @description Get all active model providers with their models
+         */
+        get: operations["get_active_providers_model_providers_active_providers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/model-providers/{provider_name}": {
         parameters: {
             query?: never;
@@ -338,7 +360,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/model-providers/{provider_name}/models/{model_name}": {
+    "/static/providers/{provider}/icon/{size}": {
         parameters: {
             query?: never;
             header?: never;
@@ -346,36 +368,16 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Model
-         * @description Get a model configuration by name
+         * Get Provider Icon
+         * @description Get the icon for a specific provider
+         *
+         *     Args:
+         *         provider: The provider name
+         *         size: Icon size ('small' or 'large')
          */
-        get: operations["get_model_model_providers__provider_name__models__model_name__get"];
+        get: operations["get_provider_icon_static_providers__provider__icon__size__get"];
         put?: never;
-        /**
-         * Save Model
-         * @description Save a model configuration
-         */
-        post: operations["save_model_model_providers__provider_name__models__model_name__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/model-providers/{provider_name}/models/{model_name}/enable": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Enable Model
-         * @description Enable a model and create its associated system app if it doesn't exist
-         */
-        post: operations["enable_model_model_providers__provider_name__models__model_name__enable_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -394,6 +396,32 @@ export interface paths {
          * @description Get all available operators
          */
         get: operations["get_operators_workflows_operators_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workflows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Workflow List
+         * @description Get paginated list of workflows with optional search.
+         *
+         *     Args:
+         *         app_id: Application ID to filter workflows
+         *         page: Page number (1-based)
+         *         page_size: Number of items per page
+         *         search: Optional search term to filter workflows by name or description
+         */
+        get: operations["get_workflow_list_workflows_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -450,7 +478,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/static/providers/{provider}/icon/{size}": {
+    "/workflows/{workflow_id}/save-graph": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save Workflow
+         * @description Save workflow graph data with batch operations.
+         */
+        post: operations["save_workflow_workflows__workflow_id__save_graph_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workflows/{workflow_id}/save-meta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Workflow Meta
+         * @description Update workflow metadata (name, description).
+         */
+        put: operations["update_workflow_meta_workflows__workflow_id__save_meta_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workflows/{workflow_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -458,16 +526,223 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get Provider Icon
-         * @description Get the icon for a specific provider
+         * Get Workflow
+         * @description Get complete workflow information including nodes and edges.
          *
          *     Args:
-         *         provider: The provider name
-         *         size: Icon size ('small' or 'large')
+         *         workflow_id: ID of the workflow to retrieve
          */
-        get: operations["get_provider_icon_static_providers__provider__icon__size__get"];
+        get: operations["get_workflow_workflows__workflow_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workflows/{workflow_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish Workflow
+         * @description Publish a workflow with a specific version.
+         */
+        post: operations["publish_workflow_workflows__workflow_id__publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/apps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Apps
+         * @description Get list of apps with pagination and search support.
+         *
+         *     Args:
+         *         page: Page number (1-based)
+         *         page_size: Number of items per page
+         *         search: Optional search term
+         */
+        get: operations["list_apps_apps_get"];
+        put?: never;
+        /**
+         * Create Application
+         * @description Create a new application
+         */
+        post: operations["create_application_apps_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/apps/{app_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get App
+         * @description Get details of a specific application
+         */
+        get: operations["get_app_apps__app_id__get"];
+        /**
+         * Update App
+         * @description Update an existing application
+         */
+        put: operations["update_app_apps__app_id__put"];
+        post?: never;
+        /**
+         * Delete App
+         * @description Delete an application
+         */
+        delete: operations["delete_app_apps__app_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/apps/{app_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List App Versions
+         * @description Get all versions of a specific application
+         */
+        get: operations["list_app_versions_apps__app_id__versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/apps/tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Apps Tree
+         * @description Get all apps with their version information in a tree structure
+         */
+        get: operations["get_apps_tree_apps_tree_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/apps/{app_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish App Version
+         * @description Publish a new version of an application
+         */
+        post: operations["publish_app_version_apps__app_id__publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Conversations */
+        get: operations["list_conversations_conversations_get"];
+        put?: never;
+        /** Create Conversation */
+        post: operations["create_conversation_conversations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Conversation */
+        get: operations["get_conversation_conversations__conversation_id__get"];
+        /** Update Conversation */
+        put: operations["update_conversation_conversations__conversation_id__put"];
+        post?: never;
+        /** Delete Conversation */
+        delete: operations["delete_conversation_conversations__conversation_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{conversation_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Messages */
+        get: operations["list_messages_conversations__conversation_id__messages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{conversation_id}/completion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Completion */
+        post: operations["completion_conversations__conversation_id__completion_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -491,63 +766,10 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/stream": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Stream Endpoint */
-        get: operations["stream_endpoint_stream_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/mock/llm/stream": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Mock Llm Stream Endpoint */
-        get: operations["mock_llm_stream_endpoint_mock_llm_stream_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** AccountResponse */
-        AccountResponse: {
-            /** Id */
-            id: string;
-            /** Email */
-            email: string;
-            /** Name */
-            name: string;
-            /** Language */
-            language: string | null;
-            status: components["schemas"]["AccountStatus"];
-            /** Last Login At */
-            last_login_at: string | null;
-            /** Last Login Ip */
-            last_login_ip: string | null;
-            role: components["schemas"]["TenantUserRole"] | null;
-            /** Avatar */
-            avatar: string | null;
-        };
         /**
          * AccountStatus
          * @enum {string}
@@ -587,12 +809,223 @@ export interface components {
              */
             token_type: string;
         };
+        /** ActiveModelProviderWithModels */
+        ActiveModelProviderWithModels: {
+            provider: components["schemas"]["ProviderInfo"];
+            /** Models */
+            models: components["schemas"]["ModelInfo"][];
+        };
+        /** AppCreate */
+        AppCreate: {
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Support File */
+            support_file?: boolean | null;
+            /** Support Image */
+            support_image?: boolean | null;
+            /** Support Audio */
+            support_audio?: boolean | null;
+            /** Support Thinking */
+            support_thinking?: boolean | null;
+            /** Support Tool */
+            support_tool?: boolean | null;
+        };
+        /** AppListResponse */
+        AppListResponse: {
+            /** Items */
+            items: components["schemas"]["AppResponse"][];
+            /** Total */
+            total: number;
+        };
+        /** AppPublishRequest */
+        AppPublishRequest: {
+            /** Version */
+            version: string;
+            /** Workflow Version */
+            workflow_version: string;
+        };
+        /** AppResponse */
+        AppResponse: {
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Support File */
+            support_file?: boolean | null;
+            /** Support Image */
+            support_image?: boolean | null;
+            /** Support Audio */
+            support_audio?: boolean | null;
+            /** Support Thinking */
+            support_thinking?: boolean | null;
+            /** Support Tool */
+            support_tool?: boolean | null;
+            /** Id */
+            id: string;
+            /** Tenant Id */
+            tenant_id: string;
+            /** Workflow Id */
+            workflow_id: string;
+            /** Version */
+            version?: string | null;
+            /** Created By */
+            created_by: string;
+            /** Updated By */
+            updated_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AppTreeNode */
+        AppTreeNode: {
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Support File */
+            support_file?: boolean | null;
+            /** Support Image */
+            support_image?: boolean | null;
+            /** Support Audio */
+            support_audio?: boolean | null;
+            /** Support Thinking */
+            support_thinking?: boolean | null;
+            /** Support Tool */
+            support_tool?: boolean | null;
+            /** Id */
+            id: string;
+            /** Tenant Id */
+            tenant_id: string;
+            /** Workflow Id */
+            workflow_id: string;
+            /** Version */
+            version?: string | null;
+            /** Created By */
+            created_by: string;
+            /** Updated By */
+            updated_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Versions */
+            versions: components["schemas"]["AppVersionResponse"][];
+        };
+        /** AppUpdate */
+        AppUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Support File */
+            support_file?: boolean | null;
+            /** Support Image */
+            support_image?: boolean | null;
+            /** Support Audio */
+            support_audio?: boolean | null;
+            /** Support Thinking */
+            support_thinking?: boolean | null;
+            /** Support Tool */
+            support_tool?: boolean | null;
+        };
+        /** AppVersionResponse */
+        AppVersionResponse: {
+            /** Version */
+            version: string;
+            /** Workflow Version */
+            workflow_version: string;
+            /** Status */
+            status: string;
+            /**
+             * Published At
+             * Format: date-time
+             */
+            published_at: string;
+            /** Published By */
+            published_by: string;
+            /** Id */
+            id: string;
+            /** App Id */
+            app_id: string;
+        };
+        /**
+         * AssistantPromptMessage
+         * @description Model class for assistant prompt message.
+         */
+        AssistantPromptMessage: {
+            /** @default assistant */
+            role: components["schemas"]["PromptMessageRole"];
+            /** Content */
+            content?: string | components["schemas"]["PromptMessageContent"][] | null;
+            /** Name */
+            name?: string | null;
+            /**
+             * Tool Calls
+             * @default []
+             */
+            tool_calls: components["schemas"]["ToolCall"][];
+        };
+        /** CompletionRequest */
+        CompletionRequest: {
+            /** Message */
+            message: string;
+        };
         /**
          * ConfigurateMethod
          * @description Enum class for configurate method of provider model.
          * @enum {string}
          */
         ConfigurateMethod: "predefined" | "customizable";
+        /** ConversationCreate */
+        ConversationCreate: {
+            /** Name */
+            name: string;
+        };
+        /** ConversationResponse */
+        ConversationResponse: {
+            /** Name */
+            name: string;
+            /** Id */
+            id: string;
+            /** Status */
+            status: string;
+            /** Message Count */
+            message_count: number;
+            /** Created By */
+            created_by: string;
+            /** Updated By */
+            updated_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ConversationUpdate */
+        ConversationUpdate: {
+            /** Name */
+            name: string;
+        };
         /** ForgotPasswordRequest */
         ForgotPasswordRequest: {
             /**
@@ -627,63 +1060,38 @@ export interface components {
             /** Total */
             total: number;
         };
-        /**
-         * GlobalUISchemaOptions
-         * @description Global UI schema options that can be set globally and used as fallbacks when no field-level value is provided
-         */
-        GlobalUISchemaOptions: {
+        /** GetWorkflowResponseBase */
+        GetWorkflowResponseBase: {
+            /** Id */
+            id: string;
+            /** App Id */
+            app_id: string;
+            status: components["schemas"]["WorkflowStatus"];
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Version */
+            version?: string | null;
+            /** Created By */
+            created_by: string;
+            /** Updated By */
+            updated_by: string;
             /**
-             * Addable
-             * @description If false, new items cannot be added to array fields
+             * Created At
+             * Format: date-time
              */
-            addable?: boolean | null;
+            created_at: string;
             /**
-             * Copyable
-             * @description If true, array items can be copied
+             * Updated At
+             * Format: date-time
              */
-            copyable?: boolean | null;
-            /**
-             * Orderable
-             * @description If false, array items cannot be ordered
-             */
-            orderable?: boolean | null;
-            /**
-             * Removable
-             * @description If false, array items will not be removable
-             */
-            removable?: boolean | null;
-            /**
-             * Label
-             * @description If false, field labels will be omitted
-             */
-            label?: boolean | null;
-            /**
-             * Duplicatekeysuffixseparator
-             * @description Separator between key name and integer for duplicate additionalProperties keys
-             */
-            duplicateKeySuffixSeparator?: string | null;
+            updated_at: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
-        };
-        /**
-         * JSONSchema
-         * @description Generic JSON Schema definition
-         */
-        JSONSchema: {
-            /**
-             * Type
-             * @default object
-             */
-            type: string;
-            /** Properties */
-            properties: {
-                [key: string]: components["schemas"]["StringProperty"] | components["schemas"]["NumberProperty"] | Record<string, never>;
-            };
-            /** Required */
-            required?: string[] | null;
         };
         /** LoginRequest */
         LoginRequest: {
@@ -708,6 +1116,39 @@ export interface components {
             token_type: string;
         };
         /**
+         * MessageFrom
+         * @description Defines the source of a message
+         * @enum {string}
+         */
+        MessageFrom: "user" | "app";
+        /** MessageResponse */
+        MessageResponse: {
+            /** Content */
+            content: string;
+            /** App Version Id */
+            app_version_id: string;
+            /** Id */
+            id: number;
+            /** Conversation Id */
+            conversation_id: string;
+            /** Execution Id */
+            execution_id: string | null;
+            message_from: components["schemas"]["MessageFrom"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string | null;
+            /** Search Results */
+            search_results: Record<string, never>[] | null;
+            /** Thinking Content */
+            thinking_content: string | null;
+            /** Files */
+            files: Record<string, never>[] | null;
+        };
+        /**
          * ModelFeature
          * @description Enum class for llm feature.
          * @enum {string}
@@ -723,9 +1164,10 @@ export interface components {
             /** Label */
             label: string;
             model_type: components["schemas"]["ModelType"];
+            /** Group */
+            group?: string | null;
             /** Features */
             features?: components["schemas"]["ModelFeature"][] | null;
-            configurate_method: components["schemas"]["ConfigurateMethod"];
             /** Model Properties */
             model_properties: Record<string, never>;
             /**
@@ -733,19 +1175,16 @@ export interface components {
              * @default false
              */
             deprecated: boolean;
-            parameter_rules_ui_schema?: components["schemas"]["UiSchema"] | null;
-            parameter_rules_schema?: components["schemas"]["JSONSchema"] | null;
-            pricing?: components["schemas"]["PriceConfig"] | null;
+            /** Parameter Rules Ui Schema */
+            parameter_rules_ui_schema?: Record<string, never> | null;
+            /** Parameter Rules Schema */
+            parameter_rules_schema?: Record<string, never> | null;
+            /** Pricing */
+            pricing?: components["schemas"]["PriceConfig"][] | null;
             /** Tenant Id */
             tenant_id: string;
             /** Provider */
             provider: string;
-            /** Is Enabled */
-            is_enabled: boolean;
-            /** Is System */
-            is_system: boolean;
-            /** Last Used At */
-            last_used_at?: string | null;
         };
         /**
          * ModelPropertyKey
@@ -754,59 +1193,11 @@ export interface components {
          */
         ModelPropertyKey: "mode" | "context_size" | "max_chunks" | "file_upload_limit" | "supported_file_extensions" | "max_characters_per_chunk" | "default_voice" | "voices" | "word_limit" | "audio_type" | "max_workers";
         /**
-         * ModelResponse
-         * @description Response schema for getting a model
-         */
-        ModelResponse: {
-            /** Provider */
-            provider: string;
-            /** Model */
-            model: string;
-            model_type: components["schemas"]["ModelType"];
-            /** Is System */
-            is_system: boolean;
-            /** Is Enabled */
-            is_enabled: boolean;
-            /** Last Used At */
-            last_used_at?: string | null;
-        };
-        /**
          * ModelType
          * @description Enum class for model type.
          * @enum {string}
          */
         ModelType: "llm" | "text-embedding" | "rerank" | "speech2text" | "moderation" | "tts" | "text2img";
-        /**
-         * NumberProperty
-         * @description Number type schema
-         */
-        NumberProperty: {
-            /**
-             * Type
-             * @default number
-             */
-            type: string;
-            /** Title */
-            title?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Default */
-            default?: unknown | null;
-            /** Enum */
-            enum?: unknown[] | null;
-            /** Const */
-            const?: unknown | null;
-            /** Minimum */
-            minimum?: number | null;
-            /** Maximum */
-            maximum?: number | null;
-            /** Exclusive Minimum */
-            exclusive_minimum?: number | null;
-            /** Exclusive Maximum */
-            exclusive_maximum?: number | null;
-            /** Multiple Of */
-            multiple_of?: number | null;
-        };
         /**
          * OperatorEntity
          * @description Model class for operator schema.
@@ -816,17 +1207,15 @@ export interface components {
             /** Label */
             label: string;
             type: components["schemas"]["OperatorType"];
-            /**
-             * Supports Input Stream
-             * @default false
-             */
-            supports_input_stream: boolean;
             output_stream?: components["schemas"]["OutputStream"] | null;
             /** Description */
             description: string;
-            output_schema: components["schemas"]["JSONSchema"];
-            config_schema: components["schemas"]["JSONSchema"];
-            config_ui_schema?: components["schemas"]["UiSchema"] | null;
+            /** Output Schema */
+            output_schema: Record<string, never>;
+            /** Config Schema */
+            config_schema: Record<string, never>;
+            /** Config Ui Schema */
+            config_ui_schema?: Record<string, never> | null;
         };
         /**
          * OperatorName
@@ -843,15 +1232,9 @@ export interface components {
         OutputStream: {
             /** Enabled */
             enabled: boolean;
-            type: components["schemas"]["OutputStreamType"];
-            /** Response Schema */
-            response_schema?: Record<string, never> | null;
+            /** Chunk Schema */
+            chunk_schema?: Record<string, never> | null;
         };
-        /**
-         * OutputStreamType
-         * @enum {string}
-         */
-        OutputStreamType: "self" | "external";
         /**
          * PriceConfig
          * @description Model class for pricing info.
@@ -859,6 +1242,8 @@ export interface components {
         PriceConfig: {
             /** Input */
             input: string;
+            /** Cached Input */
+            cached_input?: string | null;
             /** Output */
             output?: string | null;
             /** Unit */
@@ -866,6 +1251,27 @@ export interface components {
             /** Currency */
             currency: string;
         };
+        /**
+         * PromptMessageContent
+         * @description Model class for prompt message content.
+         */
+        PromptMessageContent: {
+            type: components["schemas"]["PromptMessageContentType"];
+            /** Data */
+            data: string;
+        };
+        /**
+         * PromptMessageContentType
+         * @description Enum class for prompt message content type.
+         * @enum {string}
+         */
+        PromptMessageContentType: "text" | "image" | "audio" | "file";
+        /**
+         * PromptMessageRole
+         * @description Enum class for prompt message.
+         * @enum {string}
+         */
+        PromptMessageRole: "system" | "user" | "assistant" | "tool";
         /**
          * ProviderDocs
          * @description Model class for provider docs.
@@ -893,11 +1299,12 @@ export interface components {
             description?: string | null;
             /** Configurate Methods */
             configurate_methods: components["schemas"]["ConfigurateMethod"][];
-            credential_schema: components["schemas"]["JSONSchema"] | null;
+            /** Credential Schema */
+            credential_schema: Record<string, never> | null;
             /** Ui Schema */
             ui_schema?: {
                 [key: string]: {
-                    [key: string]: components["schemas"]["UiSchema"] | null;
+                    [key: string]: Record<string, never> | null;
                 } | null;
             } | null;
         };
@@ -908,12 +1315,31 @@ export interface components {
         ProviderResponse: {
             /** Provider */
             provider: string;
-            /** Is System */
-            is_system: boolean;
-            /** Is Active */
-            is_active: boolean;
             /** Credentials */
             credentials?: Record<string, never> | null;
+        };
+        /** PublishWorkflowRequest */
+        PublishWorkflowRequest: {
+            /** Version */
+            version: string;
+            /** Description */
+            description?: string | null;
+        };
+        /** PublishWorkflowResponse */
+        PublishWorkflowResponse: {
+            /** Workflow Id */
+            workflow_id: string;
+            /** Version */
+            version: string;
+            /** Description */
+            description: string;
+            /**
+             * Published At
+             * Format: date-time
+             */
+            published_at: string;
+            /** Published By */
+            published_by: string;
         };
         /** ResendVerificationCodeRequest */
         ResendVerificationCodeRequest: {
@@ -953,20 +1379,6 @@ export interface components {
             /** Data */
             data: unknown;
         };
-        /** ResponseModel[AccountResponse] */
-        ResponseModel_AccountResponse_: {
-            /**
-             * Code
-             * @default 0
-             */
-            code: string;
-            /**
-             * Msg
-             * @default success
-             */
-            msg: string;
-            data: components["schemas"]["AccountResponse"];
-        };
         /** ResponseModel[ActivateAccountResponse] */
         ResponseModel_ActivateAccountResponse_: {
             /**
@@ -994,6 +1406,62 @@ export interface components {
              */
             msg: string;
             data: components["schemas"]["ActivateAccountVerifyResponse"];
+        };
+        /** ResponseModel[AppListResponse] */
+        ResponseModel_AppListResponse_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["AppListResponse"];
+        };
+        /** ResponseModel[AppResponse] */
+        ResponseModel_AppResponse_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["AppResponse"];
+        };
+        /** ResponseModel[AppVersionResponse] */
+        ResponseModel_AppVersionResponse_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["AppVersionResponse"];
+        };
+        /** ResponseModel[ConversationResponse] */
+        ResponseModel_ConversationResponse_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["ConversationResponse"];
         };
         /** ResponseModel[ForgotPasswordResponse] */
         ResponseModel_ForgotPasswordResponse_: {
@@ -1051,6 +1519,66 @@ export interface components {
             msg: string;
             data: components["schemas"]["GetOperatorsResponse"];
         };
+        /** ResponseModel[List[AppTreeNode]] */
+        ResponseModel_List_AppTreeNode__: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            /** Data */
+            data: components["schemas"]["AppTreeNode"][];
+        };
+        /** ResponseModel[List[AppVersionResponse]] */
+        ResponseModel_List_AppVersionResponse__: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            /** Data */
+            data: components["schemas"]["AppVersionResponse"][];
+        };
+        /** ResponseModel[List[ConversationResponse]] */
+        ResponseModel_List_ConversationResponse__: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            /** Data */
+            data: components["schemas"]["ConversationResponse"][];
+        };
+        /** ResponseModel[List[MessageResponse]] */
+        ResponseModel_List_MessageResponse__: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            /** Data */
+            data: components["schemas"]["MessageResponse"][];
+        };
         /** ResponseModel[LoginResponse] */
         ResponseModel_LoginResponse_: {
             /**
@@ -1064,20 +1592,6 @@ export interface components {
              */
             msg: string;
             data: components["schemas"]["LoginResponse"];
-        };
-        /** ResponseModel[ModelResponse] */
-        ResponseModel_ModelResponse_: {
-            /**
-             * Code
-             * @default 0
-             */
-            code: string;
-            /**
-             * Msg
-             * @default success
-             */
-            msg: string;
-            data: components["schemas"]["ModelResponse"];
         };
         /** ResponseModel[NoneType] */
         ResponseModel_NoneType_: {
@@ -1108,6 +1622,20 @@ export interface components {
             msg: string;
             data: components["schemas"]["ProviderResponse"];
         };
+        /** ResponseModel[PublishWorkflowResponse] */
+        ResponseModel_PublishWorkflowResponse_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["PublishWorkflowResponse"];
+        };
         /** ResponseModel[ResendVerificationCodeResponse] */
         ResponseModel_ResendVerificationCodeResponse_: {
             /**
@@ -1121,6 +1649,20 @@ export interface components {
              */
             msg: string;
             data: components["schemas"]["ResendVerificationCodeResponse"];
+        };
+        /** ResponseModel[SaveWorkflowResponse] */
+        ResponseModel_SaveWorkflowResponse_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["SaveWorkflowResponse"];
         };
         /** ResponseModel[SignupResponse] */
         ResponseModel_SignupResponse_: {
@@ -1164,8 +1706,8 @@ export interface components {
             msg: string;
             data: components["schemas"]["TenantResponse"];
         };
-        /** ResponseModel[UserResponse] */
-        ResponseModel_UserResponse_: {
+        /** ResponseModel[UpdateUserResponse] */
+        ResponseModel_UpdateUserResponse_: {
             /**
              * Code
              * @default 0
@@ -1176,7 +1718,21 @@ export interface components {
              * @default success
              */
             msg: string;
-            data: components["schemas"]["UserResponse"];
+            data: components["schemas"]["UpdateUserResponse"];
+        };
+        /** ResponseModel[UserInfo] */
+        ResponseModel_UserInfo_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["UserInfo"];
         };
         /** ResponseModel[WorkflowDebugResponse] */
         ResponseModel_WorkflowDebugResponse_: {
@@ -1206,6 +1762,49 @@ export interface components {
             msg: string;
             data: components["schemas"]["WorkflowExecuteResponse"];
         };
+        /** ResponseModel[WorkflowListResponse] */
+        ResponseModel_WorkflowListResponse_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["WorkflowListResponse"];
+        };
+        /** ResponseModel[WorkflowResponse] */
+        ResponseModel_WorkflowResponse_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["WorkflowResponse"];
+        };
+        /** ResponseModel[list[ActiveModelProviderWithModels]] */
+        ResponseModel_list_ActiveModelProviderWithModels__: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            /** Data */
+            data: components["schemas"]["ActiveModelProviderWithModels"][];
+        };
         /** ResponseModel[list[TenantResponse]] */
         ResponseModel_list_TenantResponse__: {
             /**
@@ -1221,25 +1820,56 @@ export interface components {
             /** Data */
             data: components["schemas"]["TenantResponse"][];
         };
-        /**
-         * SaveModelRequest
-         * @description Request schema for saving a model
-         */
-        SaveModelRequest: {
-            /** Is System */
-            is_system: boolean;
-            /** Is Enabled */
-            is_enabled?: boolean | null;
+        /** ResponseModel[list[UserInfo]] */
+        ResponseModel_list_UserInfo__: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            /** Data */
+            data: components["schemas"]["UserInfo"][];
         };
         /**
          * SaveProviderRequest
          * @description Request schema for saving a provider
          */
         SaveProviderRequest: {
-            /** Is System */
-            is_system: boolean;
             /** Credentials */
             credentials?: Record<string, never> | null;
+        };
+        /** SaveWorkflowRequest */
+        SaveWorkflowRequest: {
+            /** Operations */
+            operations: components["schemas"]["WorkflowOperation"][];
+        };
+        /** SaveWorkflowResponse */
+        SaveWorkflowResponse: {
+            /** Added Nodes */
+            added_nodes?: string[];
+            /** Updated Nodes */
+            updated_nodes?: string[];
+            /** Deleted Nodes */
+            deleted_nodes?: string[];
+            /** Added Edges */
+            added_edges?: string[];
+            /** Updated Edges */
+            updated_edges?: string[];
+            /** Deleted Edges */
+            deleted_edges?: string[];
+            /** Snapshot */
+            snapshot: Record<string, never>;
+            /** Snapshot Hash */
+            snapshot_hash: string;
+            /** Start Node Key */
+            start_node_key: string;
+            /** End Node Key */
+            end_node_key: string;
         };
         /** SignupRequest */
         SignupRequest: {
@@ -1279,35 +1909,6 @@ export interface components {
              */
             token_type: string;
         };
-        /**
-         * StringProperty
-         * @description String type schema
-         */
-        StringProperty: {
-            /**
-             * Type
-             * @default string
-             */
-            type: string;
-            /** Title */
-            title?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Default */
-            default?: unknown | null;
-            /** Enum */
-            enum?: unknown[] | null;
-            /** Const */
-            const?: unknown | null;
-            /** Minlength */
-            minLength?: number | null;
-            /** Maxlength */
-            maxLength?: number | null;
-            /** Pattern */
-            pattern?: string | null;
-            /** Format */
-            format?: string | null;
-        };
         /** TenantCreateRequest */
         TenantCreateRequest: {
             /** Name */
@@ -1331,234 +1932,47 @@ export interface components {
          */
         TenantUserRole: "owner" | "admin" | "member" | "guest";
         /**
-         * UIOptionsBaseType
-         * @description Base type for UI options
+         * ToolCall
+         * @description Model class for assistant prompt message tool call.
          */
-        UIOptionsBaseType: {
-            /**
-             * Addable
-             * @description If false, new items cannot be added to array fields
-             */
-            addable?: boolean | null;
-            /**
-             * Copyable
-             * @description If true, array items can be copied
-             */
-            copyable?: boolean | null;
-            /**
-             * Orderable
-             * @description If false, array items cannot be ordered
-             */
-            orderable?: boolean | null;
-            /**
-             * Removable
-             * @description If false, array items will not be removable
-             */
-            removable?: boolean | null;
-            /**
-             * Label
-             * @description If false, field labels will be omitted
-             */
-            label?: boolean | null;
-            /**
-             * Duplicatekeysuffixseparator
-             * @description Separator between key name and integer for duplicate additionalProperties keys
-             */
-            duplicateKeySuffixSeparator?: string | null;
-            /** Classnames */
-            classNames?: string | null;
-            /** Style */
-            style?: Record<string, never> | null;
-            /** Title */
-            title?: string | null;
+        ToolCall: {
+            /** Index */
+            index: number;
+            /** Id */
+            id: string;
+            /** Type */
+            type: string;
+            function: components["schemas"]["ToolCallFunction"];
+        };
+        /**
+         * ToolCallFunction
+         * @description Model class for assistant prompt message tool call function.
+         */
+        ToolCallFunction: {
+            /** Name */
+            name: string;
+            /** Arguments */
+            arguments: string;
+        };
+        /** UpdateUserResponse */
+        UpdateUserResponse: {
+            /** Id */
+            id: string;
+            /** Account Id */
+            account_id: string;
+            /** Tenant Id */
+            tenant_id: string;
+            role: components["schemas"]["TenantUserRole"];
+        };
+        /**
+         * UpdateWorkflowMetaRequest
+         * @description Request model for updating workflow metadata.
+         */
+        UpdateWorkflowMetaRequest: {
+            /** Name */
+            name?: string | null;
             /** Description */
             description?: string | null;
-            /** Placeholder */
-            placeholder?: string | null;
-            /** Help */
-            help?: string | null;
-            /** Autofocus */
-            autofocus?: boolean | null;
-            /** Autocomplete */
-            autocomplete?: string | null;
-            /** Disabled */
-            disabled?: boolean | null;
-            /** Emptyvalue */
-            emptyValue?: unknown | null;
-            /** Enumdisabled */
-            enumDisabled?: (string | number | boolean)[] | null;
-            /** Hideerror */
-            hideError?: boolean | null;
-            /** Readonly */
-            readonly?: boolean | null;
-            /** Order */
-            order?: string[] | null;
-            /** Filepreview */
-            filePreview?: boolean | null;
-            /** Inline */
-            inline?: boolean | null;
-            /** Inputtype */
-            inputType?: string | null;
-            /** Rows */
-            rows?: number | null;
-            submitButtonOptions?: components["schemas"]["UISchemaSubmitButtonOptions"] | null;
-            /** Widget */
-            widget?: string | null;
-            /** Enumnames */
-            enumNames?: string[] | null;
-        } & {
-            [key: string]: unknown;
-        };
-        /**
-         * UISchemaSubmitButtonOptions
-         * @description Options for customizing the submit button behavior
-         */
-        UISchemaSubmitButtonOptions: {
-            /**
-             * Submittext
-             * @description Text to display on submit button
-             */
-            submitText?: string | null;
-            /**
-             * Norender
-             * @description If true, removes submit button completely
-             */
-            norender?: boolean | null;
-            /**
-             * Props
-             * @description Additional props to pass to submit button
-             */
-            props?: Record<string, never> | null;
-        };
-        /**
-         * UiSchema
-         * @description UI Schema for React JSON Schema Form
-         */
-        UiSchema: {
-            /** Ui:Addable */
-            "ui:addable"?: boolean | null;
-            /** Ui:Copyable */
-            "ui:copyable"?: boolean | null;
-            /** Ui:Orderable */
-            "ui:orderable"?: boolean | null;
-            /** Ui:Removable */
-            "ui:removable"?: boolean | null;
-            /** Ui:Label */
-            "ui:label"?: boolean | null;
-            /** Ui:Duplicatekeysuffixseparator */
-            "ui:duplicateKeySuffixSeparator"?: string | null;
-            /**
-             * Ui:Classnames
-             * @description CSS class names to apply to field
-             */
-            "ui:classNames"?: string | null;
-            /**
-             * Ui:Style
-             * @description Custom styles to apply to field
-             */
-            "ui:style"?: Record<string, never> | null;
-            /**
-             * Ui:Title
-             * @description Custom title for the field
-             */
-            "ui:title"?: string | null;
-            /**
-             * Ui:Description
-             * @description Custom description for the field
-             */
-            "ui:description"?: string | null;
-            /**
-             * Ui:Placeholder
-             * @description Placeholder text for inputs
-             */
-            "ui:placeholder"?: string | null;
-            /**
-             * Ui:Help
-             * @description Help text shown next to field
-             */
-            "ui:help"?: string | null;
-            /**
-             * Ui:Autofocus
-             * @description If true, field will be focused on load
-             */
-            "ui:autofocus"?: boolean | null;
-            /**
-             * Ui:Autocomplete
-             * @description HTML autocomplete attribute
-             */
-            "ui:autocomplete"?: string | null;
-            /**
-             * Ui:Disabled
-             * @description If true, field will be disabled
-             */
-            "ui:disabled"?: boolean | null;
-            /**
-             * Ui:Emptyvalue
-             * @description Value to use when input is empty
-             */
-            "ui:emptyValue"?: unknown | null;
-            /**
-             * Ui:Enumdisabled
-             * @description List of enum values to disable
-             */
-            "ui:enumDisabled"?: (string | number | boolean)[] | null;
-            /**
-             * Ui:Hideerror
-             * @description If true, hide error display for field
-             */
-            "ui:hideError"?: boolean | null;
-            /**
-             * Ui:Readonly
-             * @description If true, field will be read-only
-             */
-            "ui:readonly"?: boolean | null;
-            /**
-             * Ui:Order
-             * @description Custom ordering of object properties
-             */
-            "ui:order"?: string[] | null;
-            /**
-             * Ui:Inline
-             * @description If true, checkboxes render inline
-             */
-            "ui:inline"?: boolean | null;
-            /**
-             * Ui:Widget
-             * @description Custom widget to use for field
-             */
-            "ui:widget"?: string | null;
-            /**
-             * Ui:Inputtype
-             * @description HTML input type
-             */
-            "ui:inputType"?: string | null;
-            /**
-             * Ui:Rows
-             * @description Number of rows for textarea
-             */
-            "ui:rows"?: number | null;
-            /**
-             * Ui:Filepreview
-             * @description If true, show file preview
-             */
-            "ui:filePreview"?: boolean | null;
-            "ui:submitButtonOptions"?: components["schemas"]["UISchemaSubmitButtonOptions"] | null;
-            /**
-             * Ui:Enumnames
-             * @description Custom labels for enum values
-             */
-            "ui:enumNames"?: string[] | null;
-            "ui:globalOptions"?: components["schemas"]["GlobalUISchemaOptions"] | null;
-            /** Ui:Rootfieldid */
-            "ui:rootFieldId"?: string | null;
-            /** Ui:Field */
-            "ui:field"?: string | null;
-            /** Ui:Fieldreplacesanyoroneof */
-            "ui:fieldReplacesAnyOrOneOf"?: boolean | null;
-            /** Ui:Options */
-            "ui:options"?: components["schemas"]["UIOptionsBaseType"] | Record<string, never> | null;
-        } & {
-            [key: string]: unknown;
         };
         /** UserAddRequest */
         UserAddRequest: {
@@ -1570,15 +1984,24 @@ export interface components {
             /** @default member */
             role: components["schemas"]["TenantUserRole"];
         };
-        /** UserResponse */
-        UserResponse: {
+        /** UserInfo */
+        UserInfo: {
             /** Id */
             id: string;
-            /** Account Id */
-            account_id: string;
-            /** Tenant Id */
-            tenant_id: string;
-            role: components["schemas"]["TenantUserRole"];
+            /** Email */
+            email: string;
+            /** Name */
+            name: string;
+            /** Language */
+            language: string | null;
+            status: components["schemas"]["AccountStatus"];
+            /** Last Login At */
+            last_login_at: string | null;
+            /** Last Login Ip */
+            last_login_ip: string | null;
+            role: components["schemas"]["TenantUserRole"] | null;
+            /** Avatar */
+            avatar: string | null;
         };
         /** UserRoleUpdateRequest */
         UserRoleUpdateRequest: {
@@ -1595,8 +2018,7 @@ export interface components {
         };
         /** WorkflowDebugRequest */
         WorkflowDebugRequest: {
-            /** Input Data */
-            input_data: Record<string, never>;
+            input_data: components["schemas"]["WorkflowExecuteInputData"];
             /**
              * Snapshot Timestamp
              * Format: date-time
@@ -1608,18 +2030,171 @@ export interface components {
             /** Task Id */
             task_id: string;
         };
+        /** WorkflowEdgeOperation */
+        WorkflowEdgeOperation: {
+            /** Edge Key */
+            edge_key: string;
+            /** Source Node Key */
+            source_node_key?: string | null;
+            /** Target Node Key */
+            target_node_key?: string | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+        };
+        /** WorkflowEdgeResponse */
+        WorkflowEdgeResponse: {
+            /** Edge Key */
+            edge_key: string;
+            /** Workflow Id */
+            workflow_id: string;
+            /** Source Node Key */
+            source_node_key: string;
+            /** Target Node Key */
+            target_node_key: string;
+            /** Meta */
+            meta?: Record<string, never> | null;
+            /** Created By */
+            created_by: string;
+            /** Updated By */
+            updated_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** WorkflowExecuteInputData */
+        WorkflowExecuteInputData: {
+            /** Query */
+            query: string;
+            /** Image List */
+            image_list?: string[] | null;
+            /** File List */
+            file_list?: string[] | null;
+            /** Audio List */
+            audio_list?: string[] | null;
+        };
         /** WorkflowExecuteRequest */
         WorkflowExecuteRequest: {
-            /** Input Data */
-            input_data: Record<string, never>;
+            input_data: components["schemas"]["WorkflowExecuteInputData"];
             /** Version */
             version: string;
         };
         /** WorkflowExecuteResponse */
         WorkflowExecuteResponse: {
-            /** Result */
-            result: string;
+            message: components["schemas"]["AssistantPromptMessage"];
         };
+        /** WorkflowListResponse */
+        WorkflowListResponse: {
+            /** Workflows */
+            workflows: components["schemas"]["GetWorkflowResponseBase"][];
+            /** Total */
+            total: number;
+        };
+        /** WorkflowNodeOperation */
+        WorkflowNodeOperation: {
+            /** Node Key */
+            node_key: string;
+            node_type?: components["schemas"]["OperatorName"] | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+            /** Config */
+            config?: Record<string, never> | null;
+            /** Extended Config */
+            extended_config?: Record<string, never> | null;
+        };
+        /** WorkflowNodeResponse */
+        WorkflowNodeResponse: {
+            /** Node Key */
+            node_key: string;
+            node_type: components["schemas"]["OperatorName"];
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+            /** Config */
+            config?: Record<string, never> | null;
+            /** Extended Config */
+            extended_config?: Record<string, never> | null;
+            /** Workflow Id */
+            workflow_id: string;
+            /** Created By */
+            created_by: string;
+            /** Updated By */
+            updated_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** WorkflowOperation */
+        WorkflowOperation: {
+            operation_type: components["schemas"]["WorkflowOperationType"];
+            /** Nodes */
+            nodes?: components["schemas"]["WorkflowNodeOperation"][];
+            /** Edges */
+            edges?: components["schemas"]["WorkflowEdgeOperation"][];
+        };
+        /**
+         * WorkflowOperationType
+         * @enum {string}
+         */
+        WorkflowOperationType: "add_node" | "update_node" | "delete_node" | "add_edge" | "update_edge" | "delete_edge";
+        /** WorkflowResponse */
+        WorkflowResponse: {
+            /** Id */
+            id: string;
+            /** App Id */
+            app_id: string;
+            status: components["schemas"]["WorkflowStatus"];
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Version */
+            version?: string | null;
+            /** Created By */
+            created_by: string;
+            /** Updated By */
+            updated_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Nodes */
+            nodes: components["schemas"]["WorkflowNodeResponse"][];
+            /** Edges */
+            edges: components["schemas"]["WorkflowEdgeResponse"][];
+        };
+        /**
+         * WorkflowStatus
+         * @description Workflow status enum defining possible states of a workflow.
+         * @enum {string}
+         */
+        WorkflowStatus: "draft" | "published";
     };
     responses: never;
     parameters: never;
@@ -1928,7 +2503,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResponseModel_AccountResponse_"];
+                    "application/json": components["schemas"]["ResponseModel_UserInfo_"];
                 };
             };
         };
@@ -2052,6 +2627,37 @@ export interface operations {
             };
         };
     };
+    get_tenant_users_account_tenants__tenant_id__users_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenant_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_list_UserInfo__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     add_tenant_user_account_tenants__tenant_id__users_post: {
         parameters: {
             query?: never;
@@ -2073,7 +2679,39 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResponseModel_UserResponse_"];
+                    "application/json": components["schemas"]["ResponseModel_UserInfo_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_tenant_user_account_tenants__tenant_id__users__user_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tenant_id: string;
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_UserInfo_"];
                 };
             };
             /** @description Validation Error */
@@ -2109,7 +2747,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResponseModel_UserResponse_"];
+                    "application/json": components["schemas"]["ResponseModel_UpdateUserResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -2206,6 +2844,26 @@ export interface operations {
             };
         };
     };
+    get_active_providers_model_providers_active_providers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_list_ActiveModelProviderWithModels__"];
+                };
+            };
+        };
+    };
     get_provider_model_providers__provider_name__get: {
         parameters: {
             query?: never;
@@ -2272,13 +2930,13 @@ export interface operations {
             };
         };
     };
-    get_model_model_providers__provider_name__models__model_name__get: {
+    get_provider_icon_static_providers__provider__icon__size__get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                provider_name: string;
-                model_name: string;
+                provider: string;
+                size: string;
             };
             cookie?: never;
         };
@@ -2290,75 +2948,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResponseModel_ModelResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    save_model_model_providers__provider_name__models__model_name__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                provider_name: string;
-                model_name: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveModelRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResponseModel_ModelResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    enable_model_model_providers__provider_name__models__model_name__enable_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                provider_name: string;
-                model_name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResponseModel_ModelResponse_"];
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -2388,6 +2978,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ResponseModel_GetOperatorsResponse_"];
+                };
+            };
+        };
+    };
+    get_workflow_list_workflows_get: {
+        parameters: {
+            query: {
+                app_id: string;
+                page?: number | null;
+                page_size?: number | null;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_WorkflowListResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -2462,17 +3086,584 @@ export interface operations {
             };
         };
     };
-    get_provider_icon_static_providers__provider__icon__size__get: {
+    save_workflow_workflows__workflow_id__save_graph_post: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                provider: string;
-                size: string;
+                workflow_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveWorkflowRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_SaveWorkflowResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_workflow_meta_workflows__workflow_id__save_meta_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workflow_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWorkflowMetaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_WorkflowResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_workflow_workflows__workflow_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workflow_id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_WorkflowResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publish_workflow_workflows__workflow_id__publish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workflow_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublishWorkflowRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_PublishWorkflowResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_apps_apps_get: {
+        parameters: {
+            query?: {
+                page?: number | null;
+                page_size?: number | null;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_AppListResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_application_apps_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_AppResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_app_apps__app_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_AppResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_app_apps__app_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_AppResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_app_apps__app_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_app_versions_apps__app_id__versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_List_AppVersionResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_apps_tree_apps_tree_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_List_AppTreeNode__"];
+                };
+            };
+        };
+    };
+    publish_app_version_apps__app_id__publish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppPublishRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_AppVersionResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_conversations_conversations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_List_ConversationResponse__"];
+                };
+            };
+        };
+    };
+    create_conversation_conversations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_ConversationResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_conversation_conversations__conversation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_ConversationResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_conversation_conversations__conversation_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_ConversationResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_conversation_conversations__conversation_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_messages_conversations__conversation_id__messages_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_List_MessageResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    completion_conversations__conversation_id__completion_post: {
+        parameters: {
+            query: {
+                app_version_id: string;
+            };
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompletionRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -2495,46 +3686,6 @@ export interface operations {
         };
     };
     health_check_health_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    stream_endpoint_stream_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    mock_llm_stream_endpoint_mock_llm_stream_get: {
         parameters: {
             query?: never;
             header?: never;

@@ -1,6 +1,5 @@
 import base64
 import io
-import json
 from collections.abc import Generator
 from typing import Union, cast
 
@@ -21,7 +20,6 @@ from httpx import Timeout
 from PIL import Image
 
 from providers.models.core import LargeLanguageModel
-from providers.models.core.callbacks import Callback
 from providers.models.core.errors import (
     CredentialsValidateFailedError,
     InvokeAuthorizationError,
@@ -46,6 +44,7 @@ from providers.models.core.schemas import (
     ToolPromptMessage,
     UserPromptMessage,
 )
+from utils.common.json import json_dumps, json_loads
 
 
 class AnthropicLargeLanguageModel(LargeLanguageModel):
@@ -163,7 +162,6 @@ class AnthropicLargeLanguageModel(LargeLanguageModel):
         stop: list[str] | None = None,
         stream: bool = True,
         user: str | None = None,
-        callbacks: list[Callback] | None = None,
     ) -> Union[LLMResult, Generator]:
         """
         Code block mode wrapper for invoking large language model
@@ -313,7 +311,7 @@ class AnthropicLargeLanguageModel(LargeLanguageModel):
                     id=content.id,
                     type="function",
                     function=AssistantPromptMessage.ToolCall.ToolCallFunction(
-                        name=content.name, arguments=json.dumps(content.input)
+                        name=content.name, arguments=json_dumps(content.input)
                     ),
                 )
                 assistant_prompt_message.tool_calls.append(tool_call)
@@ -510,7 +508,7 @@ class AnthropicLargeLanguageModel(LargeLanguageModel):
                                     "type": "tool_use",
                                     "id": tool_call.id,
                                     "name": tool_call.function.name,
-                                    "input": json.loads(tool_call.function.arguments),
+                                    "input": json_loads(tool_call.function.arguments),
                                 }
                             )
                     if message.content:

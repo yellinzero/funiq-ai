@@ -4,7 +4,7 @@ from openai import OpenAI
 
 from providers.models.core import Speech2TextModel
 from providers.models.core.errors import CredentialsValidateFailedError
-from providers.models.core.schemas import AIModelEntity, ConfigurateMethod, ModelType
+from providers.models.core.schemas import AIModelEntity, ModelType
 from providers.models.openai.core import OpenAICore
 
 
@@ -67,7 +67,6 @@ class OpenAISpeech2TextModel(OpenAICore, Speech2TextModel):
         entity = AIModelEntity(
             model=model,
             label=model,
-            configurate_method=ConfigurateMethod.CUSTOMIZABLE,
             model_type=ModelType.SPEECH2TEXT,
             model_properties={},
             parameter_rules_schema={},

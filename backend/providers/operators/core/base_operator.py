@@ -2,8 +2,6 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Generator
 from typing import Any, Callable, Coroutine, Dict, List
 
-from utils.json_schema import JSONSchema
-
 from .mixins import (
     ConvertHandlingMixin,
     LifecycleHandlingMixin,
@@ -36,9 +34,11 @@ class BaseOperator(
     """
 
     def __init__(self):
-        self._config_schema: JSONSchema | None = None
-        self._output_schema: JSONSchema | None = None
+        self._config_schema: dict | None = None
+        self._output_schema: dict | None = None
         self._execution_context: Dict[str, Any] = {}
+        self._config_value_paths_map: Dict[str, List[str]] = {}
+        self._stream_node_ids: List[str] = []
         self._init_jinja_env()
         
         self._on_created_callbacks: List[Callable[[OperatorCallbackContext], Coroutine[Any, Any, None]]] = []
@@ -46,7 +46,6 @@ class BaseOperator(
         self._on_completed_callbacks: List[Callable[[OperatorCallbackContext], Coroutine[Any, Any, None]]] = []
         self._on_failed_callbacks: List[Callable[[OperatorCallbackContext], Coroutine[Any, Any, None]]] = []
         self._state: OperatorState = OperatorState.CREATED
-                
         self._initialized = False
 
     async def initialize(self):
@@ -63,14 +62,14 @@ class BaseOperator(
         self._initialized = True
         
     @property
-    def config_schema(self) -> JSONSchema | None:
+    def config_schema(self) -> dict | None:
         if self._config_schema is None:
             operator_schema = self.get_operator_schema()
             self._config_schema = operator_schema.config_schema
         return self._config_schema
 
     @property
-    def output_schema(self) -> JSONSchema | None:
+    def output_schema(self) -> dict | None:
         if self._output_schema is None:
             operator_schema = self.get_operator_schema()
             self._output_schema = operator_schema.output_schema
@@ -90,9 +89,7 @@ class BaseOperator(
     ):
         """Execute the operator with lifecycle management and template rendering support."""
         self._execution_context = execution_context
-
-        if self.has_stream_inputs and not self.supports_input_stream:
-            raise ValueError("Operator does not support stream inputs")
+        
         if self.is_stream and not self.supports_output_stream:
             raise ValueError("Operator does not support stream outputs")
 
@@ -106,16 +103,19 @@ class BaseOperator(
             await self.on_running(context)
 
             non_stream_inputs, stream_inputs = self.prepare_stream_handling(input_data=input_data)
+            self._analyze_config_paths(config=config)
+            non_stream_config = self._filter_non_stream_config(config=config)
             converted_config = None
-            if config and any(config.values()):
-                rendered_config = self._render_config(config=config, context=non_stream_inputs)
+            if non_stream_config and any(non_stream_config.values()):
+                rendered_config = self._render_config(config=non_stream_config, context=non_stream_inputs)
                 converted_config = self.convert_config(config=rendered_config)
                 if not self.validate_config(config=converted_config):
                     raise ValueError("Configuration validation failed")
 
             all_inputs = {**non_stream_inputs, **stream_inputs}
+            all_config = {**config, **converted_config} if converted_config else config
             result = await self._execute(
-                config=converted_config, 
+                config=all_config, 
                 input_data=all_inputs, 
                 execution_context=self.execution_context, 
                 **kwargs

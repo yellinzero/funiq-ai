@@ -2,8 +2,6 @@ from typing import Any, Dict
 
 from loguru import logger
 
-from utils.json_schema import JSONSchema
-
 
 class ConvertHandlingMixin:
     """Mixin class for handling config conversions."""
@@ -26,7 +24,7 @@ class ConvertHandlingMixin:
             return config
 
         try:
-            return self._convert_by_schema(config, self.config_schema)
+            return self._convert_by_schema(data=config, schema=self.config_schema)
         except (ValueError, TypeError) as e:
             logger.error(f"Config conversion failed: {e!s}")
             raise
@@ -34,7 +32,7 @@ class ConvertHandlingMixin:
             logger.error(f"Unexpected error during config conversion: {e!s}")
             raise ValueError(f"Failed to convert config: {e!s}") from e
 
-    def _convert_by_schema(self, data: Any, schema: JSONSchema) -> Any:
+    def _convert_by_schema(self, data: Any, schema: dict[str, Any]) -> Any:
         """Recursively convert data according to schema definition.
 
         Args:
@@ -48,46 +46,48 @@ class ConvertHandlingMixin:
             ValueError: If conversion fails
             TypeError: If input types are incorrect
         """
-        if not schema or not schema.type:
+        if not schema or 'type' not in schema:
             return data
 
         try:
+            schema_type = schema['type']
+            
             # Handle null values
             if data is None:
-                if "null" in schema.type or schema.type == "null":
+                if "null" in schema_type or schema_type == "null":
                     return None
-                raise ValueError(f"Null value not allowed for type {schema.type}")
+                raise ValueError(f"Null value not allowed for type {schema_type}")
 
             # Handle object type
-            if schema.type == "object" and isinstance(data, dict):
-                if not schema.properties:
+            if schema_type == "object" and isinstance(data, dict):
+                if 'properties' not in schema:
                     return data
                 return {
-                    key: self._convert_by_schema(value, schema.properties.get(key))
+                    key: self._convert_by_schema(value, schema['properties'].get(key, {}))
                     for key, value in data.items()
-                    if key in schema.properties
+                    if key in schema['properties']
                 }
 
             # Handle array type
-            if schema.type == "array" and isinstance(data, list):
-                if not schema.items:
+            if schema_type == "array" and isinstance(data, list):
+                if 'items' not in schema:
                     return data
-                return [self._convert_by_schema(item, schema.items) for item in data]
+                return [self._convert_by_schema(item, schema['items']) for item in data]
 
             # Handle primitive types
-            if schema.type == "integer":
+            if schema_type == "integer":
                 try:
                     return int(data)
                 except (ValueError, TypeError) as e:
                     raise ValueError(f"Cannot convert '{data}' to integer") from e
 
-            if schema.type == "number":
+            if schema_type == "number":
                 try:
                     return float(data)
                 except (ValueError, TypeError) as e:
                     raise ValueError(f"Cannot convert '{data}' to number") from e
 
-            if schema.type == "boolean":
+            if schema_type == "boolean":
                 if isinstance(data, str):
                     if data.lower() in ("true", "1", "yes", "on"):
                         return True
@@ -96,20 +96,22 @@ class ConvertHandlingMixin:
                     raise ValueError(f"Cannot convert string '{data}' to boolean")
                 return bool(data)
 
-            if schema.type == "string":
+            if schema_type == "string":
                 return str(data)
 
             # Handle union types
-            if isinstance(schema.type, list):
+            if isinstance(schema_type, list):
                 errors = []
-                for type_name in schema.type:
+                for type_name in schema_type:
                     try:
-                        temp_schema = JSONSchema(type=type_name)
+                        temp_schema = {
+                            "type": type_name
+                        }
                         return self._convert_by_schema(data, temp_schema)
                     except Exception as e:
                         errors.append(f"{type_name}: {e!s}")
                 raise ValueError(
-                    f"Could not convert '{data}' to any of types {schema.type}. Errors: {'; '.join(errors)}"
+                    f"Could not convert '{data}' to any of types {schema_type}. Errors: {'; '.join(errors)}"
                 )
 
             return data

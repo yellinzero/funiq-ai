@@ -61,11 +61,15 @@ class AccountErrorCode(BaseErrorCode):
         "B0017",
         "Access token has expired"
     )
-    REFRESH_TOKEN_EXPIRED = (
-        "B0020",
-        "Refresh token has expired"
-    )
     INVALID_TENANT = (
         "B0018",
         "Invalid tenant"
+    )
+    REFRESH_TOKEN_EXPIRED = (
+        "B0019",
+        "Refresh token has expired"
+    )
+    USER_NOT_FOUND = (
+        "B0020",
+        "The user is not found."
     )

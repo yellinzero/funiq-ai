@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import JSON, BigInteger, DateTime, Enum, ForeignKey, Index, String
+from sqlalchemy import JSON, BigInteger, DateTime, Enum, ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -198,7 +198,7 @@ class BaseExecutionLog(DBBase):
         comment="Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)"
     )
     message: Mapped[str] = mapped_column(
-        String(2000), 
+        Text, 
         nullable=False,
         comment="Log message content"
     )

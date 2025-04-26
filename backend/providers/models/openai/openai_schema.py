@@ -10,7 +10,7 @@ schema = {
         "url": "https://platform.openai.com/account/api-keys",
     },
     "supported_model_types": ["llm", "text-embedding", "speech2text", "moderation", "tts"],
-    "configurate_methods": ["predefined"],
+    "configurate_methods": ["predefined", "customizable"],
     "credential_schema": {
         "type": "object",
         "properties": {

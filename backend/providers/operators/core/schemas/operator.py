@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, Union
 from pydantic import BaseModel
 
 from utils.common.i18n import TranslatableText
-from utils.json_schema import JSONSchema, UiSchema
 
 
 class OperatorName(str, Enum):
@@ -29,15 +28,9 @@ class OperatorType(str, Enum):
     LOGIC = "logic"
 
 
-class OutputStreamType(str, Enum):
-    SELF = "self"
-    EXTERNAL = "external"
-
-
 class OutputStream(BaseModel):
     enabled: bool
-    type: OutputStreamType
-    response_schema: dict[str, Any] | None = None
+    chunk_schema: dict | None = None
 
 
 class OperatorEntity(BaseModel):
@@ -45,12 +38,11 @@ class OperatorEntity(BaseModel):
     name: OperatorName
     label: Union[str, TranslatableText]
     type: OperatorType
-    supports_input_stream: bool = False
     output_stream: OutputStream | None = None
     description: Union[str, TranslatableText]
-    output_schema: JSONSchema
-    config_schema: JSONSchema
-    config_ui_schema: UiSchema | None = None 
+    output_schema: dict
+    config_schema: dict
+    config_ui_schema: dict | None = None 
     
 
 if TYPE_CHECKING:
@@ -78,3 +70,9 @@ class OperatorCallbackContext:
     @property
     def state(self) -> 'OperatorState':
         return self.operator.state
+    
+
+class StreamDependency(BaseModel):
+    config_key: str
+    required_streams: set[str]
+    current_chunks: dict[str, Any]

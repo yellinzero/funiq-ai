@@ -1,4 +1,3 @@
-import json
 import uuid
 from datetime import timedelta
 from enum import Enum
@@ -7,6 +6,7 @@ from redis.asyncio import Redis
 
 from configs import funiq_ai_config
 from infrastructure import with_redis
+from utils.common.json import json_dumps, json_loads
 
 
 class TokenManager:
@@ -29,7 +29,7 @@ class TokenManager:
         token_key = self._get_token_key(token, namespace)
 
         # Set the token data in Redis with an expiration time
-        await redis.setex(token_key, timedelta(seconds=expiry_seconds), json.dumps(data))
+        await redis.setex(token_key, timedelta(seconds=expiry_seconds), json_dumps(data))
         return token
 
     @with_redis
@@ -53,7 +53,7 @@ class TokenManager:
         token_key = self._get_token_key(token, namespace)
         token_data = await redis.get(token_key)
         if token_data:
-            return json.loads(token_data)
+            return json_loads(token_data)
         return None
 
     @with_redis

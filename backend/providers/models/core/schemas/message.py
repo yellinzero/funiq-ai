@@ -58,6 +58,7 @@ class PromptMessageContentType(Enum):
     TEXT = "text"
     IMAGE = "image"
     AUDIO = "audio"
+    FILE = "file"
 
 
 class PromptMessageContent(BaseModel):
@@ -67,6 +68,16 @@ class PromptMessageContent(BaseModel):
 
     type: PromptMessageContentType
     data: str
+    
+
+class FilePromptMessageContent(PromptMessageContent):
+    """
+    Model class for file prompt message content.
+    """
+
+    type: PromptMessageContentType = PromptMessageContentType.FILE
+    data: str = Field(..., description="Base64 encoded file data")
+    file_name: str = Field(..., description="File name")
 
 
 class TextPromptMessageContent(PromptMessageContent):
@@ -140,6 +151,7 @@ class AssistantPromptMessage(PromptMessage):
             name: str
             arguments: str
 
+        index: int
         id: str
         type: str
         function: ToolCallFunction
@@ -161,7 +173,7 @@ class AssistantPromptMessage(PromptMessage):
 
         :return: True if prompt message is empty, False otherwise
         """
-        return super().is_empty() or not self.tool_call_id
+        return super().is_empty() and len(self.tool_calls) == 0
 
 
 class SystemPromptMessage(PromptMessage):
@@ -186,4 +198,4 @@ class ToolPromptMessage(PromptMessage):
 
         :return: True if prompt message is empty, False otherwise
         """
-        return super().is_empty() or not self.tool_call_id
+        return super().is_empty() and not self.tool_call_id

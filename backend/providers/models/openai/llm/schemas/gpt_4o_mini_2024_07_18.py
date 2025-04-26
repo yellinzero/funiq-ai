@@ -4,6 +4,7 @@ schema = {
     "model": "gpt-4o-mini-2024-07-18",
     "label": "gpt-4o-mini-2024-07-18",
     "model_type": "llm",
+    "group": "gpt-4o-mini",
     "features": [
         "multi-tool-call",
         "agent-thought",
@@ -47,11 +48,11 @@ schema = {
             "_template": "json_schema",
         },
     },
-    "pricing": {
+    "pricing": [{
         "input": "0.15",
         "output": "0.60",
         "unit": "0.000001",
         "currency": "USD",
-    },
+    }],
 }
 

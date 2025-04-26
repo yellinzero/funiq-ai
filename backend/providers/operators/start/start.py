@@ -22,7 +22,9 @@ class StartOperator(BaseOperator):
         if not config:
             raise ValueError("Config is required")
 
-        result = {"question": config.get("question", "")}
+        result = {
+            "query": config.get("query", ""),
+        }
         if not self.validate_output(result):
             raise ValueError("Output validation failed")
         return result

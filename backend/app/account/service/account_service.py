@@ -38,7 +38,6 @@ from utils.security import (
     AccountTokenManager,
     AccountTokenType,
     create_token_pair,
-    get_account_id_from_request,
     invalidate_refresh_token,
 )
 
@@ -476,18 +475,19 @@ class AccountService:
         return await AccountService._handle_successful_auth(session, account, request)
 
     @staticmethod
-    async def get_account_info(session: AsyncSession, request: Request) -> Account:
+    async def get_account_info(session: AsyncSession, account_id: str) -> Account:
         """
         Get account information from JWT token.
         :param session: Database session
-        :param request: Request object
+        :param account_id: Account ID
         :return: Account object
         """
-        account_id = get_account_id_from_request(request)
-        if not account_id:
-            raise AccountErrorCode.ACCOUNT_NOT_FOUND.exception(status_code=status.HTTP_404_NOT_FOUND)
-        result = await session.execute(Account.select().where(Account.id == account_id))
-        return result.scalars().one_or_none()
+        try:
+            result = await session.execute(Account.select().where(Account.id == account_id))
+            return result.scalars().one_or_none()
+        except Exception as e:
+            logger.error(f"Error getting account info: {e!s}")
+            raise
 
     @staticmethod
     async def get_account_tenants(session: AsyncSession, account_id: str) -> list[TenantResponse]:

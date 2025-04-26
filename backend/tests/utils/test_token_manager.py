@@ -1,4 +1,4 @@
-import json
+from utils.common.json import json_loads, json_dumps
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -47,10 +47,10 @@ async def test_token_lifecycle(mock_redis, mock_redis_fixture):
     mock_redis.setex.assert_called_once()
     args = mock_redis.setex.call_args[0]
     assert args[0].startswith('funiq_ai:token:')  # token key
-    assert json.loads(args[2]) == test_data  # stored data
+    assert json_loads(args[2]) == test_data  # stored data
     
     # Setup mock for get_token_data
-    mock_redis.get.return_value = json.dumps(test_data)
+    mock_redis.get.return_value = json_dumps(test_data)
     
     # Validate token
     is_valid = await token_manager.validate_token(token=token)
@@ -97,7 +97,7 @@ async def test_account_token_manager(mock_redis, mock_redis_fixture):
         "code": code,
         "token_type": AccountTokenType.SIGNUP_EMAIL.value
     }
-    mock_redis.get.return_value = json.dumps(expected_signup_data)
+    mock_redis.get.return_value = json_dumps(expected_signup_data)
     
     signup_data = await account_token_manager.get_signup_email_verification_data(
         signup_token
@@ -117,7 +117,7 @@ async def test_account_token_manager(mock_redis, mock_redis_fixture):
         "code": code,
         "token_type": AccountTokenType.ACTIVATE_ACCOUNT_EMAIL.value
     }
-    mock_redis.get.return_value = json.dumps(expected_activate_data)
+    mock_redis.get.return_value = json_dumps(expected_activate_data)
     
     activate_data = await account_token_manager.get_activate_account_verification_data(
         activate_token
@@ -137,7 +137,7 @@ async def test_account_token_manager(mock_redis, mock_redis_fixture):
         "code": code,
         "token_type": AccountTokenType.RESET_PASSWORD_EMAIL.value
     }
-    mock_redis.get.return_value = json.dumps(expected_reset_data)
+    mock_redis.get.return_value = json_dumps(expected_reset_data)
     
     reset_data = await account_token_manager.get_reset_password_verification_data(
         reset_token

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Tuple
 
 from asgiref.sync import async_to_sync
 from celery import Task, shared_task
@@ -70,8 +70,8 @@ def execute_workflow(
     workflow_id: str,
     input_data: Dict[str, Any],
     execution_context: Dict[str, Any],
-    version: Optional[str] = None,
-    snapshot_timestamp: Optional[datetime] = None,
+    version: str | None = None,
+    snapshot_timestamp: datetime | None = None,
 ) -> Dict[str, Any]:
     """Execute a workflow using Prefect.
     
@@ -98,8 +98,8 @@ async def _execute_workflow_async(
     workflow_id: str,
     input_data: Dict[str, Any],
     execution_context: Dict[str, Any],
-    version: Optional[str] = None,
-    snapshot_timestamp: Optional[datetime] = None,
+    version: str | None = None,
+    snapshot_timestamp: datetime | None = None,
 ) -> Dict[str, Any]:
     """Execute a workflow asynchronously."""
     try:

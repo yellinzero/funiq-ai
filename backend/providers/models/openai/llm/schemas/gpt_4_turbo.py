@@ -4,6 +4,7 @@ schema = {
     "model": "gpt-4-turbo",
     "label": "gpt-4-turbo",
     "model_type": "llm",
+    "group": "gpt-4-turbo",
     "features": [
         "multi-tool-call",
         "agent-thought",
@@ -54,10 +55,10 @@ schema = {
             ],
         },
     },
-    "pricing": {
-        "input": "0.01",
-        "output": "0.03",
-        "unit": "0.001",
+    "pricing": [{
+        "input": "10",
+        "output": "30",
+        "unit": "0.000001",
         "currency": "USD",
-    },
+    }],
 }

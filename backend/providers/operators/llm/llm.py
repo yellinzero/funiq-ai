@@ -1,13 +1,24 @@
 from collections.abc import Generator
 from typing import Dict, Union
 
-from sqlalchemy import select
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.models.model_provider import Model, ModelProvider
+from app.core.models.model_provider import ModelProvider
 from infrastructure import with_session
 from providers.models.core import LargeLanguageModel, ProviderFactory
-from providers.models.core.schemas import LLMResult, ModelType, UserPromptMessage
+from providers.models.core.schemas import (
+    AudioPromptMessageContent,
+    FilePromptMessageContent,
+    ImagePromptMessageContent,
+    LLMResult,
+    ModelType,
+    PromptMessage,
+    PromptMessageContent,
+    PromptMessageContentType,
+    SystemPromptMessage,
+    UserPromptMessage,
+)
 
 from ..core import OperatorName
 from ..core.base_operator import BaseOperator
@@ -19,7 +30,7 @@ class LLMOperator(BaseOperator):
     operator_name = OperatorName.LLM.value
 
     @with_session
-    async def _execute(self, config: Dict | None, session: AsyncSession, **kwargs):
+    async def _execute(self, config: Dict | None, session: AsyncSession, execution_context: Dict, **kwargs):
         """
         Execute the LLM operator
 
@@ -34,54 +45,52 @@ class LLMOperator(BaseOperator):
             raise ValueError("Config is required")
 
         # Get model info from database using provided session
-        model = await self._get_model(session, config["model_id"])
+        model = config["model"]
+        provider_name = model.get("provider")
+        model_name = model.get("model")
+        tenant_id = execution_context.get("tenant_id")
 
-        if not model:
-            raise ValueError(f"Model {config['model_id']} not found")
-
-        if not model.is_active:
-            raise ValueError(f"Model {model.model} is not active")
-
-        # Get credentials - first try model credentials, if None then get provider credentials
-        credentials = model.credentials
-        if credentials is None:
-            # Modify the query to get the full provider object
-            provider_stmt = select(ModelProvider).join(Model).where(Model.id == model.id)
-            provider_result = await session.execute(provider_stmt)
-            provider_obj = provider_result.scalar_one()
-            credentials = provider_obj.credentials
+        if not tenant_id:
+            raise ValueError("Tenant ID is required")
 
         # Get model provider instance
-        provider = ProviderFactory.get_provider_instance(model.provider)
+        provider_instance = ProviderFactory.get_provider_instance(provider_name=provider_name)
+        credentials = await self._get_provider_credentials(
+            session=session, provider_name=provider_name, tenant_id=tenant_id
+        )
+
+        user_name = execution_context.get("user_name")
 
         # Get model instance
-        model_instance: LargeLanguageModel = provider.get_model_instance(ModelType.LLM)
+        model_instance: LargeLanguageModel = provider_instance.get_model_instance(ModelType.LLM)
 
-        # Prepare prompt and messages
-        prompt = config.get("prompt", "")
-        messages = [UserPromptMessage(content=prompt)]
-
+        tool_list = config.get("tool_list")
+        tools = []
+        if tool_list:
+            # TODO support tool calling
+            pass
+        
         # Extract model parameters from config
         model_parameters = config.get("model_parameters", {})
         # Execute model using invoke instead of _invoke
         result: Union[LLMResult, Generator] = model_instance.invoke(
-            model=model.model,
+            model=model_name,
             credentials=credentials,
-            prompt_messages=messages,
+            prompt_messages=self._handle_message(config),
             model_parameters=model_parameters,
-            tools=None,
-            stop=None,
+            tools=tools,
+            stop=config.get("stop"),
             stream=self.is_stream,
-            user=None,
+            user=user_name,
         )
-        
+
         if self.is_stream:
             if not isinstance(result, Generator):
                 raise ValueError("LLM operator stream result is not a generator")
-            
+
             def generator():
                 yield from result
-            
+
             return generator()
         else:
             # Return regular response
@@ -90,9 +99,64 @@ class LLMOperator(BaseOperator):
 
             return result
 
-    async def _get_model(self, session: AsyncSession, model_id: str) -> Model:
-        """Get model info from database"""
-        stmt = select(Model).where(Model.id == model_id)
-        result = await session.execute(stmt)
-        model = result.scalar_one_or_none()
-        return model
+    @with_session
+    async def _get_provider_credentials(self, session: AsyncSession, provider_name: str, tenant_id: str):
+        """
+        Get the provider credentials from the LLM result
+        """
+        provider = await session.execute(
+            select(ModelProvider).where(
+                and_(ModelProvider.provider == provider_name, ModelProvider.tenant_id == tenant_id)
+            )
+        )
+        provider = provider.scalar_one_or_none()
+
+        if not provider:
+            raise ValueError("Provider not found")
+
+        if not provider.is_active:
+            raise ValueError("Provider is not active")
+
+        return provider.credentials
+    
+    def _handle_message(self, config: Dict) -> list[PromptMessage]:
+        # Prepare query and messages
+        query = config.get("query", "")
+        user_messages = [PromptMessageContent(type=PromptMessageContentType.TEXT, data=query)]
+
+        messages = []
+
+        prompt = config.get("prompt", "")
+        if prompt:
+            messages.append(SystemPromptMessage(content=prompt))
+
+        image_list = config.get("image_list")
+        if image_list:
+            for image in image_list:
+                data = image.get("data")
+                detail = image.get("detail")
+                user_messages.append(
+                    ImagePromptMessageContent(data=data, detail=detail)
+                )
+
+        audio_list = config.get("audio_list")
+        if audio_list:
+            for audio in audio_list:
+                data = audio.get("data")
+                format = audio.get("format")
+                user_messages.append(AudioPromptMessageContent(data=data, format=format))
+
+        file_list = config.get("file_list")
+        if file_list:
+            for file in file_list:
+                data = file.get("data")
+                file_name = file.get("file_name")
+                user_messages.append(FilePromptMessageContent(data=data, file_name=file_name))
+
+        if len(user_messages) > 1:
+            messages.append(UserPromptMessage(content=user_messages))
+        else:
+            user_message_data = user_messages[0].data
+            messages.append(UserPromptMessage(content=user_message_data))
+            
+        return messages

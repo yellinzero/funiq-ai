@@ -2,6 +2,7 @@ schema = {
     "model": "gpt-4o-2024-05-13",
     "label": "gpt-4o-2024-05-13",
     "model_type": "llm",
+    "group": "gpt-4o",
     "features": [
         "multi-tool-call",
         "agent-thought",
@@ -32,10 +33,10 @@ schema = {
             "maximum": 4096,
         },
     },
-    "pricing": {
-        "input": "5.00",
-        "output": "15.00",
+    "pricing": [{
+        "input": "5",
+        "output": "15",
         "unit": "0.000001",
         "currency": "USD",
-    },
+    }],
 }

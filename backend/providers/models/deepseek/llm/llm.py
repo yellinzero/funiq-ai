@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from datetime import time
 from typing import Any, Union
 from urllib.parse import urlparse
 
@@ -6,13 +7,16 @@ import tiktoken
 
 from providers.models.core.schemas import (
     LLMResult,
+    LLMUsage,
+    PriceType,
     PromptMessage,
     PromptMessageTool,
 )
-from providers.models.openai.llm.llm import OpenAILargeLanguageModel
+from providers.models.openai.llm.base_llm import OpenAILikeLargeLanguageModel
+from utils.common.datetime import get_time_in_timezone, is_between
 
 
-class DeepSeekLargeLanguageModel(OpenAILargeLanguageModel):
+class DeepSeekLargeLanguageModel(OpenAILikeLargeLanguageModel):
     def _invoke(
         self,
         model: str,
@@ -66,10 +70,7 @@ class DeepSeekLargeLanguageModel(OpenAILargeLanguageModel):
             for key, value in message.items():
                 # Handle list type content (e.g., for multi-modal messages)
                 if isinstance(value, list):
-                    text = "".join(
-                        item["text"] for item in value 
-                        if isinstance(item, dict) and item["type"] == "text"
-                    )
+                    text = "".join(item["text"] for item in value if isinstance(item, dict) and item["type"] == "text")
                     value = text
 
                 # Handle tool calls
@@ -113,3 +114,72 @@ class DeepSeekLargeLanguageModel(OpenAILargeLanguageModel):
         else:
             parsed_url = urlparse(credentials["endpoint_url"])
             credentials["openai_api_base"] = f"{parsed_url.scheme}://{parsed_url.netloc}"
+
+    def _calc_response_usage(
+        self, model: str, credentials: dict, prompt_tokens: int, completion_tokens: int
+    ) -> LLMUsage:
+        """
+        Calculate response usage based on time period
+
+        :param model: model name
+        :param credentials: model credentials
+        :param prompt_tokens: prompt tokens
+        :param completion_tokens: completion tokens
+        :return: usage
+        """
+        # get prompt config
+        schema = self.get_model_schema(model=model, credentials=credentials)
+
+        if not schema:
+            raise ValueError(f"No schema found for model: {model}")
+        pricing = schema.pricing
+        if not pricing:
+            raise ValueError(f"No price info found for model: {model}")
+
+        # get current time in beijing
+        current_time = get_time_in_timezone("Asia/Shanghai")
+
+        # standard period: 08:30-00:30
+        # discount period: 00:30-08:30
+        standard_start = time(8, 30)
+        standard_end = time(0, 30)
+
+        # if current time is in standard period
+        is_standard_time = is_between(current_time, standard_start, standard_end)
+
+        # select price config
+        price_config = pricing[0] if is_standard_time else pricing[1]
+
+        # calculate prompt price
+        prompt_price_info = self.calculate_price(
+            model=model,
+            price_config=price_config,
+            price_type=PriceType.INPUT,
+            tokens=prompt_tokens,
+        )
+
+        # calculate completion price
+        completion_price_info = self.calculate_price(
+            model=model,
+            price_config=price_config,
+            price_type=PriceType.OUTPUT,
+            tokens=completion_tokens,
+        )
+
+        # construct usage info
+        usage = LLMUsage(
+            prompt_tokens=prompt_tokens,
+            prompt_unit_price=prompt_price_info.unit_price,
+            prompt_price_unit=prompt_price_info.unit,
+            prompt_price=prompt_price_info.total_amount,
+            completion_tokens=completion_tokens,
+            completion_unit_price=completion_price_info.unit_price,
+            completion_price_unit=completion_price_info.unit,
+            completion_price=completion_price_info.total_amount,
+            total_tokens=prompt_tokens + completion_tokens,
+            total_price=prompt_price_info.total_amount + completion_price_info.total_amount,
+            currency=prompt_price_info.currency,
+            latency=self.get_invoke_latency(),
+        )
+
+        return usage

@@ -1,17 +1,19 @@
-from json import dumps as json_dumps
-from typing import AsyncGenerator, Generator, List
+from typing import AsyncIterator, List
 
 from fastapi import Request, status
 from loguru import logger
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.account.service.tenant_service import TenantService
 from app.app.service.app_service import AppService
 from app.conversation.schemas import ConversationCreate, ConversationUpdate
 from app.core.errors import AccountErrorCode, AppErrorCode, ConversationErrorCode
 from app.core.models.conversation import Conversation, ConversationStatus, Message, MessageFrom
 from app.workflow.service.workflow_service import WorkflowService
+from infrastructure import StreamHandler
 from infrastructure.workflow_engine import FlowExecutionCallbackContext
+from providers.operators.end.schema import EndOperatorStreamOutput
 from utils.common.datetime import utcnow
 
 
@@ -28,14 +30,11 @@ class ConversationService:
                 status_code=status.HTTP_404_NOT_FOUND
             )
         account_id = request.state.account_id
-        if not account_id:
-            raise AccountErrorCode.ACCOUNT_NOT_FOUND.exception(
-                status_code=status.HTTP_404_NOT_FOUND
-            )
+        user = await TenantService.get_user_by_account_id(session, tenant_id, account_id)
         
         result = await session.execute(
             select(Conversation)
-            .where(and_(Conversation.created_by == account_id, Conversation.tenant_id == tenant_id))
+            .where(and_(Conversation.created_by == user.id, Conversation.tenant_id == tenant_id))
             .order_by(Conversation.created_at.desc())
         )
         return result.scalars().all()
@@ -66,18 +65,21 @@ class ConversationService:
         request: Request
     ) -> Conversation:
         """create a new conversation"""
-        account_id = request.state.account_id
-        if not account_id:
-            raise AccountErrorCode.ACCOUNT_NOT_FOUND.exception(
+        tenant_id = request.state.tenant_id
+        if not tenant_id:
+            raise AccountErrorCode.TENANT_NOT_FOUND.exception(
                 status_code=status.HTTP_404_NOT_FOUND
             )
+        account_id = request.state.account_id
+        user = await TenantService.get_user_by_account_id(session, tenant_id, account_id)
 
         try:
             new_conversation = Conversation(
                 name=conversation.name,
+                tenant_id=tenant_id,
                 status=ConversationStatus.ACTIVE,
-                created_by=account_id,
-                updated_by=account_id,
+                created_by=user.id,
+                updated_by=user.id,
                 message_count=0
             )
             await new_conversation.save(session)
@@ -102,15 +104,17 @@ class ConversationService:
             session=session, conversation_id=conversation_id
         )
         
-        account_id = request.state.account_id
-        if not account_id:
-            raise AccountErrorCode.ACCOUNT_NOT_FOUND.exception(
+        tenant_id = request.state.tenant_id
+        if not tenant_id:
+            raise AccountErrorCode.TENANT_NOT_FOUND.exception(
                 status_code=status.HTTP_404_NOT_FOUND
             )
+        account_id = request.state.account_id
+        user = await TenantService.get_user_by_account_id(session, tenant_id, account_id)
 
         try:
             conversation.name = conversation_update.name
-            conversation.updated_by = account_id
+            conversation.updated_by = user.id
             conversation.updated_at = utcnow()
             
             return conversation
@@ -160,18 +164,20 @@ class ConversationService:
         return result.scalars().all()
     
     @staticmethod
-    async def completation(
+    async def completion(
         session: AsyncSession,
         app_version_id: str,
         conversation_id: str,
         message: str,
         request: Request
-    ) -> Message:
-        account_id = request.state.account_id
-        if not account_id:
-            raise AccountErrorCode.ACCOUNT_NOT_FOUND.exception(
+    ) -> AsyncIterator[str]:
+        tenant_id = request.state.tenant_id
+        if not tenant_id:
+            raise AccountErrorCode.TENANT_NOT_FOUND.exception(
                 status_code=status.HTTP_404_NOT_FOUND
             )
+        account_id = request.state.account_id
+        user = await TenantService.get_user_by_account_id(session, tenant_id, account_id)
         
         """completation"""
         conversation = await ConversationService.get_conversation(
@@ -191,6 +197,8 @@ class ConversationService:
             raise AppErrorCode.APP_VERSION_NOT_ACTIVE.exception(
                 status_code=status.HTTP_400_BAD_REQUEST
             )
+        
+        snapshot = app_version.snapshot
             
         # Create a new message from the user
         new_message = Message(
@@ -198,7 +206,7 @@ class ConversationService:
             app_version_id=app_version.id,
             content=message,
             message_from=MessageFrom.USER,
-            created_by=account_id,
+            created_by=user.id,
         )
         await new_message.save(session)
         
@@ -227,41 +235,52 @@ class ConversationService:
             request=request,
             workflow_id=str(app_version.workflow_id),
             version=app_version.workflow_version,
-            input_data={"question": message},
-            execution_context={"conversation_id": str(conversation.id)},
+            input_data={"query": message},
+            execution_context={
+                "conversation_id": str(conversation.id),
+                "user_id": str(user.id),
+                "user_name": user.name,
+                "tenant_id": str(tenant_id),
+                "support_file": snapshot.get("support_file", False),
+                "support_image": snapshot.get("support_image", False),
+                "support_audio": snapshot.get("support_audio", False),
+                "support_thinking": snapshot.get("support_thinking", False),
+                "support_tool": snapshot.get("support_tool", False),
+            },
             on_created=[on_created],
         )
         
         await executor.initialize()
         stream = await executor.execute()
+        content = ""
         
-        async def generate():
-            content = ""
-            try:
-                if isinstance(stream, Generator):
-                    for chunk in stream:
-                        content += chunk.delta.message.content
-                        yield f"data: {chunk.model_dump_json()}\n\n"
-                elif isinstance(stream, AsyncGenerator):    
-                    async for chunk in stream:
-                        content += chunk.delta.message.content
-                        yield f"data: {chunk.model_dump_json()}\n\n"
-                app_message.content = content
-                conversation.updated_at = utcnow().replace(tzinfo=None)
-                await app_message.save(session)
-                await conversation.save(session)
-                await session.commit()
-            except Exception as e:
-                logger.error(f"Error in stream generation: {e!s}")
-                error_message = {"error": str(e)}
-                yield f"data: {json_dumps(error_message)}\n\n"
-                app_message.content = error_message
-                conversation.updated_at = utcnow().replace(tzinfo=None)
-                await app_message.save(session)
-                await conversation.save(session)
-                await session.commit()
+        def on_chunk(chunk: EndOperatorStreamOutput):
+            nonlocal content
+            content += chunk.message.content
         
-        return generate
+        async def on_finish():
+            app_message.content = content
+            conversation.updated_at = utcnow().replace(tzinfo=None)
+            await app_message.save(session)
+            await conversation.save(session)
+            await session.commit()
+        
+        async def on_error(e: Exception):
+            error_message = {"error": str(e)}
+            app_message.content = error_message
+            conversation.updated_at = utcnow().replace(tzinfo=None)
+            await app_message.save(session)
+            await conversation.save(session)
+            await session.commit()
+        
+        handler = StreamHandler(
+            chunk_type=EndOperatorStreamOutput,
+            on_chunk=on_chunk,
+            on_finish=on_finish,
+            on_error=on_error
+        )
+        
+        return handler.process_stream(stream, executor)
         
         
         

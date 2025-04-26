@@ -1,19 +1,17 @@
 from typing import List
 
-from fastapi import Request, status
+from fastapi import status
 from loguru import logger
-from sqlalchemy import select
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.app.service.app_service import AppService
 from app.core.errors import ModelProviderErrorCode
-from app.core.models.app import App
-from app.core.models.model_provider import Model, ModelProvider
+from app.core.models.model_provider import CustomizedModel, ModelProvider
 from configs import funiq_ai_config
+from providers.models.core import ModelProvider as CoreModelProvider
 from providers.models.core import ProviderFactory
-from providers.models.core.schemas import ConfigurateMethod
 
-from ..schemas import ModelInfo, ProviderInfo, SaveModelRequest, SaveProviderRequest
+from ..schemas import ActiveModelProviderWithModels, ModelInfo, ProviderInfo, SaveProviderRequest
 
 
 class ProviderService:
@@ -33,86 +31,16 @@ class ProviderService:
         provider_schemas = []
 
         for provider in providers:
-            schema = provider.get_provider_schema()
-            ui_schema = provider.get_provider_ui_schema()
-            # Transform icon paths to full URLs with domain
-            if schema.icon:
-                base_url = funiq_ai_config.SERVER_URL.rstrip("/")
-
-                if schema.icon.get("small"):
-                    schema.icon["small"] = f"{base_url}/static/providers/{schema.provider}/icon/small"
-                if schema.icon.get("large"):
-                    schema.icon["large"] = f"{base_url}/static/providers/{schema.provider}/icon/large"
-
-            provider_schemas.append({**schema.model_dump(), "ui_schema": ui_schema})
+            provider_info = ProviderService._handle_provider_schema(provider)
+            provider_schemas.append(provider_info)
 
         logger.info(f"Successfully fetched {len(provider_schemas)} providers")
         return provider_schemas
 
     @staticmethod
-    def _merge_system_provider_data(provider: ModelProvider, provider_name: str) -> None:
-        """
-        Merge system provider data from factory with database provider
-
-        Args:
-            provider: Provider instance from database
-            provider_name: Name of the provider
-        """
-        if not provider.is_system:
-            return
-
-        provider_instance = ProviderFactory.get_provider_instance(provider_name=provider_name)
-        if not provider_instance:
-            return
-
-        schema = provider_instance.get_provider_schema()
-        fields_to_merge = ["label", "description", "credential_schema", "supported_model_types", "docs", "icon"]
-
-        for field in fields_to_merge:
-            if not getattr(provider, field):
-                setattr(provider, field, getattr(schema, field))
-
-    @staticmethod
-    def _merge_system_model_data(db_model: Model, factory_model_info: dict) -> dict:
-        """
-        Merge system model data from factory with database model
-
-        Args:
-            db_model: Model instance from database
-            factory_model_info: Model info from factory
-
-        Returns:
-            dict: Merged model data
-        """
-        fields_to_merge = [
-            "label",
-            "features",
-            "model_properties",
-            "pricing",
-            "parameter_rules_schema",
-            "parameter_rules_ui_schema",
-        ]
-
-        merged_data = {
-            "id": str(db_model.id),
-            "is_enabled": db_model.is_enabled,
-            "is_system": db_model.is_system,
-            "deprecated": db_model.deprecated
-            if db_model.deprecated is not None
-            else factory_model_info.get("deprecated"),
-        }
-
-        # Merge other fields
-        for field in fields_to_merge:
-            db_value = getattr(db_model, field)
-            merged_data[field] = db_value or factory_model_info.get(field)
-
-        return merged_data
-
-    @staticmethod
     async def get_models(session: AsyncSession, tenant_id: str, provider_name: str) -> List[ModelInfo]:
         """
-        Get all models for a specific provider.
+        Get all models for a specific provider, including factory models and customized models.
 
         Args:
             session: Database session
@@ -135,34 +63,77 @@ class ProviderService:
                 data={"provider": provider_name}, status_code=status.HTTP_404_NOT_FOUND
             )
 
-        # Get models from database
+        # Get customized models from database
         result = await session.execute(
-            select(Model).where(Model.tenant_id == tenant_id, Model.provider == provider_name)
+            select(CustomizedModel).where(
+                CustomizedModel.tenant_id == tenant_id, CustomizedModel.provider == provider_name
+            )
         )
-        db_models = result.scalars().all()
-        db_models_map = {model.model: model for model in db_models}
+        custom_models = result.scalars().all()
 
-        # Merge factory and db models
-        merged_models = []
-        for factory_model in factory_models:
-            model_info = factory_model.model_dump()
-            model_info.update(
-                {
-                    "tenant_id": tenant_id,
-                    "provider": provider_name,
-                    "is_enabled": False,
-                    "is_system": True,
-                }
+        # Convert factory models to ModelInfo
+        model_info_list = [ModelInfo(
+            **model.model_dump(),
+            tenant_id=tenant_id,
+            provider=provider_name,
+        ) for model in factory_models]
+
+        # Add customized models
+        for custom_model in custom_models:
+            model_info = ModelInfo(
+                tenant_id=custom_model.tenant_id,
+                provider=custom_model.provider,
+                model=custom_model.model,
+                model_type=custom_model.model_type,
+                label=custom_model.label,
+                features=custom_model.features,
+                group=custom_model.group,
+                model_properties=custom_model.model_properties,
+                pricing=custom_model.pricing,
+                parameter_rules_ui_schema=custom_model.parameter_rules_ui_schema,
+                parameter_rules_schema=custom_model.parameter_rules_schema,
+                deprecated=custom_model.deprecated,
+            )
+            model_info_list.append(model_info)
+
+        logger.info(f"Successfully fetched {len(model_info_list)} models")
+        return model_info_list
+
+    @staticmethod
+    async def get_model(session: AsyncSession, tenant_id: str, provider_name: str, model_name: str) -> ModelInfo:
+        """
+        Get a model by name
+
+        Args:
+            session: Database session
+            tenant_id: ID of the tenant
+            provider_name: Name of the provider
+            model_name: Name of the model
+
+        Returns:
+            ModelInfo: The model information
+        """
+        logger.info(f"Fetching model: {model_name} for provider: {provider_name}", extra={"tenant_id": tenant_id})
+
+        model = ProviderFactory.get_model(model_name=model_name, provider_name=provider_name)
+
+        if not model:
+            # Get model from database
+            result = await session.execute(
+                select(CustomizedModel).where(
+                    CustomizedModel.tenant_id == tenant_id,
+                    CustomizedModel.provider == provider_name,
+                    CustomizedModel.model == model_name,
+                )
+            )
+            model = result.scalar_one_or_none()
+
+        if not model:
+            raise ModelProviderErrorCode.MODEL_NOT_FOUND.exception(
+                data={"provider": provider_name, "model": model_name}, status_code=status.HTTP_404_NOT_FOUND
             )
 
-            if factory_model.model in db_models_map:
-                db_model = db_models_map[factory_model.model]
-                model_info.update(ProviderService._merge_system_model_data(db_model, model_info))
-
-            merged_models.append(ModelInfo(**model_info))
-
-        logger.info(f"Successfully fetched and merged {len(merged_models)} models")
-        return merged_models
+        return model
 
     @staticmethod
     async def save_provider(
@@ -181,7 +152,7 @@ class ProviderService:
         """
         logger.info(
             "Saving provider configuration",
-            extra={"tenant_id": tenant_id, "provider": provider_name, "is_system": payload.is_system},
+            extra={"tenant_id": tenant_id, "provider": provider_name},
         )
 
         # Check if provider exists
@@ -191,9 +162,8 @@ class ProviderService:
         provider = result.scalars().first()
 
         if provider:
-            logger.info("Updating existing provider configuration", extra={"provider_id": str(provider.id)})
+            logger.info("Updating existing provider configuration", extra={"provider": provider.provider})
             provider.credentials = payload.credentials
-            provider.is_system = payload.is_system
             await provider.save(session)
             return provider
 
@@ -202,75 +172,14 @@ class ProviderService:
             "tenant_id": tenant_id,
             "provider": provider_name,
             "credentials": payload.credentials,
-            "is_system": payload.is_system,
         }
 
         provider = ModelProvider(**provider_data)
         await provider.save(session)
 
         await session.commit()
-        logger.info("Created new provider configuration", extra={"provider_id": str(provider.id)})
+        logger.info("Created new provider configuration", extra={"provider": provider.provider})
         return provider
-
-    @staticmethod
-    async def save_model(
-        session: AsyncSession, tenant_id: str, provider_name: str, model_name: str, payload: SaveModelRequest
-    ) -> Model:
-        """
-        Save a model configuration
-
-        Args:
-            session: Database session
-            tenant_id: ID of the tenant
-            payload: Model configuration
-
-        Returns:
-            Model: The saved model configuration
-        """
-        logger.info(
-            "Saving model configuration", extra={"tenant_id": tenant_id, "provider": provider_name, "model": model_name}
-        )
-
-        # Check if model exists
-        result = await session.execute(
-            select(Model).where(
-                Model.tenant_id == tenant_id, Model.provider == provider_name, Model.model == model_name
-            )
-        )
-        model = result.scalars().first()
-
-        if model:
-            # Update existing model
-            model.is_enabled = payload.is_enabled or False
-            await model.save(session)
-            return model
-
-        model_schema = ProviderFactory.get_model(model_name=model_name, provider_name=provider_name)
-        if not model_schema:
-            raise ModelProviderErrorCode.MODEL_NOT_FOUND.exception(
-                data={"provider": provider_name, "model": model_name}, status_code=status.HTTP_404_NOT_FOUND
-            )
-
-        # Create new model
-        model_data = {
-            "tenant_id": tenant_id,
-            "provider": provider_name,
-            "model": model_name,
-            "model_type": model_schema.model_type.value,
-            "label": model_name,
-            "is_system": payload.is_system or False,
-            "is_enabled": payload.is_enabled or False,
-            "configurate_method": ConfigurateMethod.PREDEFINED.value
-            if payload.is_system
-            else ConfigurateMethod.CUSTOMIZABLE.value,
-        }
-
-        model = Model(**model_data)
-        await model.save(session)
-
-        await session.commit()
-        logger.info("Created new model configuration", extra={"model_id": str(model.id)})
-        return model
 
     @staticmethod
     async def get_provider(session: AsyncSession, tenant_id: str, provider_name: str) -> ModelProvider:
@@ -297,103 +206,70 @@ class ProviderService:
                 data={"provider": provider_name}, status_code=status.HTTP_404_NOT_FOUND
             )
 
-        ProviderService._merge_system_provider_data(provider, provider_name)
         return provider
 
     @staticmethod
-    async def get_model(session: AsyncSession, tenant_id: str, provider_name: str, model_name: str) -> Model:
+    async def get_active_providers(session: AsyncSession, tenant_id: str) -> List[ActiveModelProviderWithModels]:
         """
-        Get a model by name
+        Get all active providers and their models.
 
         Args:
             session: Database session
             tenant_id: ID of the tenant
-            provider_name: Name of the provider
-            model_name: Name of the model
 
         Returns:
-            Model: The model configuration
+            List[dict]: List of active providers with their models
         """
-        logger.info(
-            "Fetching model configuration",
-            extra={"tenant_id": tenant_id, "provider": provider_name, "model": model_name},
-        )
+        logger.info("Fetching active providers", extra={"tenant_id": tenant_id})
 
+        # Get active providers from database
         result = await session.execute(
-            select(Model).where(
-                Model.tenant_id == tenant_id, Model.provider == provider_name, Model.model == model_name
+            select(ModelProvider).where(
+                and_(ModelProvider.tenant_id == tenant_id, ModelProvider.credentials.isnot(None))
             )
         )
-        model = result.scalars().first()
+        active_providers = result.scalars().all()
+        providers_with_models = []
+        for provider in active_providers:
+            # Get provider schema
+            provider_instance = ProviderFactory.get_provider_instance(provider.provider)
+            if not provider_instance:
+                continue
 
-        if not model:
-            raise ModelProviderErrorCode.MODEL_NOT_FOUND.exception(
-                data={"provider": provider_name, "model": model_name}, status_code=status.HTTP_404_NOT_FOUND
+            provider_info = ProviderService._handle_provider_schema(provider=provider_instance)
+            # Get models for this provider
+            models = await ProviderService.get_models(
+                session=session, tenant_id=tenant_id, provider_name=provider.provider
             )
 
-        return model
+            providers_with_models.append(
+                {
+                    "provider": provider_info,
+                    "models": [model.model_dump() for model in models],
+                }
+            )
+
+        logger.info(f"Successfully fetched {len(providers_with_models)} active providers")
+        return providers_with_models
 
     @staticmethod
-    async def enable_model(
-        session: AsyncSession,
-        tenant_id: str,
-        provider_name: str,
-        model_name: str,
-        request: Request
-    ) -> Model:
+    def _handle_provider_schema(provider: CoreModelProvider) -> ProviderInfo:
         """
-        Enable a model and create its associated system app if it doesn't exist
-
-        Args:
-            session: Database session
-            tenant_id: ID of the tenant
-            provider_name: Name of the provider
-            model_name: Name of the model
-
-        Returns:
-            Model: The enabled model
+        Handle provider schema
         """
-        logger.info("Enabling model", extra={"tenant_id": tenant_id, "provider": provider_name, "model": model_name})
+        provider_schema = {}
+        schema = provider.get_provider_schema()
+        ui_schema = provider.get_provider_ui_schema()
+        # Transform icon paths to full URLs with domain
+        if schema.icon:
+            base_url = funiq_ai_config.SERVER_URL.rstrip("/")
 
-        async with session.begin():
-            result = await session.execute(
-                select(Model).where(
-                    Model.tenant_id == tenant_id,
-                    Model.provider == provider_name,
-                    Model.model == model_name
-                )
-            )
-            model = result.scalars().first()
-
-            if not model:
-                # Create the model if it doesn't exist
-                model = await ProviderService.save_model(
-                    session=session,
-                    tenant_id=tenant_id,
-                    provider_name=provider_name,
-                    model_name=model_name,
-                    payload=SaveModelRequest(is_system=True, is_enabled=True),
-                )
-            else:
-                # Enable the existing model
-                model.is_enabled = True
-                await model.save(session)
-
-            # Check if system app exists for this model
-            result = await session.execute(
-                select(App).where(App.tenant_id == tenant_id, App.name == model_name, App.is_system == True)
-            )
-            app = result.scalars().first()
-
-            if not app:
-                await AppService.create_system_app(
-                    session=session,
-                    request=request,
-                    tenant_id=tenant_id,
-                    model_name=model_name,
-                    model_id=str(model.id),
-                )
-
-            await session.commit()
-            logger.info("Successfully enabled model", extra={"model_id": str(model.id)})
-            return model
+            if schema.icon.get("small"):
+                schema.icon["small"] = f"{base_url}/static/providers/{schema.provider}/icon/small"
+            if schema.icon.get("large"):
+                schema.icon["large"] = f"{base_url}/static/providers/{schema.provider}/icon/large"
+        provider_schema = {
+            **schema.model_dump(),
+            "ui_schema": ui_schema,
+        }
+        return provider_schema

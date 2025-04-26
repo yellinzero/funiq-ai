@@ -4,6 +4,7 @@ schema = {
     "model": "gpt-4o-2024-08-06",
     "label": "gpt-4o-2024-08-06",
     "model_type": "llm",
+    "group": "gpt-4o",
     "features": [
         "multi-tool-call",
         "agent-thought",
@@ -47,11 +48,11 @@ schema = {
             "_template": "json_schema",
         },
     },
-    "pricing": {
+    "pricing": [{
         "input": "2.50",
         "output": "10.00",
         "unit": "0.000001",
         "currency": "USD",
-    },
+    }],
 }
 

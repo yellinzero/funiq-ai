@@ -41,3 +41,4 @@ class WorkflowErrorCode(BaseErrorCode):
     WORKFLOW_VERSION_NOT_ACTIVE = ("E0602", "Specified workflow version is not active")
 
     WORKFLOW_TASK_TIMEOUT = ("E0701", "Workflow task execution timed out")
+    WORKFLOW_SAVE_ERROR = ("E0801", "Failed to save workflow - Please check the provided configuration")

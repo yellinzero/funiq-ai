@@ -34,6 +34,7 @@ from .redis.core import (
     with_redis,
     with_sync_redis,
 )
+from .stream import StreamEvent, StreamHandler
 from .workflow_engine import (
     WorkflowDebugEngine,
     WorkflowDebugExecution,
@@ -51,6 +52,8 @@ __all__ = [
     "DBSoftDeleteMixin",
     "DBUUIDModelMixin",
     "RedisRateLimiter",
+    "StreamEvent",
+    "StreamHandler",
     "WorkflowDebugEngine",
     "WorkflowDebugExecution",
     "WorkflowDebugLog",

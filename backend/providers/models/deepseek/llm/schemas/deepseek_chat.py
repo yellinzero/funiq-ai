@@ -6,6 +6,7 @@ schema = {
     "model_type": "llm",
     "features": [
         "agent-thought",
+        "tool-call",
         "multi-tool-call",
         "stream-tool-call",
     ],
@@ -94,10 +95,18 @@ schema = {
             ),
         },
     },
-    "pricing": {
-        "input": "1",
-        "output": "2",
-        "unit": "0.000001",
-        "currency": "RMB",
-    },
+    "pricing": [
+        {
+            "input": "0.5",
+            "output": "8",
+            "unit": "0.000001",
+            "currency": "CNY",
+        },
+        {
+            "input": "0.25",
+            "output": "4",
+            "unit": "0.000001",
+            "currency": "CNY",
+        },
+    ],
 }

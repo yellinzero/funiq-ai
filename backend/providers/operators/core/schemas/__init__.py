@@ -5,7 +5,7 @@ from .operator import (
     OperatorState,
     OperatorType,
     OutputStream,
-    OutputStreamType,
+    StreamDependency,
 )
 
 __all__ = [
@@ -15,5 +15,5 @@ __all__ = [
     "OperatorState",
     "OperatorType",
     "OutputStream",
-    "OutputStreamType",
+    "StreamDependency",
 ]

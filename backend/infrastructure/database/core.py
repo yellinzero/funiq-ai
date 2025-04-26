@@ -1,7 +1,7 @@
 import contextlib
 import functools
 from collections.abc import Awaitable, Callable
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 from loguru import logger
 from sqlalchemy import Engine, create_engine
@@ -16,8 +16,8 @@ T = TypeVar("T")
 R = TypeVar("R")
 
 # Global engine instance
-_engine: Optional[AsyncEngine] = None
-_sync_engine: Optional[Engine] = None
+_engine: AsyncEngine | None = None
+_sync_engine: Engine | None = None
 
 
 def get_engine() -> AsyncEngine:

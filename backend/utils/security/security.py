@@ -100,6 +100,9 @@ def get_account_id_from_token(token: str) -> str:
 
 
 def get_account_id_from_request(request: Request) -> str:
+    """
+    Extract the account ID from the request headers.
+    """
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
     return get_account_id_from_token(token)
 

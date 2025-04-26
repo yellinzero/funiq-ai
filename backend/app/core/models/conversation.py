@@ -35,6 +35,9 @@ class Conversation(DBBase, DBUUIDModelMixin):
     """Conversation model that represents a chat session"""
 
     name: Mapped[str] = mapped_column(String(100), nullable=False, comment="Conversation name")
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, comment="Reference to the tenant"
+    )
     status: Mapped[ConversationStatus] = mapped_column(
         SQLAlchemyEnum(ConversationStatus),
         nullable=False,
@@ -65,6 +68,7 @@ class Conversation(DBBase, DBUUIDModelMixin):
         # Query indexes
         Index("idx_conversation_status", status),
         Index("idx_conversation_user", created_by),
+        Index("idx_conversation_tenant", tenant_id),
     )
 
     @property

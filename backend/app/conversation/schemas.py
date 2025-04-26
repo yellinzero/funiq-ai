@@ -47,3 +47,7 @@ class MessageResponse(MessageBase):
     search_results: List[dict] | None
     thinking_content: str | None
     files: List[dict] | None
+    
+
+class CompletionRequest(BaseModel):
+    message: str

@@ -5,13 +5,11 @@ from typing import ClassVar
 
 from loguru import logger
 
-from utils.common.i18n import get_current_locale_code_with_territory
-from utils.json_schema import JSONSchema
+from utils.common.i18n import get_current_locale_code_with_territory, translate_data
 
 from ..schemas import (
     PARAMETER_RULE_TEMPLATE,
     AIModelEntity,
-    ConfigurateMethod,
     ParameterPropertyName,
 )
 
@@ -88,8 +86,7 @@ class SchemaHandlingMixin:
                     if ui_schema_data:
                         new_schema_data["parameter_rules_ui_schema"] = ui_schema_data.get("parameter_rules")
                     new_schema_data["parameter_rules_schema"] = processed_rules_schema
-                    new_schema_data["configurate_method"] = ConfigurateMethod.PREDEFINED.value
-
+                    
                     model_schema = AIModelEntity(**new_schema_data)
                     model_schemas.append(model_schema)
 
@@ -123,9 +120,14 @@ class SchemaHandlingMixin:
         """Create a custom model schema from credentials."""
         return self._create_custom_model_schema(model, credentials)
 
-    def _process_parameter_rules(self, parameter_rules: dict) -> JSONSchema:
-        """Process parameter rules and return a JSONSchema."""
-        parameter_rules_schema = JSONSchema(properties={})
+    def _process_parameter_rules(self, parameter_rules: dict) -> dict:
+        """Process parameter rules and return a json schema."""
+        parameter_rules_schema = {
+            "type": "object",
+            "properties": {},
+            "required": [],
+        }
+        
         required_fields = []
 
         for param_name, rule in parameter_rules.items():
@@ -141,13 +143,13 @@ class SchemaHandlingMixin:
                     # Update template with custom configurations
                     custom_fields = {k: v for k, v in rule.items() if k not in ("_template", "required")}
                     for key, value in custom_fields.items():
-                        setattr(processed_rule, key, value)
+                        processed_rule[key] = value
                 else:
                     # Remove required field from the rule
                     processed_rule.pop("required", None)
 
                 # Add to schema using the parameter name as the property key
-                parameter_rules_schema.properties[param_name] = processed_rule
+                parameter_rules_schema["properties"][param_name] = processed_rule
 
                 # Check if the field is required
                 if rule.get("required", False):
@@ -159,9 +161,9 @@ class SchemaHandlingMixin:
 
         # Set required fields in schema
         if required_fields:
-            parameter_rules_schema.required = required_fields
+            parameter_rules_schema["required"] = required_fields
 
-        return parameter_rules_schema.model_dump()
+        return translate_data(parameter_rules_schema)
 
     def _create_custom_model_schema(self, model: str, credentials: Mapping) -> AIModelEntity | None:
         """Internal method to create and customize a model schema using templates."""
@@ -188,16 +190,19 @@ class SchemaHandlingMixin:
 
         return default_parameter_rule
 
-    def get_parameter_rules_schema(self, model: str, credentials: dict) -> JSONSchema:
+    def get_parameter_rules_schema(self, model: str, credentials: dict) -> dict:
         """Get parameter rules schema for the model.
 
         :param model: model name
         :param credentials: model credentials
-        :return: JSONSchema instance
+        :return: json schema
         """
         model_schema = self.get_model_schema(model, credentials)
         if not model_schema:
-            return JSONSchema(properties={})
+            return {
+                "type": "object",
+                "properties": {},
+            }
 
         return model_schema.parameter_rules_schema
 

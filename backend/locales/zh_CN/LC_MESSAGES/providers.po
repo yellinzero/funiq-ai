@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2025-02-19 00:35+0800\n"
+"POT-Creation-Date: 2025-04-25 09:16+0800\n"
 "PO-Revision-Date: 2025-02-19 00:36+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh_Hans_CN\n"
@@ -26,48 +26,65 @@ msgstr "Anthropic"
 msgid "Anthropic's powerful models, such as Claude 3."
 msgstr "Anthropic 提供的强大模型，如 Claude 3。"
 
-#: providers/models/anthropic/anthropic_schema.py:12
+#: providers/models/anthropic/anthropic_schema.py:9
 msgid "Get your API Key from Anthropic"
 msgstr "从 Anthropic 获取 API 密钥"
 
-#: providers/models/anthropic/anthropic_schema.py:26
+#: providers/models/anthropic/anthropic_schema.py:19
 #: providers/models/deepseek/deepseek_schema.py:26
-#: providers/models/openai/openai_schema.py:30
+#: providers/models/openai/openai_schema.py:19
 msgid "API Key"
 msgstr "API 密钥"
 
-#: providers/models/anthropic/anthropic_schema.py:27
-#: providers/models/deepseek/deepseek_schema.py:27
-#: providers/models/openai/openai_schema.py:31
-msgid "Enter your API Key"
-msgstr "输入你的 API 密钥"
-
-#: providers/models/anthropic/anthropic_schema.py:33
+#: providers/models/anthropic/anthropic_schema.py:24
 msgid "API URL"
 msgstr "API 地址"
 
-#: providers/models/anthropic/anthropic_schema.py:34
+#: providers/models/anthropic/anthropic_schema.py:36
+#: providers/models/deepseek/deepseek_schema.py:45
+#: providers/models/openai/openai_schema.py:41
+msgid "Enter your API Key"
+msgstr "输入你的 API 密钥"
+
+#: providers/models/anthropic/anthropic_schema.py:39
 msgid "Enter your API URL"
 msgstr "输入你的 API 地址"
 
-#: providers/models/anthropic/llm/schemas/claude_2.py:22
-#: providers/models/anthropic/llm/schemas/claude_2_1.py:22
-#: providers/models/anthropic/llm/schemas/claude_3_5_haiku_20241022.py:25
-#: providers/models/anthropic/llm/schemas/claude_3_5_sonnet_20240620.py:25
-#: providers/models/anthropic/llm/schemas/claude_3_5_sonnet_20241022.py:25
-#: providers/models/anthropic/llm/schemas/claude_3_haiku_20240307.py:25
-#: providers/models/anthropic/llm/schemas/claude_3_opus_20240229.py:25
-#: providers/models/anthropic/llm/schemas/claude_3_sonnet_20240229.py:25
-#: providers/models/anthropic/llm/schemas/claude_instant_1.py:25
-#: providers/models/anthropic/llm/schemas/claude_instant_1_2.py:20
+#: providers/models/anthropic/llm/schemas/claude_3_5_sonnet.py:25
+#: providers/models/anthropic/llm/schemas/claude_3_7_sonnet.py:50
 msgid "Only sample from the top K options for each subsequent token."
 msgstr "仅从每个后续标记的前 K 个选项中采样。"
 
-#: providers/models/core/models/model.py:212
+#: providers/models/anthropic/llm/schemas/claude_3_7_sonnet.py:21
+msgid "Thinking"
+msgstr "推理模式"
+
+#: providers/models/anthropic/llm/schemas/claude_3_7_sonnet.py:22
+msgid ""
+"Controls the model's thinking capability. When enabled, temperature, "
+"top_p and top_k will be disabled."
+msgstr "控制模型的推理能力。启用时，temperature、top_p和top_k将被禁用。"
+
+#: providers/models/anthropic/llm/schemas/claude_3_7_sonnet.py:31
+msgid "Thinking Budget"
+msgstr "推理预算"
+
+#: providers/models/anthropic/llm/schemas/claude_3_7_sonnet.py:32
+msgid ""
+"Budget limit for thinking (minimum 1024), must be less than max_tokens. "
+"Only available when thinking mode is enabled."
+msgstr "推理的预算限制（最小1024），必须小于max_tokens。仅在推理模式启用时可用。"
+
+#: providers/models/anthropic/llm/schemas/claude_3_7_sonnet.py:49
+#, fuzzy
+msgid "Top k"
+msgstr "Top K"
+
+#: providers/models/core/schemas/model.py:223
 msgid "Temperature"
 msgstr "温度"
 
-#: providers/models/core/models/model.py:213
+#: providers/models/core/schemas/model.py:224
 msgid ""
 "Controls randomness. Lower temperature results in less random "
 "completions. As the temperature approaches zero, the model will become "
@@ -75,92 +92,103 @@ msgid ""
 "completions."
 msgstr "控制随机性。较低的温度会产生较少的随机完成。当温度接近零时，模型将变得确定性和重复性。较高的温度会产生更多的随机完成。"
 
-#: providers/models/core/models/model.py:223
+#: providers/models/core/schemas/model.py:236
 msgid "Top P"
 msgstr "Top P"
 
-#: providers/models/core/models/model.py:224
+#: providers/models/core/schemas/model.py:237
 msgid ""
 "Controls diversity via nucleus sampling: 0.5 means half of all "
 "likelihood-weighted options are considered."
 msgstr "通过核采样控制多样性：0.5 表示考虑所有可能性加权选项的一半。"
 
-#: providers/models/core/models/model.py:233
+#: providers/models/core/schemas/model.py:248
 msgid "Top K"
 msgstr "Top K"
 
-#: providers/models/core/models/model.py:234
+#: providers/models/core/schemas/model.py:249
 msgid ""
 "Limits the number of tokens to consider for each step by keeping only the"
 " k most likely tokens."
 msgstr "通过仅保留 k 个最可能的标记来限制每一步要考虑的标记数量。"
 
-#: providers/models/core/models/model.py:241
+#: providers/models/core/schemas/model.py:258
 msgid "Presence Penalty"
 msgstr "存在惩罚"
 
-#: providers/models/core/models/model.py:242
+#: providers/models/core/schemas/model.py:259
 msgid "Applies a penalty to the log-probability of tokens already in the text."
 msgstr "对文本中已有标记的对数概率施加惩罚。"
 
-#: providers/models/core/models/model.py:250
+#: providers/models/core/schemas/model.py:268
 msgid "Frequency Penalty"
 msgstr "频率惩罚"
 
-#: providers/models/core/models/model.py:251
+#: providers/models/core/schemas/model.py:269
 msgid ""
 "Applies a penalty to the log-probability of tokens that appear in the "
 "text."
 msgstr "对出现在文本中的标记的对数概率施加惩罚。"
 
-#: providers/models/core/models/model.py:259
+#: providers/models/core/schemas/model.py:278
 msgid "Max Tokens"
 msgstr "最大标记数"
 
-#: providers/models/core/models/model.py:260
-#: providers/models/deepseek/llm/schemas/deepseek_chat.py:34
+#: providers/models/core/schemas/model.py:279
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:35
 msgid ""
 "Specifies the upper limit on the length of generated results. If the "
 "generated results are truncated, you can increase this parameter."
 msgstr "指定生成结果长度的上限。如果生成的结果被截断，你可以增加这个参数。"
 
-#: providers/models/core/models/model.py:268
-#: providers/models/deepseek/llm/schemas/deepseek_chat.py:89
-#: providers/models/openai/llm/schemas/chatgpt_4o_latest.py:37
-#: providers/models/openai/llm/schemas/gpt_3_5_turbo.py:36
-#: providers/models/openai/llm/schemas/gpt_3_5_turbo_0125.py:36
-#: providers/models/openai/llm/schemas/gpt_3_5_turbo_1106.py:36
-#: providers/models/openai/llm/schemas/gpt_4.py:47
-#: providers/models/openai/llm/schemas/gpt_4_0125_preview.py:47
-#: providers/models/openai/llm/schemas/gpt_4_1106_preview.py:47
-#: providers/models/openai/llm/schemas/gpt_4_32k.py:47
-#: providers/models/openai/llm/schemas/gpt_4_turbo.py:48
-#: providers/models/openai/llm/schemas/gpt_4_turbo_2024_04_09.py:48
-#: providers/models/openai/llm/schemas/gpt_4_turbo_preview.py:47
-#: providers/models/openai/llm/schemas/gpt_4_vision_preview.py:45
-#: providers/models/openai/llm/schemas/gpt_4o.py:37
-#: providers/models/openai/llm/schemas/gpt_4o_2024_08_06.py:37
-#: providers/models/openai/llm/schemas/gpt_4o_audio_preview.py:37
-#: providers/models/openai/llm/schemas/gpt_4o_mini.py:37
-#: providers/models/openai/llm/schemas/gpt_4o_mini_2024_07_18.py:37
-#: providers/models/openai/llm/schemas/o1_mini.py:22
-#: providers/models/openai/llm/schemas/o1_mini_2024_09_12.py:22
-#: providers/models/openai/llm/schemas/o1_preview.py:22
-#: providers/models/openai/llm/schemas/o1_preview_2024_09_12.py:22
+#: providers/models/core/schemas/model.py:289
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:90
+#: providers/models/openai/llm/schemas/chatgpt_4o_latest.py:38
+#: providers/models/openai/llm/schemas/gpt_4.py:48
+#: providers/models/openai/llm/schemas/gpt_4_0125_preview.py:48
+#: providers/models/openai/llm/schemas/gpt_4_1.py:38
+#: providers/models/openai/llm/schemas/gpt_4_1106_preview.py:48
+#: providers/models/openai/llm/schemas/gpt_4_1_2025_04_14.py:38
+#: providers/models/openai/llm/schemas/gpt_4_1_mini.py:38
+#: providers/models/openai/llm/schemas/gpt_4_1_mini_2025_04_14.py:38
+#: providers/models/openai/llm/schemas/gpt_4_1_nano.py:38
+#: providers/models/openai/llm/schemas/gpt_4_1_nano_2025_04_14.py:38
+#: providers/models/openai/llm/schemas/gpt_4_32k.py:48
+#: providers/models/openai/llm/schemas/gpt_4_turbo.py:49
+#: providers/models/openai/llm/schemas/gpt_4_turbo_2024_04_09.py:49
+#: providers/models/openai/llm/schemas/gpt_4_turbo_preview.py:48
+#: providers/models/openai/llm/schemas/gpt_4_vision_preview.py:46
+#: providers/models/openai/llm/schemas/gpt_4o.py:38
+#: providers/models/openai/llm/schemas/gpt_4o_2024_08_06.py:38
+#: providers/models/openai/llm/schemas/gpt_4o_2024_11_20.py:38
+#: providers/models/openai/llm/schemas/gpt_4o_audio_preview.py:38
+#: providers/models/openai/llm/schemas/gpt_4o_mini.py:38
+#: providers/models/openai/llm/schemas/gpt_4o_mini_2024_07_18.py:38
+#: providers/models/openai/llm/schemas/o1.py:36
+#: providers/models/openai/llm/schemas/o1_2024_12_17.py:36
+#: providers/models/openai/llm/schemas/o1_mini.py:23
+#: providers/models/openai/llm/schemas/o1_mini_2024_09_12.py:23
+#: providers/models/openai/llm/schemas/o1_preview_2024_09_12.py:23
+#: providers/models/openai/llm/schemas/o3.py:36
+#: providers/models/openai/llm/schemas/o3_2025_04_16.py:36
+#: providers/models/openai/llm/schemas/o3_mini.py:35
+#: providers/models/openai/llm/schemas/o3_mini_2025_01_31.py:35
+#: providers/models/openai/llm/schemas/o4_mini.py:36
+#: providers/models/openai/llm/schemas/o4_mini_2025_04_16.py:36
 msgid "Response Format"
 msgstr "响应格式"
 
-#: providers/models/core/models/model.py:269
+#: providers/models/core/schemas/model.py:290
 msgid ""
 "Set a response format, ensure the output from llm is a valid code block "
 "as possible, such as JSON, XML, etc."
 msgstr "设置响应格式，确保来自 LLM 的输出尽可能是有效的代码块，如 JSON、XML 等。"
 
-#: providers/models/core/models/model.py:275
+#: providers/models/core/schemas/model.py:298
 msgid "JSON Schema"
 msgstr "JSON Schema"
 
-#: providers/models/core/models/model.py:276
+#: providers/models/core/schemas/model.py:299
 msgid ""
 "Define a JSON schema to structure and validate the LLM's response. The "
 "schema should follow JSON Schema specification format."
@@ -178,22 +206,22 @@ msgstr "深度求索提供的模型，如 deepseek-chat、deepseek-coder。"
 msgid "Get your API Key from deepseek"
 msgstr "从深度求索获取 API 密钥"
 
-#: providers/models/deepseek/deepseek_schema.py:33
+#: providers/models/deepseek/deepseek_schema.py:32
 msgid "Custom API endpoint URL"
 msgstr "自定义 API 端点 URL"
 
-#: providers/models/deepseek/deepseek_schema.py:34
+#: providers/models/deepseek/deepseek_schema.py:33
 msgid "Base URL, e.g. https://api.deepseek.com/v1 or https://api.deepseek.com"
 msgstr "基础 URL，例如 https://api.deepseek.com/v1 或 https://api.deepseek.com"
 
-#: providers/models/deepseek/llm/schemas/deepseek_chat.py:22
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:23
 msgid ""
 "Control the diversity and randomness of generated results. The smaller "
 "the value, the more rigorous it is; the larger the value, the more "
 "divergent it is."
 msgstr "控制生成结果的多样性和随机性。值越小，越严谨；值越大，越发散。"
 
-#: providers/models/deepseek/llm/schemas/deepseek_chat.py:45
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:46
 msgid ""
 "Control the randomness of generated results. The smaller the value, the "
 "weaker the randomness; the larger the value, the stronger the randomness."
@@ -201,22 +229,22 @@ msgid ""
 "temperature."
 msgstr "控制生成结果的随机性。值越小，随机性越弱；值越大，随机性越强。一般来说，你可以调整 top_p 和 temperature 这两个参数中的一个。"
 
-#: providers/models/deepseek/llm/schemas/deepseek_chat.py:54
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:55
 msgid "Log Probabilities"
 msgstr "对数概率"
 
-#: providers/models/deepseek/llm/schemas/deepseek_chat.py:56
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:57
 msgid ""
 "Whether to return the log probability of the output token. If true, "
 "returns the log probability of each output token in the content of "
 "message."
 msgstr "是否返回输出标记的对数概率。如果为真，则在消息内容中返回每个输出标记的对数概率。"
 
-#: providers/models/deepseek/llm/schemas/deepseek_chat.py:63
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:64
 msgid "Top Log Probabilities"
 msgstr "顶部对数概率"
 
-#: providers/models/deepseek/llm/schemas/deepseek_chat.py:68
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:69
 msgid ""
 "An integer N between 0 and 20, specifying that each output position "
 "returns the top N tokenswith output probability, and returns the "
@@ -226,35 +254,46 @@ msgstr ""
 "一个介于 0 和 20 之间的整数 N，指定每个输出位置返回概率最高的 N 个标记，并返回这些标记的对数概率。指定此参数时，logprobs "
 "必须为真。"
 
-#: providers/models/deepseek/llm/schemas/deepseek_chat.py:80
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:81
 msgid ""
 "A number between -2.0 and 2.0. If the value is positive, new tokens are "
 "penalized basedon their frequency of occurrence in existing text,reducing"
 " the likelihood that the model will repeat the same content."
 msgstr "一个介于 -2.0 和 2.0 之间的数字。如果值为正，则根据新标记在现有文本中的出现频率对其进行惩罚，降低模型重复相同内容的可能性。"
 
-#: providers/models/deepseek/llm/schemas/deepseek_chat.py:91
-#: providers/models/openai/llm/schemas/chatgpt_4o_latest.py:39
-#: providers/models/openai/llm/schemas/gpt_3_5_turbo.py:38
-#: providers/models/openai/llm/schemas/gpt_3_5_turbo_0125.py:38
-#: providers/models/openai/llm/schemas/gpt_3_5_turbo_1106.py:38
-#: providers/models/openai/llm/schemas/gpt_4.py:49
-#: providers/models/openai/llm/schemas/gpt_4_0125_preview.py:49
-#: providers/models/openai/llm/schemas/gpt_4_1106_preview.py:49
-#: providers/models/openai/llm/schemas/gpt_4_32k.py:49
-#: providers/models/openai/llm/schemas/gpt_4_turbo.py:50
-#: providers/models/openai/llm/schemas/gpt_4_turbo_2024_04_09.py:50
-#: providers/models/openai/llm/schemas/gpt_4_turbo_preview.py:49
-#: providers/models/openai/llm/schemas/gpt_4_vision_preview.py:47
-#: providers/models/openai/llm/schemas/gpt_4o.py:39
-#: providers/models/openai/llm/schemas/gpt_4o_2024_08_06.py:39
-#: providers/models/openai/llm/schemas/gpt_4o_audio_preview.py:39
-#: providers/models/openai/llm/schemas/gpt_4o_mini.py:39
-#: providers/models/openai/llm/schemas/gpt_4o_mini_2024_07_18.py:39
-#: providers/models/openai/llm/schemas/o1_mini.py:24
-#: providers/models/openai/llm/schemas/o1_mini_2024_09_12.py:24
-#: providers/models/openai/llm/schemas/o1_preview.py:24
-#: providers/models/openai/llm/schemas/o1_preview_2024_09_12.py:24
+#: providers/models/deepseek/llm/schemas/deepseek_chat.py:92
+#: providers/models/openai/llm/schemas/chatgpt_4o_latest.py:40
+#: providers/models/openai/llm/schemas/gpt_4.py:50
+#: providers/models/openai/llm/schemas/gpt_4_0125_preview.py:50
+#: providers/models/openai/llm/schemas/gpt_4_1.py:40
+#: providers/models/openai/llm/schemas/gpt_4_1106_preview.py:50
+#: providers/models/openai/llm/schemas/gpt_4_1_2025_04_14.py:40
+#: providers/models/openai/llm/schemas/gpt_4_1_mini.py:40
+#: providers/models/openai/llm/schemas/gpt_4_1_mini_2025_04_14.py:40
+#: providers/models/openai/llm/schemas/gpt_4_1_nano.py:40
+#: providers/models/openai/llm/schemas/gpt_4_1_nano_2025_04_14.py:40
+#: providers/models/openai/llm/schemas/gpt_4_32k.py:50
+#: providers/models/openai/llm/schemas/gpt_4_turbo.py:51
+#: providers/models/openai/llm/schemas/gpt_4_turbo_2024_04_09.py:51
+#: providers/models/openai/llm/schemas/gpt_4_turbo_preview.py:50
+#: providers/models/openai/llm/schemas/gpt_4_vision_preview.py:48
+#: providers/models/openai/llm/schemas/gpt_4o.py:40
+#: providers/models/openai/llm/schemas/gpt_4o_2024_08_06.py:40
+#: providers/models/openai/llm/schemas/gpt_4o_2024_11_20.py:40
+#: providers/models/openai/llm/schemas/gpt_4o_audio_preview.py:40
+#: providers/models/openai/llm/schemas/gpt_4o_mini.py:40
+#: providers/models/openai/llm/schemas/gpt_4o_mini_2024_07_18.py:40
+#: providers/models/openai/llm/schemas/o1.py:38
+#: providers/models/openai/llm/schemas/o1_2024_12_17.py:38
+#: providers/models/openai/llm/schemas/o1_mini.py:25
+#: providers/models/openai/llm/schemas/o1_mini_2024_09_12.py:25
+#: providers/models/openai/llm/schemas/o1_preview_2024_09_12.py:25
+#: providers/models/openai/llm/schemas/o3.py:38
+#: providers/models/openai/llm/schemas/o3_2025_04_16.py:38
+#: providers/models/openai/llm/schemas/o3_mini.py:37
+#: providers/models/openai/llm/schemas/o3_mini_2025_01_31.py:37
+#: providers/models/openai/llm/schemas/o4_mini.py:38
+#: providers/models/openai/llm/schemas/o4_mini_2025_04_16.py:38
 msgid "specifying the format that the model must output"
 msgstr "指定模型必须输出的格式"
 
@@ -266,42 +305,42 @@ msgstr "OpenAI"
 msgid "Models provided by OpenAI, such as GPT-3.5-Turbo and GPT-4."
 msgstr "OpenAI 提供的模型，如 GPT-3.5-Turbo 和 GPT-4。"
 
-#: providers/models/openai/openai_schema.py:12
+#: providers/models/openai/openai_schema.py:9
 msgid "Get your API Key from OpenAI"
 msgstr "从 OpenAI 获取 API 密钥"
 
-#: providers/models/openai/openai_schema.py:37
+#: providers/models/openai/openai_schema.py:25
 msgid "Organization ID"
 msgstr "组织 ID"
 
-#: providers/models/openai/openai_schema.py:38
-msgid "Enter your Organization ID"
-msgstr "输入你的组织 ID"
-
-#: providers/models/openai/openai_schema.py:42
+#: providers/models/openai/openai_schema.py:30
 msgid "API Base"
 msgstr "API 基础地址"
 
-#: providers/models/openai/openai_schema.py:43
+#: providers/models/openai/openai_schema.py:31
 msgid "Enter your API Base, e.g. https://api.openai.com"
 msgstr "输入你的 API 基础地址，例如 https://api.openai.com"
 
-#: providers/models/openai/llm/schemas/gpt_4.py:36
-#: providers/models/openai/llm/schemas/gpt_4_0125_preview.py:36
-#: providers/models/openai/llm/schemas/gpt_4_1106_preview.py:36
-#: providers/models/openai/llm/schemas/gpt_4_32k.py:36
-#: providers/models/openai/llm/schemas/gpt_4_turbo.py:37
-#: providers/models/openai/llm/schemas/gpt_4_turbo_2024_04_09.py:37
-#: providers/models/openai/llm/schemas/gpt_4_turbo_preview.py:36
-#: providers/models/openai/llm/schemas/gpt_4_vision_preview.py:34
+#: providers/models/openai/openai_schema.py:44
+msgid "Enter your Organization ID"
+msgstr "输入你的组织 ID"
+
+#: providers/models/openai/llm/schemas/gpt_4.py:37
+#: providers/models/openai/llm/schemas/gpt_4_0125_preview.py:37
+#: providers/models/openai/llm/schemas/gpt_4_1106_preview.py:37
+#: providers/models/openai/llm/schemas/gpt_4_32k.py:37
+#: providers/models/openai/llm/schemas/gpt_4_turbo.py:38
+#: providers/models/openai/llm/schemas/gpt_4_turbo_2024_04_09.py:38
+#: providers/models/openai/llm/schemas/gpt_4_turbo_preview.py:37
+#: providers/models/openai/llm/schemas/gpt_4_vision_preview.py:35
 msgid "Seed"
 msgstr "种子"
 
-#: providers/models/openai/llm/schemas/gpt_4.py:38
-#: providers/models/openai/llm/schemas/gpt_4_0125_preview.py:38
-#: providers/models/openai/llm/schemas/gpt_4_1106_preview.py:38
-#: providers/models/openai/llm/schemas/gpt_4_32k.py:38
-#: providers/models/openai/llm/schemas/gpt_4_turbo_2024_04_09.py:39
+#: providers/models/openai/llm/schemas/gpt_4.py:39
+#: providers/models/openai/llm/schemas/gpt_4_0125_preview.py:39
+#: providers/models/openai/llm/schemas/gpt_4_1106_preview.py:39
+#: providers/models/openai/llm/schemas/gpt_4_32k.py:39
+#: providers/models/openai/llm/schemas/gpt_4_turbo_2024_04_09.py:40
 msgid ""
 "If specified, model will make a best effort to sample deterministically, "
 "such that repeated requests with the same seed and parameters should "
@@ -311,9 +350,9 @@ msgstr ""
 "如果指定，模型将尽最大努力进行确定性采样，使得具有相同种子和参数的重复请求应返回相同的结果。确定性不能保证，你应该参考 "
 "system_fingerprint 响应参数"
 
-#: providers/models/openai/llm/schemas/gpt_4_turbo.py:39
-#: providers/models/openai/llm/schemas/gpt_4_turbo_preview.py:38
-#: providers/models/openai/llm/schemas/gpt_4_vision_preview.py:36
+#: providers/models/openai/llm/schemas/gpt_4_turbo.py:40
+#: providers/models/openai/llm/schemas/gpt_4_turbo_preview.py:39
+#: providers/models/openai/llm/schemas/gpt_4_vision_preview.py:37
 msgid ""
 "If specified, model will make a best effort to sample deterministically, "
 "such that repeated requests with the same seed and parameters should "
@@ -323,4 +362,145 @@ msgid ""
 msgstr ""
 "如果指定，模型将尽最大努力进行确定性采样，使得具有相同种子和参数的重复请求应返回相同的结果。确定性不能保证，你应该参考 "
 "system_fingerprint 响应参数来监控后端的变化。"
+
+#: providers/models/openai/llm/schemas/o1.py:26
+#: providers/models/openai/llm/schemas/o1_2024_12_17.py:26
+#: providers/models/openai/llm/schemas/o3.py:26
+#: providers/models/openai/llm/schemas/o3_2025_04_16.py:26
+#: providers/models/openai/llm/schemas/o3_mini.py:25
+#: providers/models/openai/llm/schemas/o3_mini_2025_01_31.py:25
+#: providers/models/openai/llm/schemas/o4_mini.py:26
+#: providers/models/openai/llm/schemas/o4_mini_2025_04_16.py:26
+#, fuzzy
+msgid "Reasoning Effort"
+msgstr "响应格式"
+
+#: providers/models/openai/llm/schemas/o1.py:28
+#: providers/models/openai/llm/schemas/o1_2024_12_17.py:28
+#: providers/models/openai/llm/schemas/o3.py:28
+#: providers/models/openai/llm/schemas/o3_2025_04_16.py:28
+#: providers/models/openai/llm/schemas/o3_mini.py:27
+#: providers/models/openai/llm/schemas/o3_mini_2025_01_31.py:27
+#: providers/models/openai/llm/schemas/o4_mini.py:28
+#: providers/models/openai/llm/schemas/o4_mini_2025_04_16.py:28
+msgid "constrains effort on reasoning for reasoning models"
+msgstr ""
+
+#: providers/operators/end/schema.py:11
+msgid "The reason the LLM stopped generating"
+msgstr "LLM停止生成的原因"
+
+#: providers/operators/end/schema.py:21
+#, fuzzy
+msgid "End Operator"
+msgstr "温度"
+
+#: providers/operators/end/schema.py:22
+#, fuzzy
+msgid "End operator"
+msgstr "温度"
+
+#: providers/operators/end/schema.py:34
+msgid "The final processed output"
+msgstr ""
+
+#: providers/operators/llm/schema.py:7
+#, fuzzy
+msgid "LLM Operator"
+msgstr "温度"
+
+#: providers/operators/llm/schema.py:8
+msgid "Large Language Model operator"
+msgstr ""
+
+#: providers/operators/llm/schema.py:19
+msgid "Model"
+msgstr ""
+
+#: providers/operators/llm/schema.py:20
+msgid "The LLM model to use"
+msgstr ""
+
+#: providers/operators/llm/schema.py:35 providers/operators/start/schema.py:20
+#: providers/operators/start/schema.py:55
+msgid "Image List"
+msgstr ""
+
+#: providers/operators/llm/schema.py:36 providers/operators/start/schema.py:21
+#: providers/operators/start/schema.py:56
+msgid "The list of images to send to the LLM"
+msgstr ""
+
+#: providers/operators/llm/schema.py:54 providers/operators/start/schema.py:28
+#: providers/operators/start/schema.py:63
+msgid "Audio List"
+msgstr ""
+
+#: providers/operators/llm/schema.py:55 providers/operators/start/schema.py:29
+#: providers/operators/start/schema.py:64
+msgid "The list of audio files to send to the LLM"
+msgstr ""
+
+#: providers/operators/llm/schema.py:73 providers/operators/start/schema.py:36
+#: providers/operators/start/schema.py:71
+msgid "File List"
+msgstr ""
+
+#: providers/operators/llm/schema.py:74 providers/operators/start/schema.py:37
+#: providers/operators/start/schema.py:72
+msgid "The list of files to send to the LLM"
+msgstr ""
+
+#: providers/operators/llm/schema.py:89
+msgid "Tool List"
+msgstr ""
+
+#: providers/operators/llm/schema.py:90
+msgid "The list of tools to send to the LLM"
+msgstr ""
+
+#: providers/operators/llm/schema.py:97
+#, fuzzy
+msgid "Stop"
+msgstr "Top P"
+
+#: providers/operators/llm/schema.py:98
+msgid "The stop words to send to the LLM"
+msgstr ""
+
+#: providers/operators/llm/schema.py:105
+msgid "Prompt"
+msgstr ""
+
+#: providers/operators/llm/schema.py:106
+msgid "The prompt to send to the LLM"
+msgstr ""
+
+#: providers/operators/llm/schema.py:110 providers/operators/start/schema.py:15
+#: providers/operators/start/schema.py:50
+msgid "Query"
+msgstr ""
+
+#: providers/operators/llm/schema.py:111
+msgid "The query to send to the LLM"
+msgstr ""
+
+#: providers/operators/start/schema.py:7
+msgid "Start Operator"
+msgstr ""
+
+#: providers/operators/start/schema.py:9
+msgid "Starting point of the workflow"
+msgstr ""
+
+#: providers/operators/start/schema.py:16
+#: providers/operators/start/schema.py:51
+msgid "The query to start the workflow"
+msgstr ""
+
+#~ msgid "Question"
+#~ msgstr ""
+
+#~ msgid "The question to start the workflow"
+#~ msgstr ""
 

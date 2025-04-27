@@ -41,10 +41,12 @@ schema = {
         "audio_type": "mp3",
         "max_workers": 5,
     },
-    "pricing": {
-        "input": "0.03",
-        "output": "0",
-        "unit": "0.001",
-        "currency": "USD",
-    },
+    "pricing": [
+        {
+            "input": "30",
+            "output": "0",
+            "unit": "0.000001",
+            "currency": "USD",
+        },
+    ],
 }

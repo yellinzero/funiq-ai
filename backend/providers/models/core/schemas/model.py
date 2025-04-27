@@ -88,6 +88,7 @@ class ModelFeature(Enum):
     AGENT_THOUGHT = "agent-thought"
     VISION = "vision"
     STREAM_TOOL_CALL = "stream-tool-call"
+    DOCUMENT = "document"
 
 
 class ParameterType(Enum):
@@ -140,10 +141,14 @@ class PriceConfig(BaseModel):
     """
 
     input: Decimal
-    cached_input: Decimal | None = None
     output: Decimal | None = None
     unit: Decimal
     currency: str
+
+
+class ModelParameterRulesSchema(BaseModel):
+    json_schema: dict | None = None
+    ui_schema:  dict | None = None
 
 
 class AIModelEntity(ProviderModel):
@@ -151,8 +156,7 @@ class AIModelEntity(ProviderModel):
     Model class for AI model.
     """
 
-    parameter_rules_ui_schema: dict | None = None
-    parameter_rules_schema: dict | None = None
+    parameter_rules_schema: ModelParameterRulesSchema | None = None
     pricing: list[PriceConfig] | None = None
 
 
@@ -208,119 +212,95 @@ class ParameterPropertyName(str, Enum):
         raise ValueError(f"invalid parameter name {value}")
 
 
-# Keep this function lazy to avoid evaluating the translations prematurely
-def get_parameter_template(name: ParameterPropertyName) -> dict:
-    """Lazy initialization of parameter templates"""
-    templates = {
-        ParameterPropertyName.TEMPERATURE: lambda: {
-            "type": "number",
-            "title": _("Temperature", domain="providers"),
-            "description": _(
-                "Controls randomness. Lower temperature results in less random completions. "
-                "As the temperature approaches zero, the model will become deterministic and repetitive. "
-                "Higher temperature results in more random completions.",
-                domain="providers",
-            ),
-            "default": 0.0,
-            "minimum": 0.0,
-            "maximum": 1.0,
-            "multipleOf": 0.01,
-        },
-        ParameterPropertyName.TOP_P: lambda: {
-            "type": "number",
-            "title": _("Top P", domain="providers"),
-            "description": _(
-                "Controls diversity via nucleus sampling: 0.5 means half of all likelihood-weighted options "
-                "are considered.",
-                domain="providers",
-            ),
-            "default": 1.0,
-            "minimum": 0.0,
-            "maximum": 1.0,
-            "multipleOf": 0.01,
-        },
-        ParameterPropertyName.TOP_K: lambda: {
-            "type": "number",
-            "title": _("Top K", domain="providers"),
-            "description": _(
-                "Limits the number of tokens to consider for each step by keeping only the k most likely tokens.",
-                domain="providers",
-            ),
-            "default": 50,
-            "minimum": 1,
-            "maximum": 100,
-        },
-        ParameterPropertyName.PRESENCE_PENALTY: lambda: {
-            "type": "number",
-            "title": _("Presence Penalty", domain="providers"),
-            "description": _(
-                "Applies a penalty to the log-probability of tokens already in the text.",
-                domain="providers"
-            ),
-            "default": 0.0,
-            "minimum": 0.0,
-            "maximum": 1.0,
-            "multipleOf": 0.01,
-        },
-        ParameterPropertyName.FREQUENCY_PENALTY: lambda: {
-            "type": "number",
-            "title": _("Frequency Penalty", domain="providers"),
-            "description": _(
-                "Applies a penalty to the log-probability of tokens that appear in the text.",
-                domain="providers"
-            ),
-            "default": 0.0,
-            "minimum": 0.0,
-            "maximum": 1.0,
-            "multipleOf": 0.01,
-        },
-        ParameterPropertyName.MAX_TOKENS: lambda: {
-            "type": "number",
-            "title": _("Max Tokens", domain="providers"),
-            "description": _(
-                "Specifies the upper limit on the length of generated results. "
-                "If the generated results are truncated, you can increase this parameter.",
-                domain="providers",
-            ),
-            "default": 64,
-            "minimum": 1,
-            "maximum": 2048,
-        },
-        ParameterPropertyName.RESPONSE_FORMAT: lambda: {
-            "type": "string",
-            "title": _("Response Format", domain="providers"),
-            "description": _(
-                "Set a response format, ensure the output from llm is a valid code block as possible, "
-                "such as JSON, XML, etc.",
-                domain="providers",
-            ),
-            "enum": ["JSON", "XML"],
-        },
-        ParameterPropertyName.JSON_SCHEMA: lambda: {
-            "type": "string",
-            "title": _("JSON Schema", domain="providers"),
-            "description": _(
-                "Define a JSON schema to structure and validate the LLM's response. "
-                "The schema should follow JSON Schema specification format.",
-                domain="providers",
-            ),
-            "default": "{}",
-        },
-    }
-
-    template_factory = templates.get(name)
-    if not template_factory:
-        raise ValueError(f"Invalid parameter name {name}")
-
-    return template_factory()
-
-
-class ParameterRuleTemplate:
-    def __getitem__(self, name: ParameterPropertyName) -> dict:
-        return get_parameter_template(name)
-
-    def get(self, name: ParameterPropertyName) -> dict:
-        return get_parameter_template(name)
-
-
-PARAMETER_RULE_TEMPLATE = ParameterRuleTemplate()
+PARAMETER_RULE_TEMPLATES = {
+    ParameterPropertyName.TEMPERATURE: {
+        "type": "number",
+        "title": _("Temperature", domain="providers"),
+        "description": _(
+            "Controls randomness. Lower temperature results in less random completions. "
+            "As the temperature approaches zero, the model will become deterministic and repetitive. "
+            "Higher temperature results in more random completions.",
+            domain="providers",
+        ),
+        "default": 0.0,
+        "minimum": 0.0,
+        "maximum": 1.0,
+        "multipleOf": 0.01,
+    },
+    ParameterPropertyName.TOP_P: {
+        "type": "number",
+        "title": _("Top P", domain="providers"),
+        "description": _(
+            "Controls diversity via nucleus sampling: 0.5 means half of all likelihood-weighted options "
+            "are considered.",
+            domain="providers",
+        ),
+        "default": 1.0,
+        "minimum": 0.0,
+        "maximum": 1.0,
+        "multipleOf": 0.01,
+    },
+    ParameterPropertyName.TOP_K: {
+        "type": "number",
+        "title": _("Top K", domain="providers"),
+        "description": _(
+            "Limits the number of tokens to consider for each step by keeping only the k most likely tokens.",
+            domain="providers",
+        ),
+        "default": 50,
+        "minimum": 1,
+        "maximum": 100,
+    },
+    ParameterPropertyName.PRESENCE_PENALTY: {
+        "type": "number",
+        "title": _("Presence Penalty", domain="providers"),
+        "description": _("Applies a penalty to the log-probability of tokens already in the text.", domain="providers"),
+        "default": 0.0,
+        "minimum": 0.0,
+        "maximum": 1.0,
+        "multipleOf": 0.01,
+    },
+    ParameterPropertyName.FREQUENCY_PENALTY: {
+        "type": "number",
+        "title": _("Frequency Penalty", domain="providers"),
+        "description": _(
+            "Applies a penalty to the log-probability of tokens that appear in the text.", domain="providers"
+        ),
+        "default": 0.0,
+        "minimum": 0.0,
+        "maximum": 1.0,
+        "multipleOf": 0.01,
+    },
+    ParameterPropertyName.MAX_TOKENS: {
+        "type": "number",
+        "title": _("Max Tokens", domain="providers"),
+        "description": _(
+            "Specifies the upper limit on the length of generated results. "
+            "If the generated results are truncated, you can increase this parameter.",
+            domain="providers",
+        ),
+        "default": 64,
+        "minimum": 1,
+        "maximum": 2048,
+    },
+    ParameterPropertyName.RESPONSE_FORMAT: {
+        "type": "string",
+        "title": _("Response Format", domain="providers"),
+        "description": _(
+            "Set a response format, ensure the output from llm is a valid code block as possible, "
+            "such as JSON, XML, etc.",
+            domain="providers",
+        ),
+        "enum": ["JSON", "XML"],
+    },
+    ParameterPropertyName.JSON_SCHEMA: {
+        "type": "string",
+        "title": _("JSON Schema", domain="providers"),
+        "description": _(
+            "Define a JSON schema to structure and validate the LLM's response. "
+            "The schema should follow JSON Schema specification format.",
+            domain="providers",
+        ),
+        "default": "{}",
+    },
+}

@@ -7,6 +7,8 @@ from .database import (
     DBBase,
     DBSoftDeleteMixin,
     DBUUIDModelMixin,
+    EncryptedJSON,
+    EncryptedType,
     get_engine,
     get_session,
     get_sync_engine,
@@ -51,6 +53,8 @@ __all__ = [
     "DBBase",
     "DBSoftDeleteMixin",
     "DBUUIDModelMixin",
+    "EncryptedJSON",
+    "EncryptedType",
     "RedisRateLimiter",
     "StreamEvent",
     "StreamHandler",
@@ -80,5 +84,5 @@ __all__ = [
     "update_database_schema",
     "with_redis",
     "with_session",
-    "with_sync_redis",
+    "with_sync_redis"
 ]

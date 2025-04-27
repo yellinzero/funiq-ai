@@ -10,12 +10,17 @@ schema = {
         "context_size": 128000,
     },
     "parameter_rules_schema": {
-        "max_tokens": {
-            "_template": "max_tokens",
-            "minimum": 1,
-            "maximum": 8192,
-            "default": 4096,
-        },
+        "json_schema": {
+            "type": "object",
+            "properties": {
+                "max_tokens": {
+                    "_template": "max_tokens",
+                    "minimum": 1,
+                    "maximum": 8192,
+                    "default": 4096,
+                },
+            },
+        }
     },
     "pricing": [
         {

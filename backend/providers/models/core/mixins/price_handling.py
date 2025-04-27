@@ -1,6 +1,5 @@
 import decimal
 from abc import ABC, abstractmethod
-from typing import Mapping
 
 from ..schemas import AIModelEntity, LLMUsage, PriceConfig, PriceInfo, PriceType
 
@@ -9,7 +8,7 @@ class PriceHandlingMixin(ABC):
     """Mixin class for handling price calculations for model usage."""
 
     @abstractmethod
-    def get_model_schema(self, model: str, credentials: Mapping | None = None) -> AIModelEntity | None:
+    def get_model_schema(self, model: str) -> AIModelEntity | None:
         pass
     
     @abstractmethod
@@ -63,7 +62,7 @@ class PriceHandlingMixin(ABC):
         )
        
     def _calc_response_usage(
-        self, model: str, credentials: dict, prompt_tokens: int, completion_tokens: int
+        self, model: str, prompt_tokens: int, completion_tokens: int
     ) -> LLMUsage:
         """
         Calculate response usage
@@ -75,7 +74,7 @@ class PriceHandlingMixin(ABC):
         :return: usage
         """
         # get prompt config
-        schema = self.get_model_schema(model=model, credentials=credentials)
+        schema = self.get_model_schema(model=model)
         
         if not schema:
             raise ValueError(f'No schema found for model: {model}')

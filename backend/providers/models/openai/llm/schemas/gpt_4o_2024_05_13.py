@@ -14,29 +14,36 @@ schema = {
         "context_size": 128000,
     },
     "parameter_rules_schema": {
-        "temperature": {
-            "_template": "temperature",
-        },
-        "top_p": {
-            "_template": "top_p",
-        },
-        "presence_penalty": {
-            "_template": "presence_penalty",
-        },
-        "frequency_penalty": {
-            "_template": "frequency_penalty",
-        },
-        "max_tokens": {
-            "_template": "max_tokens",
-            "default": 512,
-            "minimum": 1,
-            "maximum": 4096,
+        "json_schema": {
+            "type": "object",
+            "properties": {
+                "temperature": {
+                    "_template": "temperature",
+                },
+                "top_p": {
+                    "_template": "top_p",
+                },
+                "presence_penalty": {
+                    "_template": "presence_penalty",
+                },
+                "frequency_penalty": {
+                    "_template": "frequency_penalty",
+                },
+                "max_tokens": {
+                    "_template": "max_tokens",
+                    "default": 512,
+                    "minimum": 1,
+                    "maximum": 4096,
+                },
+            },
         },
     },
-    "pricing": [{
-        "input": "5",
-        "output": "15",
-        "unit": "0.000001",
-        "currency": "USD",
-    }],
+    "pricing": [
+        {
+            "input": "5",
+            "output": "15",
+            "unit": "0.000001",
+            "currency": "USD",
+        }
+    ],
 }

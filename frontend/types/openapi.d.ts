@@ -316,6 +316,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/model-providers/{provider_name}/models/{model_name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Model
+         * @description Get a model by name
+         */
+        get: operations["get_model_model_providers__provider_name__models__model_name__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/model-providers/active-providers": {
         parameters: {
             query?: never;
@@ -771,6 +791,31 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * AIModelEntity
+         * @description Model class for AI model.
+         */
+        AIModelEntity: {
+            /** Model */
+            model: string;
+            /** Label */
+            label: string;
+            model_type: components["schemas"]["ModelType"];
+            /** Group */
+            group?: string | null;
+            /** Features */
+            features?: components["schemas"]["ModelFeature"][] | null;
+            /** Model Properties */
+            model_properties: Record<string, never>;
+            /**
+             * Deprecated
+             * @default false
+             */
+            deprecated: boolean;
+            parameter_rules_schema?: components["schemas"]["ModelParameterRulesSchema"] | null;
+            /** Pricing */
+            pricing?: components["schemas"]["PriceConfig"][] | null;
+        };
+        /**
          * AccountStatus
          * @enum {string}
          */
@@ -809,11 +854,27 @@ export interface components {
              */
             token_type: string;
         };
+        /** ActiveModelProviderModelItem */
+        ActiveModelProviderModelItem: {
+            /** Model */
+            model: string;
+            /** Label */
+            label: string;
+            /** Group */
+            group?: string | null;
+            /** Deprecated */
+            deprecated?: boolean | null;
+        };
         /** ActiveModelProviderWithModels */
         ActiveModelProviderWithModels: {
-            provider: components["schemas"]["ProviderInfo"];
+            /** Provider */
+            provider: string;
+            /** Label */
+            label: string;
+            /** Description */
+            description: string;
             /** Models */
-            models: components["schemas"]["ModelInfo"][];
+            models: components["schemas"]["ActiveModelProviderModelItem"][];
         };
         /** AppCreate */
         AppCreate: {
@@ -985,12 +1046,6 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * ConfigurateMethod
-         * @description Enum class for configurate method of provider model.
-         * @enum {string}
-         */
-        ConfigurateMethod: "predefined" | "customizable";
         /** ConversationCreate */
         ConversationCreate: {
             /** Name */
@@ -1175,16 +1230,18 @@ export interface components {
              * @default false
              */
             deprecated: boolean;
-            /** Parameter Rules Ui Schema */
-            parameter_rules_ui_schema?: Record<string, never> | null;
-            /** Parameter Rules Schema */
-            parameter_rules_schema?: Record<string, never> | null;
+            parameter_rules_schema?: components["schemas"]["ModelParameterRulesSchema"] | null;
             /** Pricing */
             pricing?: components["schemas"]["PriceConfig"][] | null;
-            /** Tenant Id */
-            tenant_id: string;
             /** Provider */
             provider: string;
+        };
+        /** ModelParameterRulesSchema */
+        ModelParameterRulesSchema: {
+            /** Json Schema */
+            json_schema?: Record<string, never> | null;
+            /** Ui Schema */
+            ui_schema?: Record<string, never> | null;
         };
         /**
          * ModelPropertyKey
@@ -1242,8 +1299,6 @@ export interface components {
         PriceConfig: {
             /** Input */
             input: string;
-            /** Cached Input */
-            cached_input?: string | null;
             /** Output */
             output?: string | null;
             /** Unit */
@@ -1272,11 +1327,18 @@ export interface components {
          * @enum {string}
          */
         PromptMessageRole: "system" | "user" | "assistant" | "tool";
+        /** ProviderConfigSchema */
+        ProviderConfigSchema: {
+            /** Json Schema */
+            json_schema: Record<string, never> | null;
+            /** Ui Schema */
+            ui_schema: Record<string, never> | null;
+        };
         /**
-         * ProviderDocs
+         * ProviderDoc
          * @description Model class for provider docs.
          */
-        ProviderDocs: {
+        ProviderDoc: {
             /** Title */
             title: string;
             /** Url */
@@ -1292,21 +1354,13 @@ export interface components {
             icon: {
                 [key: string]: string | null;
             } | null;
-            /** Supported Model Types */
-            supported_model_types: components["schemas"]["ModelType"][];
-            docs: components["schemas"]["ProviderDocs"] | null;
+            /** Model Types */
+            model_types: components["schemas"]["ModelType"][];
+            /** Docs */
+            docs: components["schemas"]["ProviderDoc"][] | null;
             /** Description */
             description?: string | null;
-            /** Configurate Methods */
-            configurate_methods: components["schemas"]["ConfigurateMethod"][];
-            /** Credential Schema */
-            credential_schema: Record<string, never> | null;
-            /** Ui Schema */
-            ui_schema?: {
-                [key: string]: {
-                    [key: string]: Record<string, never> | null;
-                } | null;
-            } | null;
+            config_schema: components["schemas"]["ProviderConfigSchema"] | null;
         };
         /**
          * ProviderResponse
@@ -1378,6 +1432,20 @@ export interface components {
             msg: string;
             /** Data */
             data: unknown;
+        };
+        /** ResponseModel[AIModelEntity] */
+        ResponseModel_AIModelEntity_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["AIModelEntity"];
         };
         /** ResponseModel[ActivateAccountResponse] */
         ResponseModel_ActivateAccountResponse_: {
@@ -2831,6 +2899,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ResponseModel_GetModelsResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_model_model_providers__provider_name__models__model_name__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_name: string;
+                model_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_AIModelEntity_"];
                 };
             };
             /** @description Validation Error */

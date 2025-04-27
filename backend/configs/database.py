@@ -16,6 +16,7 @@ class DatabaseConfig(BaseSettings):
     SYNC_DATABASE_POOL_SIZE: int = Field(5, description="Database connection pool size")
     ASYNC_DATABASE_URL: str = Field(..., description="Asynchronous database URL")
     ASYNC_DATABASE_POOL_SIZE: int = Field(5, description="Async database connection pool size")
+    DB_ENCRYPTION_KEY: str = Field(..., description="Database encryption key")
 
 
 class RedisConfig(BaseSettings):

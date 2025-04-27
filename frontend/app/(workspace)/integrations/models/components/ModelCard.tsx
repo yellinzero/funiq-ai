@@ -32,7 +32,6 @@ export default function ModelCard(props: ModelCardProps) {
     features = [],
     model_properties,
     deprecated = false,
-    is_enabled
   } = modelInfo
 
   const isDisabled = disabled || deprecated
@@ -88,14 +87,6 @@ export default function ModelCard(props: ModelCardProps) {
             />}
           </Stack>
         </Stack>
-        {onToggle && (
-          <Switch
-            checked={is_enabled}
-            onChange={(e) => onToggle(modelInfo, e.target.checked)}
-            size="small"
-            disabled={isDisabled}
-          />
-        )}
       </Stack>
 
       {features && features.length > 0 && (

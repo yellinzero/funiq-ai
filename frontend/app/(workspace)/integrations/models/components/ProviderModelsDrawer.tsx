@@ -7,7 +7,6 @@ import { useModelsStore, useModelsQuery } from '@/app/(workspace)/integrations/m
 import { useProviderQuery, useProviderStore } from '@/app/(workspace)/integrations/models/stores/useProviderStore'
 import CloseIcon from '@mui/icons-material/Close'
 import { IModelInfo, IProviderInfo } from '@/apis/types'
-import { enableModelApi, saveModelApi } from '@/apis'
 
 interface ProviderModelsDrawerProps {
   provider: IProviderInfo
@@ -29,29 +28,11 @@ export default function ProviderModelsDrawer({ provider, open, onClose }: Provid
   }, [open, provider])
 
   useEffect(() => {
-    setIsProviderUnavailable(!currentProvider || !currentProvider.is_active)
+    setIsProviderUnavailable(!currentProvider)
   }, [currentProvider])
 
   const providerModels = models[provider.provider] || []
   const isLoading = isModelsLoading || isProviderLoading
-
-  const canAddModel = provider.configurate_methods.includes('customizable')
-
-  async function handleToggle(model: IModelInfo, enabled: boolean) {
-    try {
-      if (enabled) {
-        await enableModelApi(model.provider, model.model)
-      } else {
-        await saveModelApi(model.provider, model.model, {
-          is_enabled: enabled,
-          is_system: model.is_system,
-        })
-      }
-      refetchModels()
-    } catch (error) {
-      console.error(error)
-    }
-  }
 
   return (
     <Drawer
@@ -83,7 +64,7 @@ export default function ProviderModelsDrawer({ provider, open, onClose }: Provid
           <Grid2 container spacing={2}>
             {providerModels.map((model: IModelInfo) => (
               <Grid2 size={12} key={model.model}>
-                <ModelCard {...model} icon={provider.icon} onToggle={handleToggle} disabled={isProviderUnavailable} />
+                <ModelCard {...model} icon={provider.icon} disabled={isProviderUnavailable} />
               </Grid2>
             ))}
           </Grid2>
@@ -98,11 +79,6 @@ export default function ProviderModelsDrawer({ provider, open, onClose }: Provid
           }}>
             {t('count_models', { ns: 'integrations', count: providerModels.length })}
           </Typography>
-          {canAddModel && (
-            <Button variant="contained" color="primary">
-              {t('add_model', { ns: 'integrations' })}
-            </Button>
-          )}
         </Stack>
       </Box>
     </Drawer>

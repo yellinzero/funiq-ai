@@ -3,12 +3,15 @@ from app.core.errors.base import BaseErrorCode
 
 class ConversationErrorCode(BaseErrorCode):
     """
-    Conversation related error codes
+    Conversation related errors (Category F)
     """
-    CONVERSATION_NOT_FOUND = ("D0601", "Conversation not found with the specified ID")
-    CONVERSATION_DELETE_ERROR = ("D0602", "Failed to delete conversation - Please ensure no active dependencies exist")
-    CONVERSATION_CREATE_ERROR = ("D0603", "Failed to create conversation - Please check the provided configuration")
-
-    CONVERSATION_NOT_ACTIVE = ("D0604", "The requested conversation is not active")
-
-    CONVERSATION_UPDATE_ERROR = ("D0605", "Failed to update conversation - Please check the provided changes")
+    # Resource related (03)
+    CONVERSATION_NOT_FOUND = ("F0301", "Conversation not found with the specified ID")
+    
+    # Operation related (04)
+    CONVERSATION_CREATE_ERROR = ("F0401", "Failed to create conversation - Please check the provided configuration")
+    CONVERSATION_UPDATE_ERROR = ("F0402", "Failed to update conversation - Please check the provided changes")
+    CONVERSATION_DELETE_ERROR = ("F0403", "Failed to delete conversation - Please ensure no active dependencies exist")
+    
+    # Business logic/Status related (10)
+    CONVERSATION_NOT_ACTIVE = ("F1001", "The requested conversation is not active")

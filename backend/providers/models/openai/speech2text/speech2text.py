@@ -4,7 +4,6 @@ from openai import OpenAI
 
 from providers.models.core import Speech2TextModel
 from providers.models.core.errors import CredentialsValidateFailedError
-from providers.models.core.schemas import AIModelEntity, ModelType
 from providers.models.openai.core import OpenAICore
 
 
@@ -59,17 +58,3 @@ class OpenAISpeech2TextModel(OpenAICore, Speech2TextModel):
         response = client.audio.transcriptions.create(model=model, file=file)
 
         return response.text
-
-    def get_customizable_model_schema(self, model: str, credentials: dict) -> AIModelEntity | None:
-        """
-        used to define customizable model schema
-        """
-        entity = AIModelEntity(
-            model=model,
-            label=model,
-            model_type=ModelType.SPEECH2TEXT,
-            model_properties={},
-            parameter_rules_schema={},
-        )
-
-        return entity

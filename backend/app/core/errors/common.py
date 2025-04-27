@@ -5,18 +5,27 @@ class CommonErrorCode(BaseErrorCode):
     """
     Common errors (Category A)
     """
-    UNAUTHORIZED = ("A0001", "Unauthorized")
-    PERMISSION_DENIED = ("A0002", "Permission Denied")
-    NOT_FOUND = ("A0003", "Resource Not Found")
-    INVALID_ARGUMENT = ("A0004", "Invalid Argument")
-    INTERNAL_SERVER_ERROR = ("A0005", "Internal Server Error")
-    INVALID_VERIFICATION_CODE = ("A0006", "Invalid verification code")
+    # System level errors (00)
+    INTERNAL_SERVER_ERROR = ("A0001", "Internal Server Error")
+    
+    # Authentication & Authorization (01)
+    UNAUTHORIZED = ("A0101", "Unauthorized")
+    PERMISSION_DENIED = ("A0102", "Permission Denied")
+    
+    # Input/Parameter validation (02)
+    INVALID_ARGUMENT = ("A0201", "Invalid Argument")
+    INVALID_VERIFICATION_CODE = ("A0202", "Invalid verification code")
+    
+    # Resource related (03)
+    RESOURCE_NOT_FOUND = ("A0301", "Resource Not Found")
+    FILE_NOT_FOUND = ("A0302", "The requested file could not be found")
+    
+    # Rate limiting (05)
     EMAIL_VERIFICATION_TOO_FREQUENT = (
-        "A0007", 
+        "A0501", 
         "Email verification requests are too frequent. Please try again later."
     )
     EMAIL_VERIFICATION_CODE_EXPIRED = (
-        "A0008", 
+        "A0502", 
         "The email verification code has expired. Please request a new one."
     )
-    FILE_NOT_FOUND = ("A0009", "The requested file could not be found")

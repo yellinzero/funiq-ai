@@ -11,6 +11,7 @@ from .core import (
     update_database_schema,
     with_session,
 )
+from .encryption import EncryptedJSON, EncryptedType
 from .models import (
     # Mixins
     DBAuditFieldsMixin,
@@ -44,6 +45,8 @@ __all__ = [
     "DBIntegerModelMixin",
     "DBSoftDeleteMixin",
     "DBUUIDModelMixin",
+    "EncryptedJSON",
+    "EncryptedType",
     "create_transient_session",
     "get_engine",
     "get_session",

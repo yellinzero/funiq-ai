@@ -440,7 +440,7 @@ class OpenAILikeLargeLanguageModel(OpenAICore, LargeLanguageModel):
             completion_tokens = self._num_tokens_from_string(model, assistant_text)
 
         # transform usage
-        usage = self._calc_response_usage(model, credentials, prompt_tokens, completion_tokens)
+        usage = self._calc_response_usage(model=model, prompt_tokens=prompt_tokens, completion_tokens=completion_tokens)
 
         # transform response
         result = LLMResult(
@@ -526,7 +526,7 @@ class OpenAILikeLargeLanguageModel(OpenAICore, LargeLanguageModel):
             completion_tokens = self._num_tokens_from_string(model, full_text)
 
         # transform usage
-        usage = self._calc_response_usage(model, credentials, prompt_tokens, completion_tokens)
+        usage = self._calc_response_usage(model=model, prompt_tokens=prompt_tokens, completion_tokens=completion_tokens)
 
         final_chunk.delta.usage = usage
 
@@ -653,7 +653,7 @@ class OpenAILikeLargeLanguageModel(OpenAICore, LargeLanguageModel):
             completion_tokens = self._num_tokens_from_messages(model, [assistant_prompt_message])
 
         # transform usage
-        usage = self._calc_response_usage(model, credentials, prompt_tokens, completion_tokens)
+        usage = self._calc_response_usage(model=model, prompt_tokens=prompt_tokens, completion_tokens=completion_tokens)
 
         # transform response
         response = LLMResult(
@@ -760,7 +760,7 @@ class OpenAILikeLargeLanguageModel(OpenAICore, LargeLanguageModel):
             completion_tokens = self._num_tokens_from_messages(model, [full_assistant_prompt_message])
 
         # transform usage
-        usage = self._calc_response_usage(model, credentials, prompt_tokens, completion_tokens)
+        usage = self._calc_response_usage(model=model, prompt_tokens=prompt_tokens, completion_tokens=completion_tokens)
         final_chunk.delta.usage = usage
 
         yield final_chunk
@@ -1091,40 +1091,3 @@ class OpenAILikeLargeLanguageModel(OpenAICore, LargeLanguageModel):
                     num_tokens += len(encoding.encode(required_field))
 
         return num_tokens
-
-    def get_customizable_model_schema(self, model: str, credentials: dict) -> AIModelEntity:
-        """
-        OpenAI supports fine-tuning of their models. This method returns the schema of the base model
-        but renamed to the fine-tuned model name.
-
-        :param model: model name
-        :param credentials: credentials
-
-        :return: model schema
-        """
-
-        base_model = model if not model.startswith("ft:") else model.split(":")[1]
-
-        # get model schema
-        models = self.load_predefined_model_schemas()
-        model_map = {model.model: model for model in models}
-        if base_model not in model_map:
-            raise ValueError(f"Base model {base_model} not found")
-
-        base_model_schema = model_map[base_model]
-
-        base_model_schema_features = base_model_schema.features or []
-        base_model_schema_model_properties = base_model_schema.model_properties or {}
-        base_model_schema_parameters_rules_schema = base_model_schema.parameter_rules_schema or {}
-
-        entity = AIModelEntity(
-            model=model,
-            label=model,
-            model_type=ModelType.LLM,
-            features=list(base_model_schema_features),
-            model_properties=dict(base_model_schema_model_properties.items()),
-            parameter_rules_schema=base_model_schema_parameters_rules_schema,
-            pricing=base_model_schema.pricing,
-        )
-
-        return entity

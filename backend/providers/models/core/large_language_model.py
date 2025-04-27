@@ -1,6 +1,6 @@
 import re
 from abc import abstractmethod
-from collections.abc import Generator, Mapping
+from collections.abc import Generator
 from typing import Union
 
 from jsonschema import ValidationError, validate
@@ -368,13 +368,13 @@ class LargeLanguageModel(AIModel):
         :param credentials: model credentials
         :return: parameter rules
         """
-        model_schema = self.get_model_schema(model, credentials)
+        model_schema = self.get_model_schema(model)
         if model_schema:
             return model_schema.parameter_rules_schema
 
         return []
 
-    def get_model_mode(self, model: str, credentials: Mapping | None = None) -> LLMMode:
+    def get_model_mode(self, model: str) -> LLMMode:
         """
         Get model mode
 
@@ -382,7 +382,7 @@ class LargeLanguageModel(AIModel):
         :param credentials: model credentials
         :return: model mode
         """
-        model_schema = self.get_model_schema(model, credentials)
+        model_schema = self.get_model_schema(model)
 
         mode = LLMMode.CHAT
         if model_schema and model_schema.model_properties.get("mode"):
@@ -405,9 +405,10 @@ class LargeLanguageModel(AIModel):
 
         # Convert schema to dict using model_dump
         schema_dict = translate_data(parameter_rules_schema)
+        json_schema = schema_dict.get("json_schema", {})
         try:
             # Use jsonschema.validate to validate against the schema
-            validate(instance=model_parameters, schema=schema_dict)
+            validate(instance=model_parameters, schema=json_schema)
             return model_parameters
         except ValidationError as e:
             # Transform validation error into a more user-friendly message

@@ -16,33 +16,38 @@ schema = {
         "context_size": 200000,
     },
     "parameter_rules_schema": {
-        "max_tokens": {
-            "use_template": "max_tokens",
-            "default": 100000,
-            "minimum": 1,
-            "maximum": 100000,
-        },
-        "reasoning": {
-            "title": _("Reasoning Effort", domain="providers"),
-            "type": "string",
-            "description": _("constrains effort on reasoning for reasoning models", domain="providers"),
-            "enum": [
-                "low",
-                "medium",
-                "high",
-            ],
-        },
-        "response_format": {
-            "title": _("Response Format", domain="providers"),
-            "type": "string",
-            "description": _("specifying the format that the model must output", domain="providers"),
-            "enum": [
-                "text",
-                "json_object",
-            ],
-        },
         "json_schema": {
-            "_template": "json_schema",
+            "type": "object",
+            "properties": {
+                "max_tokens": {
+                    "use_template": "max_tokens",
+                    "default": 100000,
+                    "minimum": 1,
+                    "maximum": 100000,
+                },
+                "reasoning": {
+                    "title": _("Reasoning Effort", domain="providers"),
+                    "type": "string",
+                    "description": _("constrains effort on reasoning for reasoning models", domain="providers"),
+                    "enum": [
+                        "low",
+                        "medium",
+                        "high",
+                    ],
+                },
+                "response_format": {
+                    "title": _("Response Format", domain="providers"),
+                    "type": "string",
+                    "description": _("specifying the format that the model must output", domain="providers"),
+                    "enum": [
+                        "text",
+                        "json_object",
+                    ],
+                },
+                "json_schema": {
+                    "_template": "json_schema",
+                },
+            },
         },
     },
     "pricing": [

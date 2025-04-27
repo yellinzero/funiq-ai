@@ -71,7 +71,7 @@ class TTSModel(AIModel):
         """
         raise NotImplementedError
 
-    def get_tts_model_voices(self, model: str, credentials: dict, language: str | None = None) -> list:
+    def get_tts_model_voices(self, model: str, language: str | None = None) -> list:
         """
         Retrieves the list of voices supported by a given text-to-speech (TTS) model.
 
@@ -80,7 +80,7 @@ class TTSModel(AIModel):
         :param credentials: The credentials required to access the TTS model.
         :return: A list of voices supported by the TTS model.
         """
-        model_schema = self.get_model_schema(model, credentials)
+        model_schema = self.get_model_schema(model)
 
         if not model_schema or ModelPropertyKey.VOICES not in model_schema.model_properties:
             raise ValueError("this model does not support voice")
@@ -93,7 +93,7 @@ class TTSModel(AIModel):
         else:
             return [{"name": d["name"], "value": d["mode"]} for d in voices]
 
-    def _get_model_default_voice(self, model: str, credentials: dict) -> Any:
+    def _get_model_default_voice(self, model: str) -> Any:
         """
         Get voice for given tts model
 
@@ -101,12 +101,12 @@ class TTSModel(AIModel):
         :param credentials: model credentials
         :return: voice
         """
-        model_schema = self.get_model_schema(model, credentials)
+        model_schema = self.get_model_schema(model)
 
         if model_schema and ModelPropertyKey.DEFAULT_VOICE in model_schema.model_properties:
             return model_schema.model_properties[ModelPropertyKey.DEFAULT_VOICE]
 
-    def _get_model_audio_type(self, model: str, credentials: dict) -> str:
+    def _get_model_audio_type(self, model: str) -> str:
         """
         Get audio type for given tts model
 
@@ -114,31 +114,31 @@ class TTSModel(AIModel):
         :param credentials: model credentials
         :return: voice
         """
-        model_schema = self.get_model_schema(model, credentials)
+        model_schema = self.get_model_schema(model)
 
         if not model_schema or ModelPropertyKey.AUDIO_TYPE not in model_schema.model_properties:
             raise ValueError("this model does not support audio type")
 
         return model_schema.model_properties[ModelPropertyKey.AUDIO_TYPE]
 
-    def _get_model_word_limit(self, model: str, credentials: dict) -> int:
+    def _get_model_word_limit(self, model: str) -> int:
         """
         Get audio type for given tts model
         :return: audio type
         """
-        model_schema = self.get_model_schema(model, credentials)
+        model_schema = self.get_model_schema(model)
 
         if not model_schema or ModelPropertyKey.WORD_LIMIT not in model_schema.model_properties:
             raise ValueError("this model does not support word limit")
 
         return model_schema.model_properties[ModelPropertyKey.WORD_LIMIT]
 
-    def _get_model_workers_limit(self, model: str, credentials: dict) -> int:
+    def _get_model_workers_limit(self, model: str) -> int:
         """
         Get audio max workers for given tts model
         :return: audio type
         """
-        model_schema = self.get_model_schema(model, credentials)
+        model_schema = self.get_model_schema(model)
 
         if not model_schema or ModelPropertyKey.MAX_WORKERS not in model_schema.model_properties:
             raise ValueError("this model does not support max workers")

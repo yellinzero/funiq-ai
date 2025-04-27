@@ -6,7 +6,7 @@ from providers.models.core.schemas import AIModelEntity, ProviderEntity
 
 
 class ProviderInfo(ProviderEntity):
-    ui_schema: dict[str, dict[str, dict | None] | None] | None = None
+    pass
 
 
 class GetModelProvidersResponse(BaseModel):
@@ -16,7 +16,6 @@ class GetModelProvidersResponse(BaseModel):
 
 class ModelInfo(AIModelEntity):
     """Model info for a provider"""
-    tenant_id: str
     provider: str
 
 
@@ -35,7 +34,16 @@ class ProviderResponse(BaseModel):
     provider: str
     credentials: dict | None = None
     
+    
+class ActiveModelProviderModelItem(BaseModel):
+    model: str
+    label: str
+    group: str | None = None
+    deprecated: bool | None = None
+    
 
 class ActiveModelProviderWithModels(BaseModel):
-    provider: ProviderInfo
-    models: List[ModelInfo]
+    provider: str
+    label: str
+    description: str
+    models: List[ActiveModelProviderModelItem]

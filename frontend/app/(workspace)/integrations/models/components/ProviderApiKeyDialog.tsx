@@ -37,7 +37,6 @@ export default function ProviderApiKeyDialog({
     if (formRef.current) {
       try {
         await saveProvider({
-          is_system: providerData?.is_system ?? false,
           credentials: formData
         })
         onClose()

@@ -29,9 +29,9 @@ class OpenAIText2SpeechModel(OpenAICore, TTSModel):
         """
 
         if not voice or voice not in [
-            d["value"] for d in self.get_tts_model_voices(model=model, credentials=credentials)
+            d["value"] for d in self.get_tts_model_voices(model=model)
         ]:
-            voice = self._get_model_default_voice(model, credentials)
+            voice = self._get_model_default_voice(model)
         # if streaming:
         return self._tts_invoke_streaming(model=model, credentials=credentials, content_text=content_text, voice=voice)
 
@@ -49,7 +49,7 @@ class OpenAIText2SpeechModel(OpenAICore, TTSModel):
                 model=model,
                 credentials=credentials,
                 content_text="Hello Dify!",
-                voice=self._get_model_default_voice(model, credentials),
+                voice=self._get_model_default_voice(model),
             )
         except Exception as ex:
             raise CredentialsValidateFailedError(str(ex)) from ex
@@ -69,11 +69,11 @@ class OpenAIText2SpeechModel(OpenAICore, TTSModel):
             credentials_kwargs = self._to_credential_kwargs(credentials)
             client = OpenAI(**credentials_kwargs)
             model_support_voice = [
-                x.get("value") for x in self.get_tts_model_voices(model=model, credentials=credentials)
+                x.get("value") for x in self.get_tts_model_voices(model=model)
             ]
             if not voice or voice not in model_support_voice:
-                voice = self._get_model_default_voice(model, credentials)
-            word_limit = self._get_model_word_limit(model, credentials)
+                voice = self._get_model_default_voice(model)
+            word_limit = self._get_model_word_limit(model)
             if len(content_text) > word_limit:
                 sentences = self._split_text_into_sentences(content_text, max_length=word_limit)
                 executor = concurrent.futures.ThreadPoolExecutor(max_workers=min(3, len(sentences)))

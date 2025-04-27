@@ -12,7 +12,7 @@ export default function ProviderCard(props: ProviderCardProps) {
   const {
     label,
     description,
-    supported_model_types,
+    model_types,
     icon,
     onClickAPIKey,
     onClickModels,
@@ -61,7 +61,7 @@ export default function ProviderCard(props: ProviderCardProps) {
         {description}
       </Typography>
       <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
-        {supported_model_types.map((type) => (
+        {model_types.map((type) => (
           <Chip
             key={type}
             label={type.toUpperCase()}

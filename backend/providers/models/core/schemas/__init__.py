@@ -24,7 +24,7 @@ from .message import (
     UserPromptMessage,
 )
 from .model import (
-    PARAMETER_RULE_TEMPLATE,
+    PARAMETER_RULE_TEMPLATES,
     AIModelEntity,
     ConfigurateMethod,
     ModelFeature,
@@ -32,7 +32,6 @@ from .model import (
     ModelType,
     ModelUsage,
     ParameterPropertyName,
-    ParameterRuleTemplate,
     ParameterType,
     PriceConfig,
     PriceInfo,
@@ -40,7 +39,7 @@ from .model import (
     ProviderModel,
 )
 from .provider import (
-    ProviderDocs,
+    ProviderDoc,
     ProviderEntity,
     SimpleProviderEntity,
 )
@@ -55,7 +54,7 @@ from .text_embedding import (
 )
 
 __all__ = [
-    "PARAMETER_RULE_TEMPLATE",
+    "PARAMETER_RULE_TEMPLATES",
     "AIModelEntity",
     "AssistantPromptMessage",
     "AudioPromptMessageContent",
@@ -75,7 +74,6 @@ __all__ = [
     "ModelUsage",
     "NumTokensResult",
     "ParameterPropertyName",
-    "ParameterRuleTemplate",
     "ParameterType",
     "PriceConfig",
     "PriceInfo",
@@ -87,7 +85,7 @@ __all__ = [
     "PromptMessageFunction",
     "PromptMessageRole",
     "PromptMessageTool",
-    "ProviderDocs",
+    "ProviderDoc",
     "ProviderEntity",
     "ProviderModel",
     "RerankDocument",

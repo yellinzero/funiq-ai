@@ -141,6 +141,7 @@ asgiref = "^3.8.1"
 httpx = "0.27.2"
 nanoid = "^2.0.0"
 aiofiles = "^24.1.0"
+cryptography = "^44.0.2"
 
 
 [tool.poetry.scripts]

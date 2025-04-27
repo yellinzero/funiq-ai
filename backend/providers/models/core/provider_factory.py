@@ -116,8 +116,8 @@ class ProviderFactory:
                 # Get provider schema to find supported model types
                 provider_schema = provider.get_provider_schema()
                 # Get models for each supported model type
-                for supported_type in provider_schema.supported_model_types:
-                    models = provider.models(model_type=supported_type)
+                for model_type in provider_schema.model_types:
+                    models = provider.models(model_type=model_type)
                     all_models.extend(models)
 
         return all_models
@@ -139,7 +139,7 @@ class ProviderFactory:
         provider_schema = provider.get_provider_schema()
 
         # Check each supported model type
-        for model_type in provider_schema.supported_model_types:
+        for model_type in provider_schema.model_types:
             # Get models of this type from the provider
             model_instance = provider.get_model_instance(model_type=model_type)
 

@@ -4,9 +4,6 @@ import {
   getModelsUrl,
   getProviderUrl,
   saveProviderUrl,
-  getModelUrl,
-  saveModelUrl,
-  enableModelUrl,
 } from '@/apis/paths/model_providers'
 
 export async function getModelProvidersApi() {
@@ -46,43 +43,3 @@ export async function saveProviderApi(
     body,
   })
 }
-
-export async function getModelApi(providerName: string, modelName: string) {
-  return await fetchApi.GET(getModelUrl, {
-    params: {
-      path: {
-        provider_name: providerName,
-        model_name: modelName,
-      },
-    },
-  })
-}
-
-export async function saveModelApi(
-  providerName: string,
-  modelName: string,
-  body: ExtractBodyType<'post', typeof saveModelUrl>,
-) {
-  return await fetchApi.POST(saveModelUrl, {
-    params: {
-      path: {
-        provider_name: providerName,
-        model_name: modelName,
-      },
-    },
-    body,
-  })
-}
-
-export async function enableModelApi(providerName: string, modelName: string) {
-  return await fetchApi.POST(enableModelUrl, {
-    params: {
-      path: {
-        provider_name: providerName,
-        model_name: modelName,
-      },
-    },
-  })
-}
-
-

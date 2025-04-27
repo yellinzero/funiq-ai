@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request
 from fastapi_async_sqlalchemy import db
 
 from app.core.schemas import ResponseModel
+from providers.models.core.schemas import AIModelEntity
 
 from .schemas import (
     ActiveModelProviderWithModels,
@@ -15,10 +16,8 @@ from .service.provider_service import ProviderService
 model_providers_router = APIRouter(prefix="/model-providers", tags=["Model Providers"])
 
 
-@model_providers_router.get(
-    "", response_model=ResponseModel[GetModelProvidersResponse], response_model_exclude_none=True
-)
-async def get_model_providers(request: Request):
+@model_providers_router.get("", response_model=ResponseModel[GetModelProvidersResponse])
+async def get_model_providers():
     """
     Get all available model providers and their configurations from provider schema
     """
@@ -26,23 +25,27 @@ async def get_model_providers(request: Request):
     return ResponseModel(data={"providers": providers, "total": len(providers)})
 
 
-@model_providers_router.get(
-    "/{provider_name}/models", response_model=ResponseModel[GetModelsResponse], response_model_exclude_none=True
-)
-async def get_models(request: Request, provider_name: str):
+@model_providers_router.get("/{provider_name}/models", response_model=ResponseModel[GetModelsResponse])
+async def get_models(provider_name: str):
     """
     Get all available models from a specific provider
     """
-    models = await ProviderService.get_models(
-        session=db.session, tenant_id=request.state.tenant_id, provider_name=provider_name
-    )
+    models = await ProviderService.get_models(provider_name=provider_name)
     return ResponseModel(data={"models": models, "total": len(models)})
+
+
+@model_providers_router.get("/{provider_name}/models/{model_name}", response_model=ResponseModel[AIModelEntity])
+async def get_model(provider_name: str, model_name: str):
+    """
+    Get a model by name
+    """
+    model = await ProviderService.get_model(provider_name=provider_name, model_name=model_name)
+    return ResponseModel(data=model)
 
 
 @model_providers_router.get(
     "/active-providers",
     response_model=ResponseModel[list[ActiveModelProviderWithModels]],
-    response_model_exclude_none=True,
 )
 async def get_active_providers(request: Request):
     """

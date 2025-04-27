@@ -5,10 +5,10 @@ from pydantic import BaseModel
 
 from utils.common.i18n import TranslatableText
 
-from .model import ConfigurateMethod, ModelType
+from .model import ModelType
 
 
-class ProviderDocs(BaseModel):
+class ProviderDoc(BaseModel):
     """
     Model class for provider docs.
     """
@@ -25,8 +25,13 @@ class SimpleProviderEntity(BaseModel):
     provider: str
     label: Union[str, TranslatableText]
     icon: dict[Literal["small", "large"], str | None] | None
-    supported_model_types: Sequence[ModelType]
-    docs: ProviderDocs | None
+    model_types: Sequence[ModelType]
+    docs: list[ProviderDoc] | None
+
+
+class ProviderConfigSchema(BaseModel):
+    json_schema: dict | None
+    ui_schema: dict | None
 
 
 class ProviderEntity(SimpleProviderEntity):
@@ -34,5 +39,4 @@ class ProviderEntity(SimpleProviderEntity):
     Model class for provider.
     """
     description: Union[str, TranslatableText] | None = None
-    configurate_methods: list[ConfigurateMethod]
-    credential_schema: dict | None
+    config_schema: ProviderConfigSchema | None

@@ -58,11 +58,11 @@ export default function ModelsPage() {
             open={openDrawer}
             onClose={() => setOpenDrawer(false)}
           />
-          {selectedProvider.credential_schema && (
+          {selectedProvider.config_schema && (
             <ProviderApiKeyDialog
               providerName={selectedProvider.provider}
-              schema={selectedProvider.credential_schema as RJSFSchema}
-              uiSchema={selectedProvider.ui_schema?.[selectedProvider.provider]?.credential_schema as UiSchema}
+              schema={selectedProvider.config_schema?.json_schema as RJSFSchema}
+              uiSchema={selectedProvider.config_schema?.ui_schema as UiSchema}
               open={openApiKeyDialog}
               onClose={() => setOpenApiKeyDialog(false)}
             />

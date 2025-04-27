@@ -1,6 +1,5 @@
 import importlib
 import os
-from collections.abc import Mapping
 from typing import ClassVar
 
 from loguru import logger
@@ -8,7 +7,7 @@ from loguru import logger
 from utils.common.i18n import get_current_locale_code_with_territory, translate_data
 
 from ..schemas import (
-    PARAMETER_RULE_TEMPLATE,
+    PARAMETER_RULE_TEMPLATES,
     AIModelEntity,
     ParameterPropertyName,
 )
@@ -18,9 +17,7 @@ class SchemaHandlingMixin:
     """Mixin class for handling model schemas and their configurations."""
 
     # provider -> model_type -> locale -> schemas
-    _provider_model_schemas: ClassVar[
-        dict[str, dict[str, dict[str, list[AIModelEntity]]]]
-    ] = {}  
+    _provider_model_schemas: ClassVar[dict[str, dict[str, dict[str, list[AIModelEntity]]]]] = {}
 
     def load_predefined_model_schemas(self) -> list[AIModelEntity]:
         """Load and cache all predefined model schemas from Python configuration files."""
@@ -69,24 +66,22 @@ class SchemaHandlingMixin:
             for schema_file in schema_files:
                 schema_module_name = schema_file.rstrip(".py")
                 schema_module_path = f"{schema_base_path}.{schema_module_name}"
-                logger.info(f"Loading model schema from {schema_module_path}")
 
                 try:
                     schema_module = importlib.import_module(schema_module_path)
                     if not hasattr(schema_module, "schema"):
                         raise Exception(f"No schema found in {schema_module_path}")
                     schema_data = schema_module.schema
-                    ui_schema_data = schema_module.ui_schema if hasattr(schema_module, "ui_schema") else None
                     new_schema_data = schema_data.copy()
 
                     # Process parameter rules schema
                     parameter_rules_schema = new_schema_data.pop("parameter_rules_schema", {})
-                    processed_rules_schema = self._process_parameter_rules(parameter_rules_schema)
+                    parameter_rules_json_schema = self._handle_parameter_rules_json_schema(parameter_rules_schema)
+                    new_schema_data["parameter_rules_schema"] = {
+                        **parameter_rules_schema,
+                        "json_schema": parameter_rules_json_schema,
+                    }
 
-                    if ui_schema_data:
-                        new_schema_data["parameter_rules_ui_schema"] = ui_schema_data.get("parameter_rules")
-                    new_schema_data["parameter_rules_schema"] = processed_rules_schema
-                    
                     model_schema = AIModelEntity(**new_schema_data)
                     model_schemas.append(model_schema)
 
@@ -101,7 +96,7 @@ class SchemaHandlingMixin:
         self._provider_model_schemas[provider_name][model_type][locale_code] = model_schemas
         return model_schemas
 
-    def get_model_schema(self, model: str, credentials: Mapping | None = None) -> AIModelEntity | None:
+    def get_model_schema(self, model: str) -> AIModelEntity | None:
         """Get model schema by model name."""
         # Check predefined schemas first
         models = self.load_predefined_model_schemas()
@@ -110,94 +105,55 @@ class SchemaHandlingMixin:
         if model in model_map:
             return model_map[model]
 
-        # Try to create custom schema from credentials
-        if credentials:
-            return self.create_custom_model_schema(model, credentials)
-
         return None
 
-    def create_custom_model_schema(self, model: str, credentials: Mapping) -> AIModelEntity | None:
-        """Create a custom model schema from credentials."""
-        return self._create_custom_model_schema(model, credentials)
-
-    def _process_parameter_rules(self, parameter_rules: dict) -> dict:
+    def _handle_parameter_rules_json_schema(self, parameter_rules: dict) -> dict:
         """Process parameter rules and return a json schema."""
-        parameter_rules_schema = {
-            "type": "object",
-            "properties": {},
-            "required": [],
-        }
-        
-        required_fields = []
+        parameter_rules_json_schema = parameter_rules.get("json_schema", {})
+        properties = parameter_rules_json_schema.get("properties", {})
 
-        for param_name, rule in parameter_rules.items():
+        def _handle_template_rule(rule: dict) -> dict:
+            """Helper function to process template-based rules."""
+            template_name = ParameterPropertyName(rule["_template"])
+            template_rule = PARAMETER_RULE_TEMPLATES[template_name].copy()
+
+            # Update template with custom configurations
+            custom_fields = {k: v for k, v in rule.items() if k != "_template"}
+            template_rule.update(custom_fields)
+            return template_rule
+
+        for param_name, rule in properties.items():
             try:
-                processed_rule = rule.copy()
+                processed_rule = _handle_template_rule(rule) if "_template" in rule else rule.copy()
+                properties[param_name] = processed_rule
 
-                # Handle template-based rules
-                if "_template" in rule:
-                    template_name = ParameterPropertyName(rule["_template"])
-                    template_rule = PARAMETER_RULE_TEMPLATE[template_name]
-                    processed_rule = template_rule
+            except Exception as e:
+                raise ValueError(f"Failed to process parameter rule for {param_name}: {e}") from e
 
-                    # Update template with custom configurations
-                    custom_fields = {k: v for k, v in rule.items() if k not in ("_template", "required")}
-                    for key, value in custom_fields.items():
-                        processed_rule[key] = value
-                else:
-                    # Remove required field from the rule
-                    processed_rule.pop("required", None)
-
-                # Add to schema using the parameter name as the property key
-                parameter_rules_schema["properties"][param_name] = processed_rule
-
-                # Check if the field is required
-                if rule.get("required", False):
-                    required_fields.append(param_name)
-
-            except (ValueError, KeyError) as e:
-                logger.warning(f"Failed to process parameter rule for {param_name}: {e}")
-                continue
-
-        # Set required fields in schema
-        if required_fields:
-            parameter_rules_schema["required"] = required_fields
-
-        return translate_data(parameter_rules_schema)
-
-    def _create_custom_model_schema(self, model: str, credentials: Mapping) -> AIModelEntity | None:
-        """Internal method to create and customize a model schema using templates."""
-        schema = self.get_customizable_model_schema(model, credentials)
-        if not schema:
-            return None
-
-        # Process parameter rules
-        processed_rules_schema = self._process_parameter_rules(schema.parameter_rules_schema)
-        schema.parameter_rules_schema = processed_rules_schema
-
-        return schema
-
-    def get_customizable_model_schema(self, model: str, credentials: Mapping) -> AIModelEntity | None:
-        """Get customizable model schema. To be implemented by subclasses if needed."""
-        return None
+        return translate_data(
+            {
+                **parameter_rules_json_schema,
+                "properties": properties,
+            }
+        )
 
     def _get_default_parameter_rule_variable_map(self, name: ParameterPropertyName) -> dict:
         """Get default parameter rule for given name."""
-        default_parameter_rule = PARAMETER_RULE_TEMPLATE.get(name)
+        default_parameter_rule = PARAMETER_RULE_TEMPLATES[name]
 
         if not default_parameter_rule:
             raise Exception(f"Invalid model parameter rule name {name}")
 
         return default_parameter_rule
 
-    def get_parameter_rules_schema(self, model: str, credentials: dict) -> dict:
+    def get_parameter_rules_schema(self, model: str) -> dict:
         """Get parameter rules schema for the model.
 
         :param model: model name
         :param credentials: model credentials
         :return: json schema
         """
-        model_schema = self.get_model_schema(model, credentials)
+        model_schema = self.get_model_schema(model)
         if not model_schema:
             return {
                 "type": "object",
@@ -205,15 +161,3 @@ class SchemaHandlingMixin:
             }
 
         return model_schema.parameter_rules_schema
-
-    def get_model_ui_schema(self, model: str) -> dict | None:
-        """Get UI schema for the specified model in current locale.
-
-        :param model: model name
-        :return: UI schema dict or None if not found
-        """
-        model_schema = self.get_model_schema(model)
-        if not model_schema:
-            return None
-
-        return model_schema.ui_schema

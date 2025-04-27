@@ -13,20 +13,25 @@ schema = {
         "context_size": 128000,
     },
     "parameter_rules_schema": {
-        "max_tokens": {
-            "_template": "max_tokens",
-            "default": 32768,
-            "minimum": 1,
-            "maximum": 32768,
-        },
-        "response_format": {
-            "title": _("Response Format", domain="providers"),
-            "type": "string",
-            "description": _("specifying the format that the model must output", domain="providers"),
-            "enum": [
-                "text",
-                "json_object",
-            ],
+        "json_schema": {
+            "type": "object",
+            "properties": {
+                "max_tokens": {
+                    "_template": "max_tokens",
+                    "default": 32768,
+                    "minimum": 1,
+                    "maximum": 32768,
+                },
+                "response_format": {
+                    "title": _("Response Format", domain="providers"),
+                    "type": "string",
+                    "description": _("specifying the format that the model must output", domain="providers"),
+                    "enum": [
+                        "text",
+                        "json_object",
+                    ],
+                },
+            },
         },
     },
     "pricing": [
@@ -38,4 +43,3 @@ schema = {
         },
     ],
 }
-

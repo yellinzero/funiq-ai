@@ -327,7 +327,7 @@ class AnthropicLargeLanguageModel(LargeLanguageModel):
             completion_tokens = self.get_num_tokens(model, credentials, [assistant_prompt_message])
 
         # transform usage
-        usage = self._calc_response_usage(model, credentials, prompt_tokens, completion_tokens)
+        usage = self._calc_response_usage(model=model, prompt_tokens=prompt_tokens, completion_tokens=completion_tokens)
 
         # transform response
         response = LLMResult(
@@ -383,7 +383,9 @@ class AnthropicLargeLanguageModel(LargeLanguageModel):
                 finish_reason = chunk.delta.stop_reason
             elif isinstance(chunk, MessageStopEvent):
                 # transform usage
-                usage = self._calc_response_usage(model, credentials, input_tokens, output_tokens)
+                usage = self._calc_response_usage(
+                    model=model, prompt_tokens=input_tokens, completion_tokens=output_tokens
+                )
 
                 # transform empty tool call arguments to {}
                 for tool_call in tool_calls:

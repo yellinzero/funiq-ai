@@ -4,12 +4,11 @@ from typing import ClassVar
 
 from providers.models.core import AIModel
 from providers.models.core.schemas import AIModelEntity, ModelType, ProviderEntity
-from utils.common.i18n import get_current_locale_code_with_territory
+from utils.common.i18n import get_current_locale_code_with_territory, translate_data
 
 
 class ModelProvider(ABC):
     _provider_schemas: ClassVar[dict[str, dict[str, ProviderEntity]]] = {}  # provider -> locale -> schema
-    _provider_ui_schemas: ClassVar[dict[str, dict[str, dict]]] = {}  # provider -> locale -> ui_schema
     model_instance_map: ClassVar[dict[str, AIModel]] = {}
 
     @abstractmethod
@@ -40,7 +39,6 @@ class ModelProvider(ABC):
         # Initialize provider dict if not exists
         if provider_name not in self._provider_schemas:
             self._provider_schemas[provider_name] = {}
-            self._provider_ui_schemas[provider_name] = {}
 
         # Return cached schema if exists
         if locale_code in self._provider_schemas[provider_name]:
@@ -53,30 +51,14 @@ class ModelProvider(ABC):
             schema_module = importlib.import_module(module_path)
             if not hasattr(schema_module, "schema"):
                 raise AttributeError(f"No provider_schema found in {module_path}")
-
-            provider_schema = ProviderEntity(**schema_module.schema)
-
-            # Load and cache UI schema if available
-            if hasattr(schema_module, "ui_schema"):
-                self._provider_ui_schemas[provider_name][locale_code] = {**schema_module.ui_schema}
-
+            provider_schema = ProviderEntity(**translate_data(schema_module.schema))
+            
         except Exception as e:
             raise Exception(f"Invalid provider schema for {provider_name}: {e!s}") from e
 
         # Cache schema
         self._provider_schemas[provider_name][locale_code] = provider_schema
         return provider_schema
-
-    def get_provider_ui_schema(self) -> dict | None:
-        """
-        Get provider UI schema for current locale
-
-        :return: provider UI schema
-        """
-        provider_name = self.__class__.__module__.split(".")[-1]
-        locale_code = get_current_locale_code_with_territory()
-
-        return self._provider_ui_schemas.get(provider_name, {}).get(locale_code, None)
 
     def models(self, model_type: ModelType) -> list[AIModelEntity]:
         """
@@ -86,7 +68,7 @@ class ModelProvider(ABC):
         :return: list of models
         """
         provider_schema = self.get_provider_schema()
-        if model_type not in provider_schema.supported_model_types:
+        if model_type not in provider_schema.model_types:
             return []
 
         # get model instance of the model type

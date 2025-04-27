@@ -116,7 +116,7 @@ class DeepSeekLargeLanguageModel(OpenAILikeLargeLanguageModel):
             credentials["openai_api_base"] = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
     def _calc_response_usage(
-        self, model: str, credentials: dict, prompt_tokens: int, completion_tokens: int
+        self, model: str, prompt_tokens: int, completion_tokens: int
     ) -> LLMUsage:
         """
         Calculate response usage based on time period
@@ -128,7 +128,7 @@ class DeepSeekLargeLanguageModel(OpenAILikeLargeLanguageModel):
         :return: usage
         """
         # get prompt config
-        schema = self.get_model_schema(model=model, credentials=credentials)
+        schema = self.get_model_schema(model=model)
 
         if not schema:
             raise ValueError(f"No schema found for model: {model}")

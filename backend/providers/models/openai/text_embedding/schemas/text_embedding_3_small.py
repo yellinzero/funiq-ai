@@ -6,9 +6,11 @@ schema = {
         "context_size": 8191,
         "max_chunks": 32,
     },
-    "pricing": {
-        "input": "0.00002",
-        "unit": "0.001",
-        "currency": "USD",
-    },
+    "pricing": [
+        {
+            "input": "0.02",
+            "unit": "0.000001",
+            "currency": "USD",
+        },
+    ],
 }

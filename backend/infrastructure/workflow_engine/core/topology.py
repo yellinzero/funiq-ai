@@ -5,7 +5,6 @@ from loguru import logger
 from redis.asyncio import Redis
 
 from infrastructure import with_redis
-from providers.operators.core import OperatorName
 from utils.common.json import json_loads
 
 from .schemas import TopologyCacheContext, TopologyData, WorkflowContext
@@ -107,23 +106,15 @@ class WorkflowTopologyMixin:
             topology_data = TopologyData(
                 adjacency={},
                 node_levels=[],
-                end_node_key="",
             )
 
             # Build new topology
             g = nx.DiGraph()
             # Find END node while building graph
-            topology_data.end_node_key = None
             nodes = snapshot.get("nodes", [])
             for node in nodes:
                 node_key = node.get("node_key")
-                node_type = node.get("node_type")
                 g.add_node(node_key)
-                if node_type == OperatorName.END:
-                    topology_data.end_node_key = node_key
-
-            if not topology_data.end_node_key:
-                raise ValueError("Workflow must have an END node")
 
             edges = snapshot.get("edges", [])
             for edge in edges:

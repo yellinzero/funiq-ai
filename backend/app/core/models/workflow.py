@@ -1,16 +1,21 @@
 from __future__ import annotations
 
 import enum
+import hashlib
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import JSON, DateTime, Enum, ForeignKey, ForeignKeyConstraint, Index, String, UniqueConstraint
+from sqlalchemy import JSON, DateTime, Enum, ForeignKey, ForeignKeyConstraint, Index, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import select
 
 from infrastructure import DBAuditFieldsMixin, DBBase, DBUUIDModelMixin
 from providers.operators.core import OperatorName
+from utils.common.datetime import utcnow
+from utils.common.json import json_dumps
 
 if TYPE_CHECKING:
     from .app import App
@@ -55,44 +60,66 @@ class Workflow(DBBase, DBUUIDModelMixin):
         default=WorkflowStatus.DRAFT,
         comment="Current status of the workflow",
     )
-    name: Mapped[str] = mapped_column(String(100), nullable=False, comment="Display name of the workflow")
-    description: Mapped[str | None] = mapped_column(
-        String(255), comment="Optional description of the workflow's purpose"
-    )
     version: Mapped[str | None] = mapped_column(
         String(50), nullable=True, comment="Current version number of the workflow"
     )
+    config: Mapped[dict | None] = mapped_column(JSON, comment="Workflow configuration")
 
     # Relationships
-    app: Mapped[App] = relationship("App", back_populates="workflow", uselist=False, single_parent=True)
+    app: Mapped[App] = relationship(
+        back_populates="workflow", uselist=False, cascade="all, delete", lazy="joined", foreign_keys=[app_id]
+    )
+
     nodes: Mapped[list[WorkflowNode]] = relationship(
-        "WorkflowNode", back_populates="workflow", cascade="all, delete-orphan"
+        "WorkflowNode", back_populates="workflow", cascade="all, delete-orphan", lazy="raise"
     )
     edges: Mapped[list[WorkflowEdge]] = relationship(
-        "WorkflowEdge", back_populates="workflow", cascade="all, delete-orphan"
+        "WorkflowEdge", back_populates="workflow", cascade="all, delete-orphan", lazy="raise"
     )
     versions: Mapped[list[WorkflowVersion]] = relationship(
-        "WorkflowVersion", back_populates="workflow", cascade="all, delete-orphan"
+        "WorkflowVersion", back_populates="workflow", cascade="all, delete-orphan", lazy="raise"
     )
-    snapshots: Mapped[list[WorkflowSnapshot]] = relationship(
-        "WorkflowSnapshot", back_populates="workflow", cascade="all, delete-orphan"
+    debug_snapshots: Mapped[list[WorkflowDebugSnapshot]] = relationship(
+        "WorkflowDebugSnapshot", back_populates="workflow", cascade="all, delete-orphan", lazy="raise"
     )
-
-    # Audit fields with default values
-    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    updated_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
 
     __table_args__ = (
-        UniqueConstraint("app_id", "name", name="uq_workflow_app_name"),
         Index("idx_workflow_status_created", "status", "created_at"),
         Index("idx_workflow_updated", "updated_at"),
     )
 
     def __repr__(self) -> str:
-        return f"<Workflow(app_id={self.app_id}, workflow_id={self.id}, name={self.name})>"
+        return f"<Workflow(app_id={self.app_id}, workflow_id={self.id})>"
+
+    async def get_snapshot(self, need_hash: bool = False) -> tuple[dict, str | None]:
+        snapshot_hash = None
+        snapshot = {
+            "nodes": [node.to_dict() for node in self.nodes],
+            "edges": [edge.to_dict() for edge in self.edges],
+            "config": self.config,
+        }
+        if need_hash:
+            snapshot_hash = hashlib.sha256(json_dumps(snapshot).encode()).hexdigest()
+        return snapshot, snapshot_hash
+
+    async def get_end_node(self, session: AsyncSession) -> WorkflowNode:
+        result = await session.execute(select(WorkflowNode).where(WorkflowNode.node_type == OperatorName.END.value))
+        return result.scalar_one_or_none()
+
+    async def get_start_node(self, session: AsyncSession) -> WorkflowNode:
+        result = await session.execute(select(WorkflowNode).where(WorkflowNode.node_type == OperatorName.START.value))
+        return result.scalar_one_or_none()
+
+    @property
+    def is_published(self) -> bool:
+        return self.status == WorkflowStatus.PUBLISHED
+
+    @property
+    def is_draft(self) -> bool:
+        return self.status == WorkflowStatus.DRAFT
 
 
-class WorkflowNode(DBBase, DBAuditFieldsMixin):
+class WorkflowNode(DBBase, DBUUIDModelMixin):
     """Node within a workflow representing a single task or decision point.
 
     Each node has a specific type (e.g., llm, end, start) and contains
@@ -101,9 +128,7 @@ class WorkflowNode(DBBase, DBAuditFieldsMixin):
     """
 
     # Primary key and references
-    node_key: Mapped[str] = mapped_column(
-        String(10), primary_key=True, comment="Unique identifier for the node within its workflow"
-    )
+    node_key: Mapped[str] = mapped_column(String(10), comment="Unique identifier for the node within its workflow")
     workflow_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("workflows.id", ondelete="CASCADE"), nullable=False, comment="Reference to the parent workflow"
     )
@@ -113,43 +138,28 @@ class WorkflowNode(DBBase, DBAuditFieldsMixin):
         Enum(OperatorName), nullable=False, comment="Type of operation this node performs"
     )
     name: Mapped[str] = mapped_column(String(100), nullable=False, comment="Display name of the node")
-    description: Mapped[str | None] = mapped_column(String(255), comment="Optional description of the node's purpose")
+    description: Mapped[str | None] = mapped_column(Text, comment="Optional description of the node's purpose")
 
     # Configuration and metadata
-    meta: Mapped[dict[str, Any] | None] = mapped_column(
+    meta: Mapped[dict | None] = mapped_column(
         JSON, comment="Node metadata including UI properties (position, style, etc)"
     )
 
-    config: Mapped[dict[str, Any] | None] = mapped_column(
+    config: Mapped[dict | None] = mapped_column(
         JSON, comment="Core configuration for node operation (parameters, settings)"
     )
 
-    extended_config: Mapped[dict[str, Any] | None] = mapped_column(
+    extended_config: Mapped[dict | None] = mapped_column(
         JSON, comment="Extended configuration specific to node type (e.g., LLM parameters)"
     )
 
-    # Audit fields with default values
-    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    updated_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-
     # Relationships
-    workflow: Mapped[Workflow] = relationship("Workflow", back_populates="nodes")
-    outgoing_edges: Mapped[list[WorkflowEdge]] = relationship(
-        "WorkflowEdge",
-        back_populates="source_node",
-        foreign_keys="WorkflowEdge.source_node_key",
-        cascade="all, delete-orphan",
-    )
-    incoming_edges: Mapped[list[WorkflowEdge]] = relationship(
-        "WorkflowEdge",
-        back_populates="target_node",
-        foreign_keys="WorkflowEdge.target_node_key",
-        cascade="all, delete-orphan",
+    workflow: Mapped[Workflow] = relationship(
+        "Workflow", back_populates="nodes", lazy="raise", foreign_keys=[workflow_id]
     )
 
     __table_args__ = (
         UniqueConstraint("workflow_id", "node_key", name="uq_workflow_node"),
-        UniqueConstraint("workflow_id", "name", name="uq_workflow_node_name"),
         Index("idx_node_workflow", "workflow_id"),
     )
 
@@ -160,6 +170,14 @@ class WorkflowNode(DBBase, DBAuditFieldsMixin):
             f"key={self.node_key}, "
             f"type={self.node_type})>"
         )
+
+    async def get_incoming_edges(self, session: AsyncSession) -> list[WorkflowEdge]:
+        result = await session.execute(select(WorkflowEdge).where(WorkflowEdge.target_node_key == self.node_key))
+        return result.scalars().all()
+
+    async def get_outgoing_edges(self, session: AsyncSession) -> list[WorkflowEdge]:
+        result = await session.execute(select(WorkflowEdge).where(WorkflowEdge.source_node_key == self.node_key))
+        return result.scalars().all()
 
 
 class WorkflowEdge(DBBase, DBAuditFieldsMixin):
@@ -180,27 +198,18 @@ class WorkflowEdge(DBBase, DBAuditFieldsMixin):
     source_node_key: Mapped[str] = mapped_column(String(10), nullable=False, comment="Reference to the source node")
     target_node_key: Mapped[str] = mapped_column(String(10), nullable=False, comment="Reference to the target node")
 
-    # Audit fields
-    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    updated_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-
     # Edge properties
     meta: Mapped[dict[str, Any] | None] = mapped_column(
         JSON, comment="Edge metadata including UI properties (path style, labels)"
     )
 
     # Relationships
-    workflow: Mapped[Workflow] = relationship("Workflow", back_populates="edges")
-    source_node: Mapped[WorkflowNode] = relationship(
-        "WorkflowNode", back_populates="outgoing_edges", foreign_keys=[source_node_key]
-    )
-    target_node: Mapped[WorkflowNode] = relationship(
-        "WorkflowNode", back_populates="incoming_edges", foreign_keys=[target_node_key]
+    workflow: Mapped[Workflow] = relationship(
+        "Workflow", back_populates="edges", lazy="raise", foreign_keys=[workflow_id]
     )
 
     __table_args__ = (
         UniqueConstraint("workflow_id", "edge_key", name="uq_workflow_edge"),
-        UniqueConstraint("workflow_id", "source_node_key", "target_node_key", name="uq_workflow_edge_nodes"),
         ForeignKeyConstraint(
             ["workflow_id", "source_node_key"],
             ["workflow_nodes.workflow_id", "workflow_nodes.node_key"],
@@ -223,103 +232,124 @@ class WorkflowEdge(DBBase, DBAuditFieldsMixin):
             f"key={self.edge_key}, "
             f"workflow_id={self.workflow_id}, "
             f"source={self.source_node_key}, "
-            f"target={self.target_node_key}, "
+            f"target={self.target_node_key}"
+            f")>"
         )
+
+    async def get_source_node(self, session: AsyncSession) -> WorkflowNode:
+        result = await session.execute(select(WorkflowNode).where(WorkflowNode.node_key == self.source_node_key))
+        return result.scalar_one_or_none()
+
+    async def get_target_node(self, session: AsyncSession) -> WorkflowNode:
+        result = await session.execute(select(WorkflowNode).where(WorkflowNode.node_key == self.target_node_key))
+        return result.scalar_one_or_none()
 
 
 class BaseWorkflowSnapshotModel(DBBase):
     """Base class for workflow snapshot models with common fields and properties."""
-    
-    snapshot: Mapped[dict[str, Any]] = mapped_column(JSON, comment="Snapshot data")
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    snapshot: Mapped[dict] = mapped_column(JSON, comment="Snapshot data")
     snapshot_hash: Mapped[str] = mapped_column(String(256), nullable=False)
     start_node_key: Mapped[str] = mapped_column(String(10), nullable=False)
     end_node_key: Mapped[str] = mapped_column(String(10), nullable=False)
     workflow_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("workflows.id", ondelete="CASCADE"), 
-        nullable=False, 
-        comment="Reference to the parent workflow"
+        ForeignKey("workflows.id", ondelete="CASCADE"), nullable=False, comment="Reference to the parent workflow"
     )
-    
+
     __abstract__ = True
-    
+
     @property
     def nodes(self) -> list[WorkflowNode]:
         if not self.snapshot:
             raise ValueError("Snapshot is not available")
-        return self.snapshot["nodes"]
-    
+        nodes = self.snapshot.get("nodes", [])
+        result = []
+
+        for node in nodes:
+            result.append(WorkflowNode(**node))
+        return result
+
     @property
     def edges(self) -> list[WorkflowEdge]:
         if not self.snapshot:
             raise ValueError("Snapshot is not available")
-        return self.snapshot["edges"]
-    
+
+        edges = self.snapshot.get("edges", [])
+        result = []
+
+        for edge in edges:
+            result.append(WorkflowEdge(**edge))
+        return result
+
+    @property
+    def snapshot_config(self) -> dict:
+        if not self.snapshot:
+            raise ValueError("Snapshot is not available")
+        return self.snapshot.get("config", {})
+
     @property
     def end_node(self) -> WorkflowNode:
         if not self.nodes:
             raise ValueError("Nodes are not available")
-        node = next((node for node in self.nodes if node["node_key"] == self.end_node_key), None)
+        node = next((node for node in self.nodes if node.node_key == self.end_node_key), None)
         if not node:
             raise ValueError("End node not found")
         return node
-    
+
     @property
     def start_node(self) -> WorkflowNode:
         if not self.nodes:
             raise ValueError("Nodes are not available")
-        node = next((node for node in self.nodes if node["node_key"] == self.start_node_key), None)
+        node = next((node for node in self.nodes if node.node_key == self.start_node_key), None)
         if not node:
             raise ValueError("Start node not found")
         return node
 
+    __table_args__ = (Index("idx_workflow_snapshot_workflow", "workflow_id"),)
+
 
 class WorkflowVersion(BaseWorkflowSnapshotModel):
-    version: Mapped[str] = mapped_column(String(50), primary_key=True)
+    version: Mapped[str] = mapped_column(String(50))
     status: Mapped[WorkflowVersionStatus] = mapped_column(
-        Enum(WorkflowVersionStatus),
-        nullable=False,
-        default=WorkflowVersionStatus.ACTIVE
+        Enum(WorkflowVersionStatus), nullable=False, default=WorkflowVersionStatus.ACTIVE
     )
-    description: Mapped[str] = mapped_column(String(255))
-    published_at: Mapped[datetime] = mapped_column(
-        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
-    )
+    description: Mapped[str] = mapped_column(Text)
+    published_at: Mapped[datetime] = mapped_column(default=lambda: utcnow().replace(tzinfo=None))
     published_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    
+
     workflow: Mapped[Workflow] = relationship("Workflow", back_populates="versions")
-    
+
     __table_args__ = (
         UniqueConstraint("workflow_id", "version", name="uq_workflow_version"),
-        Index("idx_workflow_version_workflow", "workflow_id"),
         Index("idx_workflow_version_status", "status"),
     )
-    
+
     @property
     def is_active(self) -> bool:
         return self.status == WorkflowVersionStatus.ACTIVE
-    
+
     @property
     def is_deprecated(self) -> bool:
         return self.status == WorkflowVersionStatus.DEPRECATED
-    
+
     @property
     def is_archived(self) -> bool:
         return self.status == WorkflowVersionStatus.ARCHIVED
-    
+
     @property
     def is_inactive(self) -> bool:
         return self.status == WorkflowVersionStatus.INACTIVE
 
 
-class WorkflowSnapshot(BaseWorkflowSnapshotModel):
-    snapshot_timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False, primary_key=True)
+class WorkflowDebugSnapshot(BaseWorkflowSnapshotModel):
+    snapshot_timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    
-    workflow: Mapped[Workflow] = relationship("Workflow", back_populates="snapshots")
-    
+
+    workflow: Mapped[Workflow] = relationship("Workflow", back_populates="debug_snapshots")
+
     __table_args__ = (
-        UniqueConstraint("workflow_id", "snapshot_timestamp", name="uq_workflow_snapshots_composite"),
-        Index("idx_workflow_snapshot_workflow", "workflow_id"),
+        UniqueConstraint("workflow_id", "snapshot_timestamp", name="uq_workflow_debug_snapshots_composite"),
     )

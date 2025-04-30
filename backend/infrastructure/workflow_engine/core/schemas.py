@@ -19,13 +19,14 @@ class ExecutionStates(str, Enum):
 class WorkflowContext(BaseModel):
     """Context of the workflow."""
     workflow_id: str
-    workflow_name: str
     snapshot: dict[str, Any]
     snapshot_hash: str
     input_data: dict[str, Any]
     execution_context: dict[str, Any]
-    is_stream: bool
-    snapshot_timestamp: str | None = None
+    is_debug: bool
+    start_node_key: str
+    end_node_key: str
+    timestamp: str | None = None
     version: str | None = None
     
     
@@ -33,7 +34,6 @@ class TopologyData(BaseModel):
     """Topology of the workflow."""
     adjacency: dict[str, Any]
     node_levels: list[list[str]]
-    end_node_key: str
 
 
 class TopologyCacheContext(BaseModel):

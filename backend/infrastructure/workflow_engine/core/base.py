@@ -15,7 +15,7 @@ from .schemas import (
 from .topology import WorkflowTopologyMixin
 
 
-class WorkflowEngineBase(WorkflowTopologyMixin):
+class WorkflowEngine(WorkflowTopologyMixin):
     """Base class for workflow execution."""
 
     def __init__(
@@ -23,9 +23,15 @@ class WorkflowEngineBase(WorkflowTopologyMixin):
         workflow_id: str,
         snapshot: dict[str, Any],
         snapshot_hash: str,
+       
+        start_node_key: str,
+        end_node_key: str,
         input_data: dict[str, Any],
-        execution_context: dict[str, Any],
+        execution_context: dict[str, Any] = {},
         topology_cached_expiration: int = 24 * 60 * 60,
+        is_debug: bool = False,
+        version: str | None = None,
+        timestamp: str | None = None,
         on_created: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
         on_pending: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
         on_running: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
@@ -54,16 +60,17 @@ class WorkflowEngineBase(WorkflowTopologyMixin):
             snapshot_hash=snapshot_hash,
             input_data=input_data,
             execution_context=execution_context,
-            is_stream=snapshot.get("stream_mode", False),
-            snapshot_timestamp=None,
-            version=None,
+            is_debug=is_debug,
+            start_node_key=start_node_key,
+            end_node_key=end_node_key,
+            version=version,
+            timestamp=timestamp,
         )
-
+        
         self._topology_info = TopologyInfo(
             data=TopologyData(
                 adjacency={},
                 node_levels=[],
-                end_node_key="",
             ),
             cache_context=TopologyCacheContext(
                 cached_expiration=topology_cached_expiration,

@@ -36,12 +36,10 @@ class SchemaHandlingMixin:
                 raise Exception(f"No schema found in {schema_path}")
 
             schema_data = schema_module.schema
-            config_ui_schema_data = getattr(schema_module, "config_ui_schema", None)
     
             # Create operator schema
             operator_schema = OperatorEntity(
                 **schema_data,
-                config_ui_schema=config_ui_schema_data
             )
 
             # Cache schema

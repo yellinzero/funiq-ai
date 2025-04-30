@@ -1,11 +1,11 @@
 from typing import List
 
-from providers.operators.core import OperatorFactory
+from providers.operators.core import OperatorEntity, OperatorFactory
 
 
 class OperatorService:
     @staticmethod
-    def get_all_operators() -> List[dict]:
+    def get_all_operators() -> List[OperatorEntity]:
         """
         Get all available operators and their schemas
         """

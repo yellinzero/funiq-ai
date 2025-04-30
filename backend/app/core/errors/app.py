@@ -23,6 +23,10 @@ class AppErrorCode(BaseErrorCode):
     APP_WORKFLOW_NOT_FOUND = ("D0303", "App workflow not found")
     APP_ALREADY_EXISTS = ("D0304", "An app with this name already exists in the tenant")
     APP_VERSION_ALREADY_EXISTS = ("D0305", "This version number already exists for the app")
+    APP_FETCH_FAILED = ("D0306", "Failed to fetch apps")
+    CONVERSATION_NOT_FOUND = ("D0307", "Conversation not found with the specified ID")
+    CONVERSATION_FETCH_FAILED = ("D0308", "Failed to fetch conversations")
+    MESSAGE_FETCH_FAILED = ("D0309", "Failed to fetch messages")
     
     # Operation related (04)
     APP_CREATE_ERROR = ("D0401", "Failed to create app - Please check the provided configuration")
@@ -32,6 +36,11 @@ class AppErrorCode(BaseErrorCode):
         "D0404",
         "Failed to publish app version - Please check version configuration and workflow status"
     )
+    CONVERSATION_CREATE_ERROR = ("D0405", "Failed to create conversation - Please check the provided configuration")
+    CONVERSATION_UPDATE_ERROR = ("D0406", "Failed to update conversation - Please check the provided changes")
+    CONVERSATION_DELETE_ERROR = ("D0407", "Failed to delete conversation - Please ensure no active dependencies exist")
+    APP_ARCHIVED = ("D0408", "The app is currently archived")
+    APP_INACTIVE = ("D0409", "The app is currently inactive")
 
     # Configuration related (08)
     INVALID_APP = ("D0801", "Invalid app configuration - Please check app settings and permissions")
@@ -42,3 +51,5 @@ class AppErrorCode(BaseErrorCode):
     APP_DISABLED = ("D1001", "The app is currently disabled")
     APP_VERSION_INACTIVE = ("D1002", "The requested app version is not active")
     APP_VERSION_NOT_ACTIVE = ("D1003", "The requested app version is not active")
+    CONVERSATION_ARCHIVED = ("D1004", "The requested conversation is archived")
+

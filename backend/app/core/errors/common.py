@@ -15,6 +15,7 @@ class CommonErrorCode(BaseErrorCode):
     # Input/Parameter validation (02)
     INVALID_ARGUMENT = ("A0201", "Invalid Argument")
     INVALID_VERIFICATION_CODE = ("A0202", "Invalid verification code")
+    INVALID_VERSION = ("A0203", "Invalid version number")
     
     # Resource related (03)
     RESOURCE_NOT_FOUND = ("A0301", "Resource Not Found")

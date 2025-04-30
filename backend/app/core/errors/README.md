@@ -13,7 +13,6 @@ Example: `A01XX`
 - `C`: Model provider related (AI models, providers)
 - `D`: Application related (app management)
 - `E`: Workflow related (workflow execution)
-- `F`: Conversation related (chat, messages)
 
 ## Module Numbers (2 digits)
 - `00`: System level (system errors, internal errors)

@@ -24,14 +24,16 @@ schema = {
         "chunk_schema": EndOperatorStreamOutput.model_json_schema(),
     },
     "config_schema": {
-        "type": "object",
-        "properties": {
-            "message": {
-                "type": "string",
-                "description": _("The final processed output", domain="providers"),
+        "json_schema": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "description": _("The final processed output", domain="providers"),
+                },
             },
+            "required": ["message"],
         },
-        "required": ["message"],
     },
     "output_schema": EndOperatorOutput.model_json_schema(),
 }

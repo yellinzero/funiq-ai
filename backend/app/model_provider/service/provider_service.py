@@ -17,14 +17,13 @@ from ..schemas import ActiveModelProviderWithModels, ModelInfo, ProviderInfo, Sa
 class ProviderService:
     @staticmethod
     async def get_all_providers() -> List[ProviderInfo]:
-        """
-        Get all available providers and their configurations.
+        """Retrieves all available model providers and their configurations.
 
         Returns:
-            List[ProviderInfo]: List of provider information
+            List[ProviderInfo]: A list of provider information including their configurations.
 
         Raises:
-            ModelProviderErrorCode: When provider operation fails
+            ModelProviderErrorCode: If there's an error during provider retrieval.
         """
         try:
             providers = ProviderFactory.get_all_providers()
@@ -38,27 +37,23 @@ class ProviderService:
         except Exception as e:
             logger.error(f"Error fetching providers: {e}")
             raise ModelProviderErrorCode.FETCH_PROVIDERS_FAILED.exception(
-                data={"error": str(e)}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
             ) from e
 
     @staticmethod
     async def get_models(provider_name: str) -> List[ModelInfo]:
-        """
-        Get all models for a specific provider, including factory models and customized models.
+        """Retrieves all available models for a specific provider.
 
         Args:
-            session: Database session
-            tenant_id: ID of the tenant
-            provider_name: Name of the provider
+            provider_name: The name of the provider to fetch models from.
 
         Returns:
-            List[ModelInfo]: List of model information
+            List[ModelInfo]: A list of model information for the specified provider.
 
         Raises:
-            ModelProviderErrorCode: When provider or model operation fails
+            ModelProviderErrorCode: If models cannot be found or if there's an error during retrieval.
         """
         try:
-            # Get models from provider factory
             factory_models = ProviderFactory.get_models(provider_name=provider_name)
             if not factory_models:
                 logger.error(f"No models found for provider: {provider_name}")
@@ -66,7 +61,6 @@ class ProviderService:
                     data={"provider": provider_name}, status_code=status.HTTP_404_NOT_FOUND
                 )
 
-            # Convert factory models to ModelInfo
             model_info_list = [
                 ModelInfo(
                     **model.model_dump(),
@@ -79,20 +73,22 @@ class ProviderService:
         except Exception as e:
             logger.error(f"Error fetching models: {e}")
             raise ModelProviderErrorCode.FETCH_MODELS_FAILED.exception(
-                data={"error": str(e)}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
             ) from e
 
     @staticmethod
     async def get_model(provider_name: str, model_name: str) -> AIModelEntity:
-        """
-        Get a model by name
+        """Retrieves a specific model by its name and provider.
 
         Args:
-            provider_name: Name of the provider
-            model_name: Name of the model
+            provider_name: The name of the provider.
+            model_name: The name of the model to retrieve.
 
         Returns:
-            ModelInfo: The model information
+            AIModelEntity: The requested model's information.
+
+        Raises:
+            ModelProviderErrorCode: If the specified model cannot be found.
         """
         model = ProviderFactory.get_model(model_name=model_name, provider_name=provider_name)
 
@@ -107,23 +103,23 @@ class ProviderService:
     async def save_provider(
         session: AsyncSession, tenant_id: str, provider_name: str, payload: SaveProviderRequest
     ) -> DBModelProvider:
-        """
-        Save a provider configuration
+        """Saves or updates a provider configuration for a specific tenant.
 
         Args:
-            session: Database session
-            tenant_id: ID of the tenant
-            payload: Provider configuration
+            session: The database session.
+            tenant_id: The ID of the tenant.
+            provider_name: The name of the provider.
+            payload: The provider configuration data.
 
         Returns:
-            DBModelProvider: The saved provider configuration
+            DBModelProvider: The saved or updated provider configuration.
         """
         logger.info(
             "Saving provider configuration",
             extra={"tenant_id": tenant_id, "provider": provider_name},
         )
 
-        # Check if provider exists
+        # Check for existing provider configuration
         result = await session.execute(
             select(DBModelProvider).where(
                 DBModelProvider.tenant_id == tenant_id, DBModelProvider.provider == provider_name
@@ -137,7 +133,7 @@ class ProviderService:
             await provider.save(session)
             return provider
 
-        # Create new provider
+        # Create new provider configuration
         provider_data = {
             "tenant_id": tenant_id,
             "provider": provider_name,
@@ -153,16 +149,18 @@ class ProviderService:
 
     @staticmethod
     async def get_provider(session: AsyncSession, tenant_id: str, provider_name: str) -> DBModelProvider:
-        """
-        Get a provider by name
+        """Retrieves a provider configuration for a specific tenant.
 
         Args:
-            session: Database session
-            tenant_id: ID of the tenant
-            provider_name: Name of the provider
+            session: The database session.
+            tenant_id: The ID of the tenant.
+            provider_name: The name of the provider to retrieve.
 
         Returns:
-            DBModelProvider: The provider configuration
+            DBModelProvider: The provider configuration.
+
+        Raises:
+            ModelProviderErrorCode: If the provider configuration cannot be found.
         """
         logger.info("Fetching provider configuration", extra={"tenant_id": tenant_id, "provider": provider_name})
 
@@ -182,17 +180,16 @@ class ProviderService:
 
     @staticmethod
     async def get_active_providers(session: AsyncSession, tenant_id: str) -> List[ActiveModelProviderWithModels]:
-        """
-        Get all active providers and their models.
+        """Retrieves all active providers and their available models for a specific tenant.
 
         Args:
-            session: Database session
-            tenant_id: ID of the tenant
+            session: The database session.
+            tenant_id: The ID of the tenant.
 
         Returns:
-            List[dict]: List of active providers with their models
+            List[ActiveModelProviderWithModels]: A list of active providers with their available models.
         """
-        # Get active providers from database
+        # Fetch active providers from database
         result = await session.execute(
             select(DBModelProvider).where(
                 and_(DBModelProvider.tenant_id == tenant_id, DBModelProvider.credentials.isnot(None))
@@ -200,14 +197,13 @@ class ProviderService:
         )
         active_providers = result.scalars().all()
         providers_with_models = []
+
         for provider in active_providers:
-            # Get provider schema
             provider_instance = ProviderFactory.get_provider_instance(provider.provider)
             if not provider_instance:
                 continue
 
             provider_info = ProviderService._handle_provider_schema(provider=provider_instance)
-            # Get models for this provider
             models = await ProviderService.get_models(provider_name=provider.provider)
 
             providers_with_models.append(
@@ -230,12 +226,17 @@ class ProviderService:
 
     @staticmethod
     def _handle_provider_schema(provider: ModelProvider) -> ProviderInfo:
+        """Processes and transforms the provider schema, including icon URL generation.
+
+        Args:
+            provider: The provider instance to process.
+
+        Returns:
+            ProviderInfo: The processed provider information with complete icon URLs.
         """
-        Handle provider schema
-        """
-        provider_schema = {}
         schema = provider.get_provider_schema()
-        # Transform icon paths to full URLs with domain
+
+        # Transform icon paths to full URLs
         if schema.icon:
             base_url = funiq_ai_config.SERVER_URL.rstrip("/")
 
@@ -243,5 +244,5 @@ class ProviderService:
                 schema.icon["small"] = f"{base_url}/static/providers/{schema.provider}/icon/small"
             if schema.icon.get("large"):
                 schema.icon["large"] = f"{base_url}/static/providers/{schema.provider}/icon/large"
-        provider_schema = schema.model_dump()
-        return ProviderInfo(**provider_schema)
+
+        return ProviderInfo(**schema.model_dump())

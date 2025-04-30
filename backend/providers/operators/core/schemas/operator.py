@@ -33,6 +33,11 @@ class OutputStream(BaseModel):
     chunk_schema: dict | None = None
 
 
+class OperatorConfigSchema(BaseModel):
+    json_schema: dict
+    ui_schema: dict | None = None
+
+
 class OperatorEntity(BaseModel):
     """Model class for operator schema."""
     name: OperatorName
@@ -41,8 +46,7 @@ class OperatorEntity(BaseModel):
     output_stream: OutputStream | None = None
     description: Union[str, TranslatableText]
     output_schema: dict
-    config_schema: dict
-    config_ui_schema: dict | None = None 
+    config_schema: OperatorConfigSchema
     
 
 if TYPE_CHECKING:

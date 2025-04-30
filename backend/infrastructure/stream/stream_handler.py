@@ -5,7 +5,7 @@ from typing import Any, AsyncIterator, Callable, TypeVar, Union
 from loguru import logger
 from pydantic import BaseModel
 
-from infrastructure.workflow_engine import WorkflowEngineBase
+from infrastructure.workflow_engine import WorkflowEngine
 from utils.common.json import json_dumps
 
 from .schema import StreamEvent
@@ -43,7 +43,7 @@ class StreamHandler:
     async def process_stream(
         self,
         stream: Union[Generator[Any, None, None], AsyncGenerator[Any, None]],
-        executor: WorkflowEngineBase | None = None,
+        executor: WorkflowEngine | None = None,
     ) -> AsyncIterator[str]:
         """Process stream data and yield SSE formatted events."""
         try:

@@ -100,10 +100,20 @@ class DBBase(AsyncAttrs, DeclarativeBase):
         return list(result.scalars().all())
 
     # ----- Instance Methods -----
-    def to_dict(self) -> dict[str, Any]:
-        """Convert the instance to a dictionary."""
-        return {col.key: getattr(self, col.key) 
-                for col in self.__table__.columns}
+    def to_dict(self, convert_uuid_to_str: bool = False) -> dict[str, Any]:
+        """Convert the instance to a dictionary.
+        
+        Args:
+            convert_uuid_to_str: If True, convert UUID fields to str.
+        """
+        result = {}
+        for col in self.__table__.columns:
+            value = getattr(self, col.key)
+            if convert_uuid_to_str and isinstance(value, uuid.UUID):
+                result[col.key] = str(value)
+            else:
+                result[col.key] = value
+        return result
 
     def update_fields(self, updates: dict[str, Any]) -> None:
         """
@@ -142,6 +152,13 @@ class DBAuditFieldsMixin:
         default=lambda: utcnow().replace(tzinfo=None),
         onupdate=lambda: utcnow().replace(tzinfo=None),
         index=True
+    )
+    
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), comment="User who created the record"
+    )
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), comment="User who updated the record"
     )
     
     def refresh_updated_at(self) -> None:

@@ -1,198 +1,182 @@
-from typing import List
-
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Request
 from fastapi_async_sqlalchemy import db
 
 from app.app.schemas import (
-    AppCreate,
+    AppInfo,
     AppListResponse,
-    AppPublishRequest,
-    AppResponse,
-    AppTreeNode,
-    AppUpdate,
-    AppVersionResponse,
+    ConversationInfo,
+    ConversationListResponse,
+    CreateAppRequest,
+    CreateConversationRequest,
+    MessageInfo,
+    UpdateAppRequest,
+    UpdateConversationRequest,
 )
 from app.app.service.app_service import AppService
+from app.app.service.conversation_service import ConversationService
 from app.core.schemas import ResponseModel
 
 app_router = APIRouter(prefix="/apps", tags=["Apps"])
 
 
-@app_router.get(
-    "",
-    response_model=ResponseModel[AppListResponse],
-    response_model_exclude_none=True
-)
-async def list_apps(
+@app_router.get("", response_model=ResponseModel[AppListResponse])
+async def get_apps(
     request: Request,
-    page: int | None = None,
-    page_size: int | None = None,
+    page: int = 1,
+    page_size: int = 20,
     search: str | None = None,
 ) -> ResponseModel[AppListResponse]:
     """
     Get list of apps with pagination and search support.
-    
+
     Args:
         page: Page number (1-based)
         page_size: Number of items per page
         search: Optional search term
     """
-    actual_page = page if page is not None else 1
-    actual_page_size = page_size if page_size is not None else 20
-    
     apps, total = await AppService.get_apps(
         session=db.session,
         request=request,
-        page=actual_page,
-        page_size=actual_page_size,
+        page=page,
+        page_size=page_size,
         search_term=search,
     )
     return ResponseModel(
         data=AppListResponse(
-            items=apps,
+            apps=apps,
             total=total,
         ),
-        message="Apps fetched successfully"
     )
 
 
-@app_router.post(
-    "",
-    response_model=ResponseModel[AppResponse],
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_application(
-    app_create: AppCreate,
+@app_router.post("", response_model=ResponseModel[AppInfo])
+async def create_app(
+    payload: CreateAppRequest,
     request: Request,
-) -> ResponseModel[AppResponse]:
+) -> ResponseModel[AppInfo]:
     """Create a new application"""
-    new_app = await AppService.create_application(
-        session=db.session,
-        app_create=app_create,
-        request=request
-    )
-    return ResponseModel(
-        data=new_app,
-        message="App created successfully"
-    )
+    new_app = await AppService.create_app(session=db.session, payload=payload, request=request)
+    return ResponseModel(data=new_app)
 
 
-@app_router.get(
-    "/{app_id}",
-    response_model=ResponseModel[AppResponse],
-)
+@app_router.get("/{app_id}", response_model=ResponseModel[AppInfo])
 async def get_app(
     app_id: str,
     request: Request,
-) -> ResponseModel[AppResponse]:
+) -> ResponseModel[AppInfo]:
     """Get details of a specific application"""
-    app = await AppService.get_app(
-        session=db.session,
-        app_id=app_id,
-        request=request
-    )
-    return ResponseModel(
-        data=app,
-        message="App fetched successfully"
-    )
+    app = await AppService.get_app(session=db.session, app_id=app_id, request=request)
+    return ResponseModel(data=AppService.app_to_info(app))
 
 
-@app_router.put(
-    "/{app_id}",
-    response_model=ResponseModel[AppResponse],
-)
+@app_router.put("/{app_id}", response_model=ResponseModel[AppInfo])
 async def update_app(
     app_id: str,
-    app_update: AppUpdate,
+    payload: UpdateAppRequest,
     request: Request,
-) -> ResponseModel[AppResponse]:
+) -> ResponseModel[AppInfo]:
     """Update an existing application"""
-    updated_app = await AppService.update_app(
-        session=db.session,
-        app_id=app_id,
-        app_update=app_update,
-        request=request
-    )
-    return ResponseModel(
-        data=updated_app,
-        message="App updated successfully"
-    )
+    updated_app = await AppService.update_app(session=db.session, app_id=app_id, payload=payload, request=request)
+    return ResponseModel(data=updated_app)
 
 
-@app_router.delete(
-    "/{app_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
+@app_router.delete("/{app_id}")
 async def delete_app(
     app_id: str,
     request: Request,
 ):
     """Delete an application"""
-    await AppService.delete_app(
-        session=db.session,
-        app_id=app_id,
-        request=request
-    )
-    return ResponseModel(message="App deleted successfully")
+    await AppService.delete_app(session=db.session, app_id=app_id, request=request)
+    return ResponseModel(data={"status": "success"})
 
 
-@app_router.get(
-    "/{app_id}/versions",
-    response_model=ResponseModel[List[AppVersionResponse]],
-)
-async def list_app_versions(
+@app_router.get("/{app_id}/conversations", response_model=ResponseModel[ConversationListResponse])
+async def get_conversations(
     app_id: str,
-    request: Request,
-) -> ResponseModel[List[AppVersionResponse]]:
-    """Get all versions of a specific application"""
-    versions = await AppService.get_app_versions(
+    page: int = 1,
+    page_size: int = 20,
+    search: str | None = None,
+) -> ResponseModel[ConversationListResponse]:
+    """
+    Get list of conversations with pagination and search support.
+
+    Args:
+        app_id: App Id
+        page: Page number (1-based)
+        page_size: Number of items per page
+        search: Optional search term
+    """
+    return await ConversationService.get_conversations(
         session=db.session,
         app_id=app_id,
-        request=request
-    )
-    return ResponseModel(
-        data=versions,
-        message="App versions fetched successfully"
+        page=page,
+        page_size=page_size,
+        search_term=search,
     )
 
 
-@app_router.get(
-    "/tree",
-    response_model=ResponseModel[List[AppTreeNode]],
-)
-async def get_apps_tree(
-    request: Request,
-) -> ResponseModel[List[AppTreeNode]]:
-    """Get all apps with their version information in a tree structure"""
-    apps_tree = await AppService.get_apps_with_versions(
+@app_router.get("/conversations/{conversation_id}", response_model=ResponseModel[ConversationInfo])
+async def get_conversation(
+    conversation_id: str,
+) -> ResponseModel[ConversationInfo]:
+    """Get details of a specific conversation"""
+    conversation = await ConversationService.get_conversation(
         session=db.session,
-        request=request
+        conversation_id=conversation_id,
     )
-    return ResponseModel(
-        data=apps_tree,
-        message="Apps tree fetched successfully"
-    )
+    return ResponseModel(data=ConversationService.conversation_to_info(conversation))
 
 
-@app_router.post(
-    "/{app_id}/publish",
-    response_model=ResponseModel[AppVersionResponse],
-    status_code=status.HTTP_201_CREATED,
-)
-async def publish_app_version(
+@app_router.post("/{app_id}/conversations", response_model=ResponseModel[ConversationInfo])
+async def create_conversation(
     app_id: str,
-    publish_request: AppPublishRequest,
+    payload: CreateConversationRequest,
     request: Request,
-) -> ResponseModel[AppVersionResponse]:
-    """Publish a new version of an application"""
-    version = await AppService.publish_app(
+) -> ResponseModel[ConversationInfo]:
+    """Create a new conversation"""
+    new_conversation = await ConversationService.create_conversation(
         session=db.session,
         app_id=app_id,
-        version=publish_request.version,
-        workflow_version=publish_request.workflow_version,
-        request=request
+        payload=payload,
+        request=request,
     )
-    return ResponseModel(
-        data=version,
-        message="App version published successfully"
+    return ResponseModel(data=new_conversation)
+
+
+@app_router.put("/conversations/{conversation_id}", response_model=ResponseModel[ConversationInfo])
+async def update_conversation(
+    conversation_id: str,
+    payload: UpdateConversationRequest,
+    request: Request,
+) -> ResponseModel[ConversationInfo]:
+    """Update an existing conversation"""
+    updated_conversation = await ConversationService.update_conversation(
+        session=db.session,
+        conversation_id=conversation_id,
+        payload=payload,
+        request=request,
     )
+    return ResponseModel(data=updated_conversation)
+
+
+@app_router.delete("/conversations/{conversation_id}")
+async def delete_conversation(
+    conversation_id: str,
+    request: Request,
+) -> ResponseModel[None]:
+    """Delete a conversation"""
+    await ConversationService.delete_conversation(
+        session=db.session,
+        conversation_id=conversation_id,
+        request=request,
+    )
+    return ResponseModel(data={"status": "success"})
+
+
+@app_router.get("/conversations/{conversation_id}/messages", response_model=ResponseModel[list[MessageInfo]])
+async def get_messages(
+    conversation_id: str,
+    request: Request,
+) -> ResponseModel[list[MessageInfo]]:
+    """Get all messages of a conversation"""
+    return await ConversationService.get_messages(session=db.session, conversation_id=conversation_id, request=request)

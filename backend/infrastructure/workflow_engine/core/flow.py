@@ -118,7 +118,11 @@ class WorkflowFlow(LifecycleMixin[FlowExecutionCallbackContext]):
 
     @property
     def end_node_key(self) -> str:
-        return self._topology_info.data.end_node_key
+        return self._workflow_context.end_node_key
+    
+    @property
+    def start_node_key(self) -> str:
+        return self._workflow_context.start_node_key
 
     @property
     def tasks_outputs(self) -> dict[str, Any]:
@@ -207,7 +211,7 @@ class WorkflowFlow(LifecycleMixin[FlowExecutionCallbackContext]):
                     result = await task.execute(input_data)
                     self.tasks_outputs[node_key] = result
 
-            end_result = self.tasks_outputs[self.topology_info.data.end_node_key]
+            end_result = self.tasks_outputs[self.end_node_key]
             
             if isinstance(end_result, (AsyncGenerator, Generator)):
                 return self._handle_generator_lifecycle(
@@ -276,7 +280,7 @@ class WorkflowFlow(LifecycleMixin[FlowExecutionCallbackContext]):
             if self.is_debug:
                 execution = WorkflowDebugExecution(
                     workflow_id=self.workflow_context.workflow_id,
-                    snapshot_timestamp=self.workflow_context.snapshot_timestamp,
+                    snapshot_timestamp=self.workflow_context.timestamp,
                     status=ExecutionStates.CREATED,
                     record_info={},
                     created_by=self.user_id,

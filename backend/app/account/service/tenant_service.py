@@ -1,7 +1,7 @@
 import secrets
 from datetime import timedelta
 
-from fastapi import status
+from fastapi import Request, status
 from loguru import logger
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,6 +16,13 @@ from .account_service import AccountService
 
 class TenantService:
     """Service for managing tenants and tenant users"""
+
+    @staticmethod
+    async def get_tenant_and_user(session: AsyncSession, request: Request):
+        tenant_id = getattr(request.state, "tenant_id", None)
+        account_id = getattr(request.state, "account_id", None)
+        user = await TenantService.get_user_by_account_id(session=session, tenant_id=tenant_id, account_id=account_id)
+        return tenant_id, account_id, user
 
     # region Tenant Management
     @staticmethod

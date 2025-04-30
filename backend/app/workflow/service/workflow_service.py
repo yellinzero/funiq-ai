@@ -1,45 +1,44 @@
-import hashlib
 from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Coroutine, Dict, List, Tuple
+from typing import Coroutine, List
 
+import semver
 from fastapi import Request, status
 from loguru import logger
 from nanoid import generate
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql import func
 
 from app.account.service.tenant_service import TenantService
-from app.core.errors import AccountErrorCode, WorkflowErrorCode
+from app.core.errors import CommonErrorCode, WorkflowErrorCode
+from app.core.models.account import User
 from app.core.models.workflow import (
     Workflow,
+    WorkflowDebugSnapshot,
     WorkflowEdge,
     WorkflowNode,
-    WorkflowSnapshot,
     WorkflowStatus,
     WorkflowVersion,
     WorkflowVersionStatus,
 )
-from infrastructure import WorkflowDebugEngine, WorkflowVersionEngine
+from infrastructure import WorkflowEngine
 from infrastructure.workflow_engine import FlowExecutionCallbackContext
 from providers.operators.core import OperatorName
-from tasks.workflow_tasks import execute_workflow as celery_execute_workflow
 from utils.common.datetime import utcnow
-from utils.common.json import json_dumps
 
 from ..schemas import (
-    GetWorkflowResponseBase,
-    PublishWorkflowResponse,
-    SaveWorkflowResponse,
-    WorkflowEdgeResponse,
-    WorkflowExecuteContext,
-    WorkflowExecuteInputData,
-    WorkflowListResponse,
-    WorkflowNodeResponse,
-    WorkflowOperation,
-    WorkflowOperationType,
-    WorkflowResponse,
+    CreateWorkflowEdgePayload,
+    CreateWorkflowNodePayload,
+    CreateWorkflowRequest,
+    CreateWorkflowVersionPayload,
+    SaveWorkflowRequest,
+    UpdateWorkflowEdgePayload,
+    UpdateWorkflowNodePayload,
+    WorkflowDebugSnapshotInfo,
+    WorkflowEdgeInfo,
+    WorkflowInfo,
+    WorkflowNodeInfo,
+    WorkflowVersionInfo,
 )
 
 
@@ -59,334 +58,530 @@ def generate_node_or_edge_key() -> str:
     return first_char + rest_of_key
 
 
-def serialize_workflow_node(node: WorkflowNode) -> dict[str, Any]:
-    return {
-        **node.to_dict(),
-        "workflow_id": str(node.workflow_id),
-        "created_by": str(node.created_by),
-        "updated_by": str(node.updated_by),
-    }
-
-
-def serialize_workflow_edge(edge: WorkflowEdge) -> dict[str, Any]:
-    return {
-        **edge.to_dict(),
-        "workflow_id": str(edge.workflow_id),
-        "created_by": str(edge.created_by),
-        "updated_by": str(edge.updated_by),
-    }
-
-
 class WorkflowService:
     @staticmethod
-    async def _can_workflow_execute(
-        session: AsyncSession,
-        workflow_id: str,
-        version: str | None = None,
-        snapshot_timestamp: datetime | None = None,
-    ) -> Tuple[Dict[str, Any], str]:
-        """Validate if workflow can be executed and return its snapshot.
+    def serialize_workflow(workflow: Workflow) -> WorkflowInfo:
+        return WorkflowInfo(**workflow.to_dict(convert_uuid_to_str=True))
 
-        Args:
-            session: Database session
-            workflow_id: ID of the workflow
-            version: Optional version to execute
-            snapshot_timestamp: Optional snapshot timestamp for debug mode
+    @staticmethod
+    def serialize_workflow_version(workflow_version: WorkflowVersion) -> WorkflowVersionInfo:
+        return WorkflowVersionInfo(**workflow_version.to_dict(convert_uuid_to_str=True))
 
-        Returns:
-            Tuple[Dict, str]: Returns (snapshot, snapshot_hash)
+    @staticmethod
+    def serialize_workflow_debug_snapshot(workflow_snapshot: WorkflowDebugSnapshot) -> WorkflowDebugSnapshotInfo:
+        return WorkflowDebugSnapshotInfo(**workflow_snapshot.to_dict(convert_uuid_to_str=True))
 
-        Raises:
-            WorkflowErrorCode: Various validation errors
-        """
-        # Validate workflow exists
+    @staticmethod
+    def serialize_workflow_node(node: WorkflowNode) -> WorkflowNodeInfo:
+        return WorkflowNodeInfo(**node.to_dict(convert_uuid_to_str=True))
+
+    @staticmethod
+    def serialize_workflow_edge(edge: WorkflowEdge) -> WorkflowEdgeInfo:
+        return WorkflowEdgeInfo(**edge.to_dict(convert_uuid_to_str=True))
+
+    @staticmethod
+    async def get_workflow(session: AsyncSession, workflow_id: str) -> Workflow:
         result = await session.execute(select(Workflow).where(Workflow.id == workflow_id))
         workflow = result.scalar_one_or_none()
         if not workflow:
             raise WorkflowErrorCode.WORKFLOW_NOT_FOUND.exception(
-                data={"workflow_id": str(workflow_id)},
+                data={"workflow_id": str(workflow_id)}, status_code=status.HTTP_404_NOT_FOUND
+            )
+        return workflow
+
+    @staticmethod
+    async def get_workflow_version(session: AsyncSession, workflow_id: str, version: str) -> WorkflowVersion:
+        result = await session.execute(
+            select(WorkflowVersion).where(
+                WorkflowVersion.workflow_id == workflow_id, WorkflowVersion.version == version
+            )
+        )
+        workflow_version = result.scalar_one_or_none()
+        if not workflow_version:
+            raise WorkflowErrorCode.WORKFLOW_VERSION_NOT_FOUND.exception(
+                data={"workflow_id": str(workflow_id), "version": version}, status_code=status.HTTP_404_NOT_FOUND
+            )
+        return workflow_version
+
+    @staticmethod
+    async def get_workflow_debug_snapshot(
+        session: AsyncSession, workflow_id: str, snapshot_timestamp: datetime
+    ) -> WorkflowDebugSnapshot:
+        result = await session.execute(
+            select(WorkflowDebugSnapshot).where(
+                WorkflowDebugSnapshot.workflow_id == workflow_id,
+                WorkflowDebugSnapshot.snapshot_timestamp == snapshot_timestamp,
+            )
+        )
+        workflow_debug_snapshot = result.scalar_one_or_none()
+        if not workflow_debug_snapshot:
+            raise WorkflowErrorCode.WORKFLOW_DEBUG_SNAPSHOT_NOT_FOUND.exception(
+                data={"workflow_id": str(workflow_id), "snapshot_timestamp": snapshot_timestamp},
                 status_code=status.HTTP_404_NOT_FOUND,
             )
+        return workflow_debug_snapshot
 
-        # Validate version XOR snapshot_timestamp
-        if bool(version) == bool(snapshot_timestamp):
-            raise WorkflowErrorCode.WORKFLOW_EXECUTION_ERROR.exception(
-                data={"message": "Either version or snapshot_timestamp must be provided, but not both"},
-                status_code=status.HTTP_400_BAD_REQUEST,
+    @staticmethod
+    async def get_workflows(session: AsyncSession, app_id: str) -> List[WorkflowInfo]:
+        try:
+            result = await session.execute(
+                select(Workflow).where(Workflow.app_id == app_id).order_by(Workflow.created_at.desc())
+            )
+            workflows = result.scalars().all()
+            return [WorkflowService.serialize_workflow(workflow) for workflow in workflows]
+        except Exception as e:
+            logger.error(f"Error getting workflows: {e}")
+            raise WorkflowErrorCode.WORKFLOW_FETCH_FAILED.exception(
+                data={"app_id": str(app_id)}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def get_workflow_versions(session: AsyncSession, workflow_id: str) -> List[WorkflowVersionInfo]:
+        try:
+            result = await session.execute(
+                select(WorkflowVersion)
+                .where(WorkflowVersion.workflow_id == workflow_id)
+                .order_by(WorkflowVersion.published_at.desc())
+            )
+            workflow_versions = result.scalars().all()
+            return [
+                WorkflowService.serialize_workflow_version(workflow_version) for workflow_version in workflow_versions
+            ]
+        except Exception as e:
+            logger.error(f"Error getting workflow versions: {e}")
+            raise WorkflowErrorCode.WORKFLOW_VERSION_FETCH_FAILED.exception(
+                data={"workflow_id": str(workflow_id)}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def get_workflow_debug_snapshots(session: AsyncSession, workflow_id: str) -> List[WorkflowDebugSnapshotInfo]:
+        try:
+            result = await session.execute(
+                select(WorkflowDebugSnapshot)
+                .where(WorkflowDebugSnapshot.workflow_id == workflow_id)
+                .order_by(WorkflowDebugSnapshot.created_at.desc())
+            )
+            workflow_debug_snapshots = result.scalars().all()
+            return [
+                WorkflowService.serialize_workflow_debug_snapshot(workflow_debug_snapshot)
+                for workflow_debug_snapshot in workflow_debug_snapshots
+            ]
+        except Exception as e:
+            logger.error(f"Error getting workflow debug snapshots: {e}")
+            raise WorkflowErrorCode.WORKFLOW_DEBUG_SNAPSHOT_FETCH_FAILED.exception(
+                data={"workflow_id": str(workflow_id)}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def get_workflow_nodes(session: AsyncSession, workflow_id: str) -> List[WorkflowNodeInfo]:
+        try:
+            result = await session.execute(select(WorkflowNode).where(WorkflowNode.workflow_id == workflow_id))
+            workflow_nodes = result.scalars().all()
+            return [WorkflowService.serialize_workflow_node(workflow_node) for workflow_node in workflow_nodes]
+        except Exception as e:
+            logger.error(f"Error getting workflow nodes: {e}")
+            raise WorkflowErrorCode.WORKFLOW_NODE_FETCH_FAILED.exception(
+                data={"workflow_id": str(workflow_id)}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def get_workflow_edges(session: AsyncSession, workflow_id: str) -> List[WorkflowEdgeInfo]:
+        try:
+            result = await session.execute(select(WorkflowEdge).where(WorkflowEdge.workflow_id == workflow_id))
+            workflow_edges = result.scalars().all()
+            return [WorkflowService.serialize_workflow_edge(workflow_edge) for workflow_edge in workflow_edges]
+        except Exception as e:
+            logger.error(f"Error getting workflow edges: {e}")
+            raise WorkflowErrorCode.WORKFLOW_EDGE_FETCH_FAILED.exception(
+                data={"workflow_id": str(workflow_id)}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def get_workflow_node(session: AsyncSession, workflow_id: str, node_key: str) -> WorkflowNode:
+        result = await session.execute(
+            select(WorkflowNode).where(and_(WorkflowNode.workflow_id == workflow_id, WorkflowNode.node_key == node_key))
+        )
+        workflow_node = result.scalar_one_or_none()
+        if not workflow_node:
+            raise WorkflowErrorCode.WORKFLOW_NODE_NOT_FOUND.exception(
+                data={"workflow_id": str(workflow_id), "node_key": node_key}, status_code=status.HTTP_404_NOT_FOUND
+            )
+        return workflow_node
+
+    @staticmethod
+    async def get_workflow_edge(session: AsyncSession, workflow_id: str, edge_key: str) -> WorkflowEdge:
+        result = await session.execute(
+            select(WorkflowEdge).where(and_(WorkflowEdge.workflow_id == workflow_id, WorkflowEdge.edge_key == edge_key))
+        )
+        workflow_edge = result.scalar_one_or_none()
+        if not workflow_edge:
+            raise WorkflowErrorCode.WORKFLOW_EDGE_NOT_FOUND.exception(
+                data={"workflow_id": str(workflow_id), "edge_key": edge_key}, status_code=status.HTTP_404_NOT_FOUND
+            )
+        return workflow_edge
+
+    @staticmethod
+    async def create_workflow(
+        session: AsyncSession, request: Request, payload: CreateWorkflowRequest, commit: bool = True
+    ) -> WorkflowInfo:
+        _, _, user = await TenantService.get_tenant_and_user(session=session, request=request)
+
+        try:
+            workflow = Workflow(
+                app_id=payload.app_id,
+                created_by=user.id,
+                updated_by=user.id,
+                config=payload.config,
+            )
+            await workflow.save(session)
+            start_node = await WorkflowService._create_workflow_node(
+                session=session,
+                payload=CreateWorkflowNodePayload(
+                    node_type=OperatorName.START,
+                    node_key=generate_node_or_edge_key(),
+                    name="Start",
+                ),
+                workflow_id=workflow.id,
+                user=user,
+            )
+            end_node = await WorkflowService._create_workflow_node(
+                session=session,
+                payload=CreateWorkflowNodePayload(
+                    node_type=OperatorName.END,
+                    node_key=generate_node_or_edge_key(),
+                    name="End",
+                ),
+                workflow_id=workflow.id,
+                user=user,
+            )
+            await WorkflowService._create_workflow_edge(
+                session=session,
+                payload=CreateWorkflowEdgePayload(
+                    edge_key=generate_node_or_edge_key(),
+                    source_node_key=start_node.node_key,
+                    target_node_key=end_node.node_key,
+                ),
+                workflow_id=workflow.id,
+                user=user,
             )
 
-        # Get snapshot based on execution mode
-        if version:
-            # Version mode
-            version_result = await session.execute(
+            if commit:
+                await session.commit()
+            return WorkflowService.serialize_workflow(workflow)
+        except Exception as e:
+            logger.error(f"Error creating workflow: {e}")
+            await session.rollback()
+            raise WorkflowErrorCode.WORKFLOW_CREATE_ERROR.exception(
+                data={"message": str(e)}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def _create_workflow_node(
+        session: AsyncSession,
+        payload: CreateWorkflowNodePayload,
+        workflow_id: str,
+        user: User,
+        need_commit: bool = False,
+    ) -> WorkflowNode:
+        try:
+            node = WorkflowNode(
+                workflow_id=workflow_id,
+                node_type=payload.node_type,
+                node_key=payload.node_key,
+                name=payload.name,
+                description=payload.description,
+                config=payload.config,
+                extended_config=payload.extended_config,
+                meta=payload.meta,
+                created_by=user.id,
+                updated_by=user.id,
+            )
+            await node.save(session)
+            await session.flush()
+            if need_commit:
+                await session.commit()
+            return node
+        except Exception as e:
+            logger.error(f"Error creating workflow node: {e}")
+            await session.rollback()
+            raise WorkflowErrorCode.WORKFLOW_NODE_CREATE_ERROR.exception(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def _create_workflow_edge(
+        session: AsyncSession,
+        payload: CreateWorkflowEdgePayload,
+        workflow_id: str,
+        user: User,
+        need_commit: bool = False,
+    ) -> WorkflowEdge:
+        try:
+            edge = WorkflowEdge(
+                workflow_id=workflow_id,
+                edge_key=payload.edge_key,
+                source_node_key=payload.source_node_key,
+                target_node_key=payload.target_node_key,
+                meta=payload.meta,
+                created_by=user.id,
+                updated_by=user.id,
+            )
+            await edge.save(session)
+            await session.flush()
+            if need_commit:
+                await session.commit()
+            return edge
+        except Exception as e:
+            logger.error(f"Error creating workflow edge: {e}")
+            await session.rollback()
+            raise WorkflowErrorCode.WORKFLOW_EDGE_CREATE_ERROR.exception(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def _update_workflow_node(
+        session: AsyncSession,
+        node_key: str,
+        payload: UpdateWorkflowNodePayload,
+        workflow_id: str,
+        user: User,
+        need_commit: bool = False,
+    ) -> WorkflowNode:
+        try:
+            node = await WorkflowService.get_workflow_node(session, workflow_id, node_key)
+            if payload.name:
+                node.name = payload.name
+            if payload.description:
+                node.description = payload.description
+            if payload.config:
+                node.config = payload.config
+            if payload.extended_config:
+                node.extended_config = payload.extended_config
+            if payload.meta:
+                node.meta = payload.meta
+            node.updated_by = user.id
+            await node.save(session)
+            await session.flush()
+            if need_commit:
+                await session.commit()
+            return node
+        except Exception as e:
+            logger.error(f"Error updating workflow node: {e}")
+            await session.rollback()
+            raise WorkflowErrorCode.WORKFLOW_NODE_UPDATE_ERROR.exception(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def _update_workflow_edge(
+        session: AsyncSession,
+        edge_key: str,
+        payload: UpdateWorkflowEdgePayload,
+        workflow_id: str,
+        user: User,
+        need_commit: bool = False,
+    ) -> WorkflowEdge:
+        try:
+            edge = await WorkflowService.get_workflow_edge(session, workflow_id, edge_key)
+            if payload.meta:
+                edge.meta = payload.meta
+            if payload.source_node_key:
+                edge.source_node_key = payload.source_node_key
+            if payload.target_node_key:
+                edge.target_node_key = payload.target_node_key
+            edge.updated_by = user.id
+            await edge.save(session)
+            await session.flush()
+            if need_commit:
+                await session.commit()
+            return edge
+        except Exception as e:
+            logger.error(f"Error updating workflow edge: {e}")
+            await session.rollback()
+            raise WorkflowErrorCode.WORKFLOW_EDGE_UPDATE_ERROR.exception(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def _delete_workflow_node(
+        session: AsyncSession, node_key: str, workflow_id: str, need_commit: bool = False
+    ) -> None:
+        try:
+            node = await WorkflowService.get_workflow_node(session, workflow_id, node_key)
+            await node.delete(session)
+            await session.flush()
+            if need_commit:
+                await session.commit()
+        except Exception as e:
+            logger.error(f"Error deleting workflow node: {e}")
+            await session.rollback()
+            raise WorkflowErrorCode.WORKFLOW_NODE_DELETE_ERROR.exception(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def _delete_workflow_edge(
+        session: AsyncSession, edge_key: str, workflow_id: str, need_commit: bool = False
+    ) -> None:
+        try:
+            edge = await WorkflowService.get_workflow_edge(session, workflow_id, edge_key)
+            await edge.delete(session)
+            await session.flush()
+            if need_commit:
+                await session.commit()
+        except Exception as e:
+            logger.error(f"Error deleting workflow edge: {e}")
+            await session.rollback()
+            raise WorkflowErrorCode.WORKFLOW_EDGE_DELETE_ERROR.exception(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def _update_workflow_config(
+        session: AsyncSession, workflow: Workflow, config: dict, user: User, need_commit: bool = False
+    ) -> Workflow:
+        try:
+            workflow.config = config
+            workflow.updated_by = user.id
+            await workflow.save(session)
+            await session.flush()
+            if need_commit:
+                await session.commit()
+            return workflow
+        except Exception as e:
+            logger.error(f"Error updating workflow config: {e}")
+            await session.rollback()
+            raise WorkflowErrorCode.WORKFLOW_CONFIG_UPDATE_ERROR.exception(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def save_workflow(
+        session: AsyncSession, request: Request, workflow_id: str, payload: SaveWorkflowRequest
+    ) -> WorkflowInfo:
+        _, _, user = await TenantService.get_tenant_and_user(session=session, request=request)
+
+        try:
+            workflow = await WorkflowService.get_workflow(session=session, workflow_id=workflow_id)
+
+            if payload.update_nodes:
+                for node in payload.update_nodes:
+                    await WorkflowService._update_workflow_node(session, node, workflow_id, user)
+
+            if payload.update_edges:
+                for edge in payload.update_edges:
+                    await WorkflowService._update_workflow_edge(session, edge, workflow_id, user)
+
+            if payload.create_nodes:
+                for node in payload.create_nodes:
+                    await WorkflowService._create_workflow_node(session, node, workflow_id, user)
+
+            if payload.create_edges:
+                for edge in payload.create_edges:
+                    await WorkflowService._create_workflow_edge(session, edge, workflow_id, user)
+
+            if payload.delete_nodes:
+                for node_key in payload.delete_nodes:
+                    await WorkflowService._delete_workflow_node(session, node_key, workflow_id, user)
+
+            if payload.delete_edges:
+                for edge_key in payload.delete_edges:
+                    await WorkflowService._delete_workflow_edge(session, edge_key, workflow_id, user)
+            if payload.config:
+                await WorkflowService._update_workflow_config(session, workflow, payload.config, user)
+
+            workflow.updated_by = user.id
+            workflow.status = WorkflowStatus.DRAFT
+            await workflow.save(session)
+
+            result = WorkflowService.serialize_workflow(workflow)
+            await session.commit()
+            return result
+        except Exception as e:
+            logger.error(f"Error saving workflow: {e}")
+            await session.rollback()
+            raise WorkflowErrorCode.WORKFLOW_SAVE_ERROR.exception(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def delete_workflow(session: AsyncSession, workflow_id: str) -> None:
+        try:
+            workflow = await WorkflowService.get_workflow(session=session, workflow_id=workflow_id)
+            await workflow.delete(session)
+            await session.commit()
+            return None
+        except Exception as e:
+            logger.error(f"Error deleting workflow: {e}")
+            await session.rollback()
+            raise WorkflowErrorCode.WORKFLOW_DELETE_ERROR.exception(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def _validate_workflow_version(
+        session: AsyncSession,
+        workflow: Workflow,
+        version: str,
+    ) -> None:
+        """
+        Validate workflow version number and uniqueness
+        """
+        try:
+            # 1. Validate version format
+            ver = semver.VersionInfo.parse(version)
+
+            # 2. Check if version already exists
+            existing_version = await session.execute(
                 select(WorkflowVersion).where(
-                    WorkflowVersion.workflow_id == workflow_id, WorkflowVersion.version == version
+                    and_(WorkflowVersion.workflow_id == workflow.id, WorkflowVersion.version == version)
                 )
             )
-            workflow_version = version_result.scalar_one_or_none()
-            if not workflow_version:
-                raise WorkflowErrorCode.WORKFLOW_VERSION_NOT_FOUND.exception(
-                    data={"workflow_id": str(workflow_id), "version": version}
-                )
-            if workflow_version.status != WorkflowVersionStatus.ACTIVE:
-                raise WorkflowErrorCode.WORKFLOW_VERSION_NOT_ACTIVE.exception(
+            if existing_version.scalar_one_or_none():
+                raise WorkflowErrorCode.WORKFLOW_VERSION_ALREADY_EXISTS.exception(
                     data={
-                        "workflow_id": str(workflow_id),
+                        "workflow_id": str(workflow.id),
                         "version": version,
-                        "status": workflow_version.status,
+                        "message": "This version number already exists",
                     }
                 )
-            return workflow_version.snapshot, workflow_version.snapshot_hash
-        else:
-            # Debug mode (snapshot)
-            snapshot_result = await session.execute(
-                select(WorkflowSnapshot).where(
-                    WorkflowSnapshot.workflow_id == workflow_id,
-                    WorkflowSnapshot.snapshot_timestamp == snapshot_timestamp,
-                )
-            )
-            workflow_snapshot = snapshot_result.scalar_one_or_none()
-            if not workflow_snapshot:
-                raise WorkflowErrorCode.WORKFLOW_SNAPSHOT_NOT_FOUND.exception(
-                    data={"workflow_id": str(workflow_id), "snapshot_timestamp": snapshot_timestamp}
-                )
-            return workflow_snapshot.snapshot, workflow_snapshot.snapshot_hash
 
-    @staticmethod
-    async def execute_workflow_stream(
-        session: AsyncSession,
-        request: Request,
-        workflow_id: str,
-        input_data: WorkflowExecuteInputData,
-        execution_context: WorkflowExecuteContext,
-        version: str | None = None,
-        snapshot_timestamp: str | None = None,
-        on_created: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
-        on_pending: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
-        on_running: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
-        on_completed: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
-        on_failed: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
-        on_cancelling: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
-        on_cancelled: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
-        on_paused: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
-    ):
-        """Execute workflow in stream mode.
+            # 3. Get latest version and validate version order
+            latest_version = workflow.version
 
-        This method should be used for stream processing instead of Celery tasks.
-        """
-        tenant_id = request.state.tenant_id
-        if not tenant_id:
-            raise AccountErrorCode.TENANT_NOT_FOUND.exception(status_code=status.HTTP_404_NOT_FOUND)
+            if latest_version:
+                latest_ver = semver.VersionInfo.parse(latest_version)
+                if ver <= latest_ver:
+                    raise CommonErrorCode.INVALID_VERSION.exception(
+                        data={
+                            "version": version,
+                            "latest_version": latest_version,
+                            "message": "New version must be greater than the latest version",
+                        }
+                    )
 
-        # Validate and get snapshot
-        snapshot, snapshot_hash = await WorkflowService._can_workflow_execute(
-            session, workflow_id, version, snapshot_timestamp
-        )
-
-        # Validate stream mode
-        if not snapshot.get("stream_mode"):
-            raise WorkflowErrorCode.WORKFLOW_EXECUTION_ERROR.exception(
-                data={"message": "Workflow is not configured for streaming"}
-            )
-
-        # Create and execute appropriate executor
-        if version:
-            executor = WorkflowVersionEngine(
-                workflow_id=workflow_id,
-                version=version,
-                snapshot=snapshot,
-                snapshot_hash=snapshot_hash,
-                input_data=input_data,
-                execution_context=execution_context,
-                on_created=on_created,
-                on_pending=on_pending,
-                on_running=on_running,
-                on_completed=on_completed,
-                on_failed=on_failed,
-                on_cancelling=on_cancelling,
-                on_cancelled=on_cancelled,
-                on_paused=on_paused,
-            )
-        else:
-            executor = WorkflowDebugEngine(
-                workflow_id=workflow_id,
-                snapshot=snapshot,
-                snapshot_hash=snapshot_hash,
-                input_data=input_data,
-                execution_context=execution_context,
-                snapshot_timestamp=snapshot_timestamp,
-                on_created=on_created,
-                on_pending=on_pending,
-                on_running=on_running,
-                on_completed=on_completed,
-                on_failed=on_failed,
-                on_cancelling=on_cancelling,
-                on_cancelled=on_cancelled,
-                on_paused=on_paused,
-            )
-
-        return executor
-
-    @staticmethod
-    async def execute_workflow_sync(
-        session: AsyncSession,
-        request: Request,
-        workflow_id: str,
-        input_data: WorkflowExecuteInputData,
-        execution_context: WorkflowExecuteContext,
-        version: str | None = None,
-        snapshot_timestamp: datetime | None = None,
-    ) -> Dict[str, Any]:
-        """Execute workflow synchronously.
-
-        This method should only be used for non-stream workflows.
-        """
-        tenant_id = request.state.tenant_id
-        if not tenant_id:
-            raise AccountErrorCode.TENANT_NOT_FOUND.exception(status_code=status.HTTP_404_NOT_FOUND)
-        snapshot, _ = await WorkflowService._can_workflow_execute(
-            session=session,
-            tenant_id=tenant_id,
-            workflow_id=workflow_id,
-            version=version,
-            snapshot_timestamp=snapshot_timestamp,
-        )
-
-        # Validate non-stream mode
-        if snapshot.get("stream_mode"):
-            raise WorkflowErrorCode.WORKFLOW_EXECUTION_ERROR.exception(
-                data={"message": "Streaming workflows must use execute_workflow_stream"}
-            )
-
-        try:
-            task = celery_execute_workflow.delay(
-                workflow_id=workflow_id,
-                input_data=input_data,
-                execution_context=execution_context,
-                version=version,
-                snapshot_timestamp=snapshot_timestamp,
-            )
-        except Exception as e:
-            raise WorkflowErrorCode.WORKFLOW_EXECUTION_ERROR.exception(
-                data={"workflow_id": str(workflow_id), "error": str(e)}
-            ) from e
-
-        return task.get()
-
-    @staticmethod
-    async def execute_workflow_async(
-        session: AsyncSession,
-        request: Request,
-        workflow_id: str,
-        input_data: WorkflowExecuteInputData,
-        execution_context: WorkflowExecuteContext,
-        version: str | None = None,
-        snapshot_timestamp: datetime | None = None,
-    ) -> Dict[str, Any]:
-        """Execute workflow asynchronously using Celery.
-
-        This method should only be used for non-stream workflows.
-        """
-        tenant_id = request.state.tenant_id
-        if not tenant_id:
-            raise AccountErrorCode.TENANT_NOT_FOUND.exception(status_code=status.HTTP_404_NOT_FOUND)
-        snapshot, _ = await WorkflowService._can_workflow_execute(session, workflow_id, version, snapshot_timestamp)
-
-        # Validate non-stream mode
-        if snapshot.get("stream_mode"):
-            raise WorkflowErrorCode.WORKFLOW_EXECUTION_ERROR.exception(
-                data={"message": "Streaming workflows must use execute_workflow_stream"}
-            )
-
-        # Start async task
-        try:
-            task = celery_execute_workflow.delay(
-                workflow_id=workflow_id,
-                input_data=input_data,
-                execution_context=execution_context,
-                version=version,
-                snapshot_timestamp=snapshot_timestamp,
-            )
-        except Exception as e:
-            raise WorkflowErrorCode.WORKFLOW_EXECUTION_ERROR.exception(
-                data={"workflow_id": str(workflow_id), "error": str(e)}
-            ) from e
-
-        return {"task_id": task.id}
-
-    @staticmethod
-    async def get_workflow_snapshot(session: AsyncSession, workflow_id: str) -> dict[str, Any]:
-        """Get the snapshot of the workflow asynchronously."""
-        # Fetch workflow and validate existence
-        result = await session.execute(select(Workflow).where(Workflow.id == workflow_id))
-        workflow = result.scalar_one_or_none()
-        if not workflow:
-            raise WorkflowErrorCode.WORKFLOW_NOT_FOUND.exception(
-                data={"workflow_id": str(workflow_id), "message": "Workflow not found for snapshot creation"},
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
-
-        # Fetch workflow nodes
-        nodes_result = await session.execute(select(WorkflowNode).where(WorkflowNode.workflow_id == workflow_id))
-        nodes = nodes_result.scalars().all()
-
-        # Fetch workflow edges
-        edges_result = await session.execute(select(WorkflowEdge).where(WorkflowEdge.workflow_id == workflow_id))
-        edges = edges_result.scalars().all()
-
-        # Validate workflow structure
-        if not nodes:
-            raise WorkflowErrorCode.INVALID_WORKFLOW.exception(
-                data={"workflow_id": str(workflow_id), "message": "Workflow has no nodes"},
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Check if the workflow is a stream according to the end node's stream mode
-        end_node = next((node for node in nodes if node.node_type == OperatorName.END.value), None)
-        is_stream = end_node and end_node.extended_config and end_node.extended_config.get("stream_mode", False)
-        snapshot = {
-            "name": workflow.name,
-            "description": workflow.description,
-            "stream_mode": is_stream,
-            "nodes": [serialize_workflow_node(node) for node in nodes],
-            "edges": [serialize_workflow_edge(edge) for edge in edges],
-        }
-        # Create and return snapshot
-        return snapshot
-
-    @staticmethod
-    async def get_workflow_snapshot_hash(snapshot: dict[str, Any]) -> str:
-        """Get the hash of the workflow snapshot asynchronously."""
-        try:
-            snapshot_hash = hashlib.sha256(json_dumps(snapshot).encode()).hexdigest()
-            return snapshot_hash
-        except Exception as e:
-            logger.error(f"Error calculating snapshot hash: {e!s}")
-            raise WorkflowErrorCode.WORKFLOW_SNAPSHOT_ERROR.exception(
-                data={"error": str(e), "message": "Failed to calculate workflow snapshot hash"},
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        except ValueError as e:
+            raise WorkflowErrorCode.INVALID_VERSION_FORMAT.exception(
+                data={"version": version, "message": f"Invalid version format: {e!s}"}
             ) from e
 
     @staticmethod
     async def publish_workflow(
         session: AsyncSession,
-        workflow_id: str,
-        version: str,
-        description: str,
         request: Request,
-    ) -> PublishWorkflowResponse:
+        workflow_id: str,
+        payload: CreateWorkflowVersionPayload,
+    ) -> WorkflowVersionInfo:
         """
         Publish a new version of a workflow by creating a snapshot and version record.
 
         Args:
             session: Database session
-            workflow_id: ID of the workflow to publish
-            version: Version string (e.g., "1.0.0")
-            description: Description of this version
+            payload: CreateWorkflowVersionPayload
             request: Request object
 
         Returns:
-            PublishWorkflowResponse: Created workflow version object
+            WorkflowVersionInfo: Created workflow version object
 
         Raises:
             WorkflowErrorCode.WORKFLOW_NOT_FOUND: If workflow doesn't exist
@@ -394,12 +589,9 @@ class WorkflowService:
             WorkflowErrorCode.INVALID_WORKFLOW: If workflow is invalid
         """
         # Validate workflow existence
-        tenant_id = request.state.tenant_id
-        account_id = request.state.account_id
-        user = await TenantService.get_user_by_account_id(session=session, tenant_id=tenant_id, account_id=account_id)
+        _, _, user = await TenantService.get_tenant_and_user(session=session, request=request)
 
-        result = await session.execute(select(Workflow).where(Workflow.id == workflow_id))
-        workflow = result.scalar_one_or_none()
+        workflow = await WorkflowService.get_workflow(session=session, workflow_id=workflow_id)
         if not workflow:
             raise WorkflowErrorCode.WORKFLOW_NOT_FOUND.exception(
                 data={
@@ -409,41 +601,23 @@ class WorkflowService:
                 status_code=status.HTTP_404_NOT_FOUND,
             )
 
-        # Check for version conflicts
-        version_result = await session.execute(
-            select(WorkflowVersion).where(
-                and_(WorkflowVersion.workflow_id == workflow_id, WorkflowVersion.version == version)
-            )
-        )
-
-        if version_result.scalar_one_or_none():
-            raise WorkflowErrorCode.WORKFLOW_VERSION_ALREADY_EXISTS.exception(
-                data={
-                    "workflow_id": str(workflow_id),
-                    "version": version,
-                    "message": "This version number is already in use",
-                },
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
+        # Check for version
+        await WorkflowService._validate_workflow_version(session, workflow, payload.version)
 
         try:
             # Create snapshot and calculate hash
-            snapshot = await WorkflowService.get_workflow_snapshot(session, workflow_id)
-            snapshot_hash = await WorkflowService.get_workflow_snapshot_hash(snapshot)
-            start_node_key = ''
-            end_node_key = ''
-            for node in snapshot["nodes"]:
-                if node["node_type"] == OperatorName.START.value:
-                    start_node_key = node["node_key"]
-                elif node["node_type"] == OperatorName.END.value:
-                    end_node_key = node["node_key"]
-                    
+            snapshot, snapshot_hash = await workflow.get_snapshot(need_hash=True)
+            start_node = await workflow.get_start_node(session)
+            end_node = await workflow.get_end_node(session)
+            start_node_key = start_node.node_key
+            end_node_key = end_node.node_key
+
             # Create new version record
             workflow_version = WorkflowVersion(
                 workflow_id=workflow_id,
-                version=version,
+                version=payload.version,
                 status=WorkflowVersionStatus.ACTIVE,
-                description=description,
+                description=payload.description,
                 published_at=utcnow().replace(tzinfo=None),
                 published_by=user.id,
                 snapshot=snapshot,
@@ -452,25 +626,15 @@ class WorkflowService:
                 end_node_key=end_node_key,
             )
             await workflow_version.save(session)
-            
+
             # Update workflow current version
-            workflow.version = version
+            workflow.version = payload.version
             workflow.status = WorkflowStatus.PUBLISHED
             await workflow.save(session)
 
-            logger.info(
-                f"Published workflow version {version} for workflow {workflow_id} "
-                f"with snapshot hash {snapshot_hash[:8]}"
-            )
-
+            result = WorkflowService.serialize_workflow_version(workflow_version)
             await session.commit()
-            return PublishWorkflowResponse(
-                workflow_id=str(workflow_id),
-                version=version,
-                description=description,
-                published_at=workflow_version.published_at,
-                published_by=str(user.id),
-            )
+            return result
 
         except Exception as e:
             # Handle version publishing errors
@@ -479,469 +643,90 @@ class WorkflowService:
             raise WorkflowErrorCode.WORKFLOW_VERSION_PUBLISH_ERROR.exception(
                 data={
                     "workflow_id": str(workflow_id),
-                    "version": version,
-                    "error": str(e),
+                    "version": payload.version,
                     "message": "Failed to publish workflow version",
                 },
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ) from e
 
     @staticmethod
-    async def create_workflow(
-        session: AsyncSession, name: str, description: str, app_id: str, request: Request
-    ) -> Workflow:
-        """Create a new workflow"""
-        try:
-            tenant_id = request.state.tenant_id
-            if not tenant_id:
-                raise AccountErrorCode.TENANT_NOT_FOUND.exception(status_code=status.HTTP_404_NOT_FOUND)
-
-            account_id = request.state.account_id
-            user = await TenantService.get_user_by_account_id(session, tenant_id, account_id)
-
-            # Check if the name already exists
-            result = await session.execute(
-                select(Workflow).where(and_(Workflow.app_id == app_id, Workflow.name == name))
-            )
-            if result.scalar_one_or_none():
-                raise WorkflowErrorCode.WORKFLOW_ALREADY_EXISTS.exception(status_code=status.HTTP_400_BAD_REQUEST)
-            workflow = Workflow(
-                name=name,
-                app_id=app_id,
-                description=description,
-                status=WorkflowStatus.DRAFT,
-                created_by=user.id,
-                updated_by=user.id,
-            )
-            await workflow.save(session)
-            session.flush()
-
-            # Create system workflow nodes and edges
-            start_node_key = generate_node_or_edge_key()
-            end_node_key = generate_node_or_edge_key()
-            start_node = WorkflowNode(
-                workflow_id=workflow.id,
-                name="Start",
-                node_key=start_node_key,
-                node_type=OperatorName.START.value,
-                config={
-                    "query": "{{query}}",
-                },
-                created_by=user.id,
-                updated_by=user.id,
-            )
-            await start_node.save(session)
-            end_node = WorkflowNode(
-                workflow_id=workflow.id,
-                name="End",
-                node_key=end_node_key,
-                node_type=OperatorName.END.value,
-                created_by=user.id,
-                updated_by=user.id,
-            )
-            await end_node.save(session)
-
-            edge = WorkflowEdge(
-                workflow_id=workflow.id,
-                edge_key=generate_node_or_edge_key(),
-                source_node_key=start_node_key,
-                target_node_key=end_node_key,
-                created_by=user.id,
-                updated_by=user.id,
-            )
-            await edge.save(session)
-
-            return workflow
-        except Exception as e:
-            logger.error(f"Error creating workflow: {e}")
-            await session.rollback()
-            raise WorkflowErrorCode.WORKFLOW_CREATE_ERROR.exception(
-                data={
-                    "workflow_name": name,
-                    "error": str(e),
-                    "message": "Failed to create workflow",
-                },
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            ) from e
-
-    @staticmethod
-    async def get_workflow_version(
+    async def execute_workflow_stream(
         session: AsyncSession,
         workflow_id: str,
-        workflow_version: str,
-    ) -> WorkflowVersion:
-        result = await session.execute(
-            select(WorkflowVersion).where(
-                and_(WorkflowVersion.workflow_id == workflow_id, WorkflowVersion.version == workflow_version)
-            )
-        )
-
-        version = result.scalar_one_or_none()
-        if not version:
-            raise WorkflowErrorCode.WORKFLOW_VERSION_NOT_FOUND.exception(
-                data={"workflow_id": workflow_id, "workflow_version": workflow_version}
-            )
-        return version
-
-    @staticmethod
-    async def save_workflow(
-        session: AsyncSession,
-        workflow_id: str,
-        operations: List[WorkflowOperation],
-        request: Request,
-    ) -> SaveWorkflowResponse:
-        """Process batch operations for workflow graph data."""
-        try:
-            tenant_id = request.state.tenant_id
-            if not tenant_id:
-                raise AccountErrorCode.TENANT_NOT_FOUND.exception(status_code=status.HTTP_404_NOT_FOUND)
-            account_id = request.state.account_id
-            user = await TenantService.get_user_by_account_id(session, tenant_id, account_id)
-
-            # Validate workflow exists
-            result = await session.execute(select(Workflow).where(Workflow.id == workflow_id))
-            workflow = result.scalar_one_or_none()
-            if not workflow:
-                raise WorkflowErrorCode.WORKFLOW_NOT_FOUND.exception(
-                    data={"workflow_id": str(workflow_id)},
-                    status_code=status.HTTP_404_NOT_FOUND,
-                )
-
-            result = {
-                "added_nodes": [],
-                "updated_nodes": [],
-                "deleted_nodes": [],
-                "added_edges": [],
-                "updated_edges": [],
-                "deleted_edges": [],
-            }
-
-            # Process operations in order
-            for operation in operations:
-                if operation.operation_type == WorkflowOperationType.ADD_NODE:
-                    for node in operation.nodes:
-                        new_node = WorkflowNode(
-                            workflow_id=workflow_id,
-                            node_key=node.node_key,
-                            node_type=node.node_type,
-                            name=node.name,
-                            description=node.description,
-                            meta=node.meta,
-                            config=node.config,
-                            extended_config=node.extended_config,
-                            created_by=user.id,
-                            updated_by=user.id,
-                        )
-                        await new_node.save(session)
-                        result["added_nodes"].append(node.node_key)
-
-                elif operation.operation_type == WorkflowOperationType.UPDATE_NODE:
-                    for node in operation.nodes:
-                        node_result = await session.execute(
-                            select(WorkflowNode).where(
-                                and_(WorkflowNode.workflow_id == workflow_id, WorkflowNode.node_key == node.node_key)
-                            )
-                        )
-                        existing_node = node_result.scalar_one_or_none()
-                        if existing_node:
-                            if node.name is not None:
-                                existing_node.name = node.name
-                            if node.description is not None:
-                                existing_node.description = node.description
-                            if node.meta is not None:
-                                existing_node.meta = node.meta
-                            if node.config is not None:
-                                existing_node.config = node.config
-                            if node.extended_config is not None:
-                                existing_node.extended_config = node.extended_config
-                            existing_node.updated_by = user.id
-                            await existing_node.save(session)
-                            result["updated_nodes"].append(node.node_key)
-
-                elif operation.operation_type == WorkflowOperationType.DELETE_NODE:
-                    for node in operation.nodes:
-                        node_result = await session.execute(
-                            select(WorkflowNode).where(
-                                and_(WorkflowNode.workflow_id == workflow_id, WorkflowNode.node_key == node.node_key)
-                            )
-                        )
-                        existing_node = node_result.scalar_one_or_none()
-                        if existing_node:
-                            await session.delete(existing_node)
-                            result["deleted_nodes"].append(node.node_key)
-
-                elif operation.operation_type == WorkflowOperationType.ADD_EDGE:
-                    for edge in operation.edges:
-                        new_edge = WorkflowEdge(
-                            workflow_id=workflow_id,
-                            edge_key=edge.edge_key,
-                            source_node_key=edge.source_node_key,
-                            target_node_key=edge.target_node_key,
-                            meta=edge.meta,
-                            created_by=user.id,
-                            updated_by=user.id,
-                        )
-                        await new_edge.save(session)
-                        result["added_edges"].append(edge.edge_key)
-
-                elif operation.operation_type == WorkflowOperationType.UPDATE_EDGE:
-                    for edge in operation.edges:
-                        edge_result = await session.execute(
-                            select(WorkflowEdge).where(
-                                and_(WorkflowEdge.workflow_id == workflow_id, WorkflowEdge.edge_key == edge.edge_key)
-                            )
-                        )
-                        existing_edge = edge_result.scalar_one_or_none()
-                        if existing_edge:
-                            if edge.source_node_key is not None:
-                                existing_edge.source_node_key = edge.source_node_key
-                            if edge.target_node_key is not None:
-                                existing_edge.target_node_key = edge.target_node_key
-                            if edge.meta is not None:
-                                existing_edge.meta = edge.meta
-                            existing_edge.updated_by = user.id
-                            await existing_edge.save(session)
-                            result["updated_edges"].append(edge.edge_key)
-
-                elif operation.operation_type == WorkflowOperationType.DELETE_EDGE:
-                    for edge in operation.edges:
-                        edge_result = await session.execute(
-                            select(WorkflowEdge).where(
-                                and_(WorkflowEdge.workflow_id == workflow_id, WorkflowEdge.edge_key == edge.edge_key)
-                            )
-                        )
-                        existing_edge = edge_result.scalar_one_or_none()
-                        if existing_edge:
-                            await session.delete(existing_edge)
-                            result["deleted_edges"].append(edge.edge_key)
-
-            # Create new snapshot after all operations
-            snapshot = await WorkflowService.get_workflow_snapshot(session, workflow_id)
-            snapshot_hash = await WorkflowService.get_workflow_snapshot_hash(snapshot)
-
-            # Find start and end nodes
-            nodes_result = await session.execute(select(WorkflowNode).where(WorkflowNode.workflow_id == workflow_id))
-            nodes = nodes_result.scalars().all()
-            start_node = next((node for node in nodes if node.node_type == OperatorName.START.value), None)
-            end_node = next((node for node in nodes if node.node_type == OperatorName.END.value), None)
-
-            if not start_node or not end_node:
-                raise WorkflowErrorCode.INVALID_WORKFLOW.exception(
-                    data={"message": "Workflow must have both start and end nodes"}
-                )
-            workflow.status = WorkflowStatus.DRAFT
-            await workflow.save(session)
-            await session.commit()
-            return SaveWorkflowResponse(
-                **result,
-                snapshot=snapshot,
-                snapshot_hash=snapshot_hash,
-                start_node_key=start_node.node_key,
-                end_node_key=end_node.node_key,
-            )
-
-        except Exception as e:
-            logger.error(f"Error saving workflow: {e}")
-            await session.rollback()
-            raise WorkflowErrorCode.WORKFLOW_SAVE_ERROR.exception(
-                data={
-                    "workflow_id": str(workflow_id),
-                    "error": str(e),
-                    "message": "Failed to save workflow changes",
-                },
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            ) from e
-
-    @staticmethod
-    async def update_workflow_meta(
-        session: AsyncSession,
-        workflow_id: str,
-        request: Request,
-        name: str | None = None,
-        description: str | None = None,
-    ) -> WorkflowResponse:
-        """Update workflow metadata."""
-        try:
-            tenant_id = request.state.tenant_id
-            if not tenant_id:
-                raise AccountErrorCode.TENANT_NOT_FOUND.exception(status_code=status.HTTP_404_NOT_FOUND)
-            account_id = request.state.account_id
-            user = await TenantService.get_user_by_account_id(session, tenant_id, account_id)
-
-            result = await session.execute(select(Workflow).where(Workflow.id == workflow_id))
-            workflow = result.scalar_one_or_none()
-            if not workflow:
-                raise WorkflowErrorCode.WORKFLOW_NOT_FOUND.exception(
-                    data={"workflow_id": str(workflow_id)},
-                    status_code=status.HTTP_404_NOT_FOUND,
-                )
-
-            if name is not None:
-                # Check name uniqueness within tenant
-                name_check = await session.execute(
-                    select(Workflow).where(
-                        and_(
-                            Workflow.tenant_id == workflow.tenant_id, Workflow.name == name, Workflow.id != workflow_id
-                        )
-                    )
-                )
-                if name_check.scalar_one_or_none():
-                    raise WorkflowErrorCode.WORKFLOW_ALREADY_EXISTS.exception(
-                        data={"name": name},
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                    )
-                workflow.name = name
-
-            if description is not None:
-                workflow.description = description
-
-            workflow.updated_by = user.id
-            workflow.status = WorkflowStatus.DRAFT
-            await workflow.save(session)
-
-            # Fetch related nodes and edges for response
-            nodes_result = await session.execute(select(WorkflowNode).where(WorkflowNode.workflow_id == workflow_id))
-            edges_result = await session.execute(select(WorkflowEdge).where(WorkflowEdge.workflow_id == workflow_id))
-
-            await session.commit()
-
-            return WorkflowResponse(
-                id=str(workflow.id),
-                app_id=str(workflow.app_id),
-                status=workflow.status,
-                name=workflow.name,
-                description=workflow.description,
-                version=workflow.version,
-                created_by=str(workflow.created_by),
-                updated_by=str(workflow.updated_by),
-                created_at=workflow.created_at,
-                updated_at=workflow.updated_at,
-                nodes=[WorkflowNodeResponse(**serialize_workflow_node(node)) for node in nodes_result.scalars().all()],
-                edges=[WorkflowEdgeResponse(**serialize_workflow_edge(edge)) for edge in edges_result.scalars().all()],
-            )
-
-        except Exception as e:
-            logger.error(f"Error updating workflow metadata: {e}")
-            await session.rollback()
-            raise WorkflowErrorCode.WORKFLOW_UPDATE_ERROR.exception(
-                data={
-                    "workflow_id": str(workflow_id),
-                    "error": str(e),
-                    "message": "Failed to update workflow metadata",
-                },
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            ) from e
-
-    @staticmethod
-    async def get_workflow_list(
-        session: AsyncSession,
-        app_id: str,
-        page: int = 1,
-        page_size: int = 20,
-        search_term: str | None = None,
-    ) -> WorkflowListResponse:
+        input_data: dict,
+        execution_context: dict,
+        is_debug: bool = False,
+        version: str | None = None,
+        snapshot_timestamp: datetime | None = None,
+        on_created: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
+        on_pending: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
+        on_running: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
+        on_completed: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
+        on_failed: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
+        on_cancelling: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
+        on_cancelled: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
+        on_paused: Callable[[FlowExecutionCallbackContext], Coroutine] = [],
+    ) -> WorkflowEngine:
         """
-        Get paginated list of workflows with optional search.
+        Execute workflow in stream mode.
 
-        Args:
-            session: Database session
-            app_id: Application ID to filter workflows
-            page: Page number (1-based)
-            page_size: Number of items per page
-            search_term: Optional search term to filter workflows by name or description
-
-        Returns:
-            Tuple[List[WorkflowResponse], int]: List of workflows and total count
+        This method should be used for stream processing instead of Celery tasks.
         """
-        # Build base query
-        query = select(Workflow).where(Workflow.app_id == app_id)
-        count_query = select(func.count()).select_from(Workflow).where(Workflow.app_id == app_id)
-
-        # Add search condition if provided
-        if search_term:
-            search_filter = or_(Workflow.name.ilike(f"%{search_term}%"), Workflow.description.ilike(f"%{search_term}%"))
-            query = query.where(search_filter)
-            count_query = count_query.where(search_filter)
-
-        # Get total count
-        total_result = await session.execute(count_query)
-        total = total_result.scalar_one()
-
-        # Add pagination
-        offset = (page - 1) * page_size
-        query = query.order_by(Workflow.updated_at.desc()).offset(offset).limit(page_size)
-
-        # Execute query
-        result = await session.execute(query)
-        workflows = result.scalars().all()
-
-        # Fetch nodes and edges for each workflow
-        workflow_responses = []
-        for workflow in workflows:
-            # Fetch nodes
-            workflow_responses.append(
-                GetWorkflowResponseBase(
-                    id=str(workflow.id),
-                    app_id=str(workflow.app_id),
-                    status=workflow.status,
-                    name=workflow.name,
-                    description=workflow.description,
-                    version=workflow.version,
-                    created_by=str(workflow.created_by),
-                    updated_by=str(workflow.updated_by),
-                    created_at=workflow.created_at,
-                    updated_at=workflow.updated_at,
-                )
-            )
-
-        return {
-            "workflows": workflow_responses,
-            "total": total,
-        }
-
-    @staticmethod
-    async def get_workflow(session: AsyncSession, workflow_id: str) -> WorkflowResponse:
-        """
-        Get complete workflow information including nodes and edges.
-
-        Args:
-            session: Database session
-            workflow_id: ID of the workflow to retrieve
-
-        Returns:
-            WorkflowResponse: Complete workflow information
-
-        Raises:
-            WorkflowErrorCode.WORKFLOW_NOT_FOUND: If workflow doesn't exist
-        """
-        result = await session.execute(select(Workflow).where(Workflow.id == workflow_id))
-        workflow = result.scalar_one_or_none()
-
+        workflow = await WorkflowService.get_workflow(session=session, workflow_id=workflow_id)
         if not workflow:
             raise WorkflowErrorCode.WORKFLOW_NOT_FOUND.exception(
-                data={"workflow_id": str(workflow_id)},
+                data={
+                    "workflow_id": str(workflow_id),
+                    "message": "Cannot execute non-existent workflow",
+                },
                 status_code=status.HTTP_404_NOT_FOUND,
             )
 
-        # Fetch related nodes
-        nodes_result = await session.execute(select(WorkflowNode).where(WorkflowNode.workflow_id == workflow_id))
-        nodes = nodes_result.scalars().all()
+        snapshot = None
+        snapshot_hash = None
+        snapshot_timestamp = None
+        version = None
+        start_node_key = None
+        end_node_key = None
+        # Create and execute appropriate executor
+        if is_debug:
+            debug_snapshot = await WorkflowService.get_workflow_debug_snapshot(
+                session=session, workflow_id=workflow_id, snapshot_timestamp=snapshot_timestamp
+            )
+            snapshot = debug_snapshot.snapshot
+            snapshot_hash = debug_snapshot.snapshot_hash
+            snapshot_timestamp = debug_snapshot.snapshot_timestamp
+            start_node_key = debug_snapshot.start_node_key
+            end_node_key = debug_snapshot.end_node_key
+        else:
+            workflow_version = await WorkflowService.get_workflow_version(
+                session=session, workflow_id=workflow_id, version=version
+            )
+            snapshot = workflow_version.snapshot
+            snapshot_hash = workflow_version.snapshot_hash
+            version = workflow_version.version
+            start_node_key = workflow_version.start_node_key
+            end_node_key = workflow_version.end_node_key
 
-        # Fetch related edges
-        edges_result = await session.execute(select(WorkflowEdge).where(WorkflowEdge.workflow_id == workflow_id))
-        edges = edges_result.scalars().all()
-
-        return WorkflowResponse(
-            id=str(workflow.id),
-            app_id=str(workflow.app_id),
-            status=workflow.status,
-            name=workflow.name,
-            description=workflow.description,
-            version=workflow.version,
-            created_by=str(workflow.created_by),
-            updated_by=str(workflow.updated_by),
-            created_at=workflow.created_at,
-            updated_at=workflow.updated_at,
-            nodes=[WorkflowNodeResponse(**serialize_workflow_node(node)) for node in nodes],
-            edges=[WorkflowEdgeResponse(**serialize_workflow_edge(edge)) for edge in edges],
+        executor = WorkflowEngine(
+            workflow_id=workflow_id,
+            version=version,
+            is_debug=is_debug,
+            snapshot_timestamp=snapshot_timestamp,
+            start_node_key=start_node_key,
+            end_node_key=end_node_key,
+            snapshot=snapshot,
+            snapshot_hash=snapshot_hash,
+            input_data=input_data,
+            execution_context=execution_context,
+            on_created=on_created,
+            on_pending=on_pending,
+            on_running=on_running,
+            on_completed=on_completed,
+            on_failed=on_failed,
+            on_cancelling=on_cancelling,
+            on_cancelled=on_cancelled,
+            on_paused=on_paused,
         )
+
+        return executor

@@ -1,4 +1,4 @@
-from .base import WorkflowEngineBase
+from .base import WorkflowEngine
 from .flow import WorkflowFlow
 from .logger import WorkflowLogger
 from .models import (
@@ -29,7 +29,7 @@ __all__ = [
     "WorkflowContext",
     "WorkflowDebugExecution",
     "WorkflowDebugLog",
-    "WorkflowEngineBase",
+    "WorkflowEngine",
     "WorkflowExecution",
     "WorkflowExecutionLog",
     "WorkflowFlow",

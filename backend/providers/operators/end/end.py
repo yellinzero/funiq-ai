@@ -23,7 +23,7 @@ class EndOperator(BaseOperator):
         if not self.is_stream:
             if not config:
                 raise ValueError("Config is required")
-            output = {"id": config.get("id"), "message": config.get("message", "")}
+            output = {"message": config.get("message", "")}
             if not self.validate_output(output):
                 raise ValueError("Output validation failed")
             return output

@@ -5,10 +5,8 @@ from app.core.schemas import ResponseModel
 from providers.operators.core import OperatorEntity
 
 from .schemas import (
-    CreateWorkflowRequest,
     CreateWorkflowVersionPayload,
     GetWorkflowDebugSnapshotsResponse,
-    GetWorkflowsResponse,
     GetWorkflowVersionsResponse,
     SaveWorkflowRequest,
     WorkflowEdgeInfo,
@@ -32,39 +30,6 @@ async def get_operators(request: Request):
 
 
 @workflow_router.get(
-    "",
-    response_model=ResponseModel[GetWorkflowsResponse],
-)
-async def get_workflows(
-    request: Request,
-    app_id: str,
-):
-    workflows = await WorkflowService.get_workflows(
-        session=db.session,
-        app_id=app_id,
-    )
-    return ResponseModel(
-        data=GetWorkflowsResponse(workflows=workflows, total=len(workflows)),
-    )
-
-
-@workflow_router.post(
-    "",
-    response_model=ResponseModel[WorkflowInfo],
-)
-async def create_workflow(
-    request: Request,
-    payload: CreateWorkflowRequest,
-):
-    workflow = await WorkflowService.create_workflow(
-        session=db.session,
-        request=request,
-        payload=payload,
-    )
-    return ResponseModel(data=WorkflowService.serialize_workflow(workflow))
-
-
-@workflow_router.get(
     "/{workflow_id}",
     response_model=ResponseModel[WorkflowInfo],
 )
@@ -76,7 +41,7 @@ async def get_workflow(
         session=db.session,
         workflow_id=workflow_id,
     )
-    return ResponseModel(data=workflow)
+    return ResponseModel(data=WorkflowService.serialize_workflow(workflow))
 
 
 @workflow_router.put(
@@ -97,26 +62,11 @@ async def update_workflow(
     return ResponseModel(data=workflow)
 
 
-@workflow_router.delete(
-    "/{workflow_id}",
-    response_model=ResponseModel[None],
-)
-async def delete_workflow(
-    request: Request,
-    workflow_id: str,
-):
-    workflow = await WorkflowService.delete_workflow(
-        session=db.session,
-        workflow_id=workflow_id,
-    )
-    return ResponseModel(data={"status": "success"})
-
-
 @workflow_router.post(
     "/{workflow_id}/publish",
     response_model=ResponseModel[WorkflowVersionInfo],
 )
-async def create_workflow_version(
+async def publish_workflow(
     request: Request,
     workflow_id: str,
     payload: CreateWorkflowVersionPayload,

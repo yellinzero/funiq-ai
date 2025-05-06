@@ -69,7 +69,7 @@ class OpenAILikeLargeLanguageModel(OpenAICore, LargeLanguageModel):
         base_model = model.split(":")[1] if model.startswith("ft:") else model
 
         # get model mode
-        model_mode = self.get_model_mode(base_model, credentials)
+        model_mode = self.get_model_mode(base_model)
 
         if model_mode == LLMMode.CHAT:
             # chat model
@@ -113,7 +113,7 @@ class OpenAILikeLargeLanguageModel(OpenAICore, LargeLanguageModel):
         base_model = model.split(":")[1] if model.startswith("ft:") else model
 
         # get model mode
-        model_mode = self.get_model_mode(base_model, credentials)
+        model_mode = self.get_model_mode(base_model)
 
         # transform response format
         if "response_format" in model_parameters and model_parameters["response_format"] in {"JSON", "XML"}:
@@ -294,7 +294,7 @@ class OpenAILikeLargeLanguageModel(OpenAICore, LargeLanguageModel):
                 raise (f"Fine-tuned model {model} not found")
 
             # get model mode
-            model_mode = self.get_model_mode(base_model, credentials)
+            model_mode = self.get_model_mode(base_model)
 
             if model_mode == LLMMode.CHAT:
                 # chat model

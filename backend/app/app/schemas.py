@@ -51,13 +51,13 @@ class ConversationListResponse(BaseModel):
     
 
 class CreateConversationRequest(BaseModel):
-    name: str | None
-    description: str | None
+    name: str | None = None
+    description: str | None = None
     
 
 class UpdateConversationRequest(BaseModel):
-    name: str | None
-    description: str | None
+    name: str | None = None
+    description: str | None = None
 
 
 class MessageInfo(BaseModel):
@@ -81,9 +81,7 @@ class MessageInfo(BaseModel):
 
 
 class CompletionRequest(BaseModel):
-    conversation_id: str
-    workflow_id: str
-    workflow_version: str
+    workflow_version_id: str
     message: str
     files: list[dict] | None = None
     images: list[dict] | None = None

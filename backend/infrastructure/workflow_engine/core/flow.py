@@ -6,7 +6,6 @@ from loguru import logger
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.models.workflow import WorkflowNode
 from infrastructure import with_session
 from utils.common.datetime import utcnow
 
@@ -193,7 +192,7 @@ class WorkflowFlow(LifecycleMixin[FlowExecutionCallbackContext]):
                     }
 
                     task = WorkflowTask(
-                        node=WorkflowNode(**node),
+                        node=node,
                         workflow_context=self.workflow_context,
                         is_debug=self._is_debug,
                         run_id=self._execution_id,
@@ -231,45 +230,45 @@ class WorkflowFlow(LifecycleMixin[FlowExecutionCallbackContext]):
     async def on_created(self, context: FlowExecutionCallbackContext):
         await self._create_execution_record()
         self._initialize_logger()
-        self._logger.info(f"Flow {self.workflow_context.workflow_name}({self._execution_id}) created")
+        self._logger.info(f"Flow {self.workflow_context.workflow_id}({self._execution_id}) created")
         await self._trigger_callbacks(self._lifecycle_context.on_created_callbacks, context)
 
     async def on_pending(self, context: FlowExecutionCallbackContext):
         await self._update_execution_status(status=ExecutionStates.PENDING)
-        self._logger.info(f"Flow {self.workflow_context.workflow_name}({self._execution_id}) pending")
+        self._logger.info(f"Flow {self.workflow_context.workflow_id}({self._execution_id}) pending")
         await self._trigger_callbacks(self._lifecycle_context.on_pending_callbacks, context)
 
     async def on_running(self, context: FlowExecutionCallbackContext):
         await self._update_execution_status(status=ExecutionStates.RUNNING)
-        self._logger.info(f"Flow {self.workflow_context.workflow_name}({self._execution_id}) running")
+        self._logger.info(f"Flow {self.workflow_context.workflow_id}({self._execution_id}) running")
         await self._trigger_callbacks(self._lifecycle_context.on_running_callbacks, context)
 
     async def on_completed(self, context: FlowExecutionCallbackContext):
         await self._update_execution_status(status=ExecutionStates.COMPLETED)
-        self._logger.info(f"Flow {self.workflow_context.workflow_name}({self._execution_id}) completed")
+        self._logger.info(f"Flow {self.workflow_context.workflow_id}({self._execution_id}) completed")
         await self._trigger_callbacks(self._lifecycle_context.on_completed_callbacks, context)
         await self._logger.archive_logs()
 
     async def on_failed(self, context: FlowExecutionCallbackContext):
         await self._update_execution_status(status=ExecutionStates.FAILED)
-        self._logger.error(f"Flow {self.workflow_context.workflow_name}({self._execution_id}) failed: {context.error}")
+        self._logger.error(f"Flow {self.workflow_context.workflow_id}({self._execution_id}) failed: {context.error}")
         await self._trigger_callbacks(self._lifecycle_context.on_failed_callbacks, context)
         await self._logger.archive_logs()
 
     async def on_cancelling(self, context: FlowExecutionCallbackContext):
         await self._update_execution_status(status=ExecutionStates.CANCELLING)
-        self._logger.info(f"Flow {self.workflow_context.workflow_name}({self._execution_id}) cancelling")
+        self._logger.info(f"Flow {self.workflow_context.workflow_id}({self._execution_id}) cancelling")
         await self._trigger_callbacks(self._lifecycle_context.on_cancelling_callbacks, context)
 
     async def on_cancelled(self, context: FlowExecutionCallbackContext):
         await self._update_execution_status(status=ExecutionStates.CANCELLED)
-        self._logger.info(f"Flow {self.workflow_context.workflow_name}({self._execution_id}) cancelled")
+        self._logger.info(f"Flow {self.workflow_context.workflow_id}({self._execution_id}) cancelled")
         await self._trigger_callbacks(self._lifecycle_context.on_cancelled_callbacks, context)
         await self._logger.archive_logs()
 
     async def on_paused(self, context: FlowExecutionCallbackContext):
         await self._update_execution_status(status=ExecutionStates.PAUSED)
-        self._logger.info(f"Flow {self.workflow_context.workflow_name}({self._execution_id}) paused")
+        self._logger.info(f"Flow {self.workflow_context.workflow_id}({self._execution_id}) paused")
         await self._trigger_callbacks(self._lifecycle_context.on_paused_callbacks, context)
 
     @with_session

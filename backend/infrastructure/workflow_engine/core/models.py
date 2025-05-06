@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import JSON, BigInteger, DateTime, Enum, ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from infrastructure import DBBase
+from infrastructure.database.core import DBBase
+from utils.common.datetime import utcnow
 
 from .schemas import ExecutionStates
 
@@ -29,7 +30,7 @@ class BaseWorkflowExecution(DBBase):
     end_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     record_info: Mapped[dict[str, Any]] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(
-        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+        default=lambda: utcnow().replace(tzinfo=None)
     )
     created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
 
@@ -77,7 +78,7 @@ class BaseWorkflowNodeExecution(DBBase):
     end_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     record_info: Mapped[dict[str, Any]] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(
-        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+        default=lambda: utcnow().replace(tzinfo=None)
     )
     created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
 
@@ -189,7 +190,7 @@ class BaseExecutionLog(DBBase):
     timestamp: Mapped[datetime] = mapped_column(
         DateTime, 
         nullable=False, 
-        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+        default=lambda: utcnow().replace(tzinfo=None),
         comment="When the log entry was created"
     )
     level: Mapped[str] = mapped_column(

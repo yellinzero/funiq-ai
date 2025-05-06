@@ -184,7 +184,8 @@ class AppService:
                 )
 
         try:
-            app.name = payload.name
+            if payload.name:
+                app.name = payload.name
             if payload.description:
                 app.description = payload.description
             app.updated_by = user.id
@@ -212,6 +213,7 @@ class AppService:
         
         try:
             await app.delete(session)
+            await session.commit()
         except Exception as e:
             logger.error(f"Error deleting app: {e}")
             await session.rollback()

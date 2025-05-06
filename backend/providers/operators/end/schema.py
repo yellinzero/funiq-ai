@@ -31,6 +31,10 @@ schema = {
                     "type": "string",
                     "description": _("The final processed output", domain="providers"),
                 },
+                "finish_reason": {
+                    "type": "string",
+                    "description": _("The reason the LLM stopped generating", domain="providers"),
+                },
             },
             "required": ["message"],
         },

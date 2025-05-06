@@ -1,5 +1,6 @@
 from .operator import (
     OperatorCallbackContext,
+    OperatorConfigSchema,
     OperatorEntity,
     OperatorName,
     OperatorState,
@@ -10,6 +11,7 @@ from .operator import (
 
 __all__ = [
     "OperatorCallbackContext",
+    "OperatorConfigSchema",
     "OperatorEntity",
     "OperatorName",
     "OperatorState",

@@ -21,6 +21,7 @@ class WorkflowErrorCode(BaseErrorCode):
     WORKFLOW_DEBUG_SNAPSHOT_FETCH_FAILED = ("E0309", "Failed to fetch workflow debug snapshots")
     WORKFLOW_FETCH_FAILED = ("E0310", "Failed to fetch workflows")
     WORKFLOW_DEBUG_SNAPSHOT_NOT_FOUND = ("E0311", "Workflow debug snapshot not found with the specified timestamp")
+    OPERATOR_FETCH_FAILED = ("E0312", "Failed to fetch operators")
 
     # Operation related (04)
     WORKFLOW_CREATE_ERROR = ("E0401", "Failed to create workflow - Please check the provided configuration")
@@ -40,6 +41,7 @@ class WorkflowErrorCode(BaseErrorCode):
         "Failed to update workflow config - Please check the provided configuration",
     )
     WORKFLOW_DELETE_ERROR = ("E0411", "Failed to delete workflow - Please check the provided configuration")
+    WORKFLOW_EXECUTION_ERROR = ("E0412", "Failed to execute workflow - Please check the provided configuration")
 
     # Business logic/Status related (10)
     WORKFLOW_VERSION_NOT_ACTIVE = ("E1001", "Specified workflow version is not active")

@@ -2,9 +2,13 @@ from typing import Any, Dict
 
 from loguru import logger
 
+from ..schemas import OperatorConfigSchema
+
 
 class ConvertHandlingMixin:
     """Mixin class for handling config conversions."""
+
+    config_schema: OperatorConfigSchema | None = None
 
     def convert_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """Convert config values according to config schema types.
@@ -19,12 +23,12 @@ class ConvertHandlingMixin:
             ValueError: If conversion fails or schema validation fails
             TypeError: If input types are incorrect
         """
-        if not hasattr(self, "config_schema") or not self.config_schema:
+        if not hasattr(self, "config_schema") or not self.config_schema.json_schema:
             logger.warning("No config schema defined, skipping conversion")
             return config
 
         try:
-            return self._convert_by_schema(data=config, schema=self.config_schema)
+            return self._convert_by_schema(data=config, schema=self.config_schema.json_schema)
         except (ValueError, TypeError) as e:
             logger.error(f"Config conversion failed: {e!s}")
             raise

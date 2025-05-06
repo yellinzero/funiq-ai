@@ -5,10 +5,12 @@ from jsonschema import ValidationError, validate
 
 from utils.common.i18n import translate_data
 
+from ..schemas import OperatorConfigSchema
+
 
 class ValidateHandlingMixin(ABC):
     """Mixin class for handling operator schemas and their configurations."""
-    config_schema: dict | None
+    config_schema: OperatorConfigSchema | None
     output_schema: dict | None
 
     def validate_output(self, data: Dict) -> bool:
@@ -28,8 +30,8 @@ class ValidateHandlingMixin(ABC):
             return True
             
         try:
-            schema = translate_data(self.config_schema)
-            validate(instance=config, schema=schema)
+            json_schema = translate_data(self.config_schema.json_schema)
+            validate(instance=config, schema=json_schema)
             return True
         except ValidationError:
             return False

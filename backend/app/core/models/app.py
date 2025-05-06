@@ -67,7 +67,6 @@ class App(DBBase, DBUUIDModelMixin):
 
     workflow: Mapped["Workflow"] = relationship(
         "Workflow",
-        back_populates="app",
         uselist=False,
         cascade="all, delete",
         lazy="joined",

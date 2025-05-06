@@ -1,7 +1,5 @@
 from typing import Any, Callable, Coroutine
 
-from loguru import logger
-
 from .flow import WorkflowFlow
 from .schemas import (
     ExecutionStates,
@@ -55,7 +53,6 @@ class WorkflowEngine(WorkflowTopologyMixin):
         
         self._context = WorkflowContext(
             workflow_id=workflow_id,
-            workflow_name=snapshot.get("name"),
             snapshot=snapshot,
             snapshot_hash=snapshot_hash,
             input_data=input_data,
@@ -104,12 +101,11 @@ class WorkflowEngine(WorkflowTopologyMixin):
 
     @property
     def is_debug(self) -> bool:
-        return bool(self._context.snapshot_timestamp)
+        return bool(self._context.timestamp)
     
     async def initialize(self):
         """Initialize the executor by building the topology."""
         if not self._initialized:
-            logger.info(f"Initializing workflow {self._context.workflow_name}")
             self._topology_info.data = await self._build_topology(
                 cache_context=self._topology_info.cache_context,
                 snapshot=self._context.snapshot,
@@ -118,7 +114,6 @@ class WorkflowEngine(WorkflowTopologyMixin):
 
     async def execute(self):
         """Execute the workflow."""
-        logger.info(f"Executing workflow {self._context.workflow_name}")
         self._flow = WorkflowFlow(
             workflow_context=self._context,
             topology_info=self._topology_info,

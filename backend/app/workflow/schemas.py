@@ -9,7 +9,7 @@ class WorkflowInfo(BaseModel):
     id: str
     app_id: str
     status: WorkflowStatus
-    config: dict
+    config: dict | None = None
     created_at: datetime
     updated_at: datetime
     created_by: str
@@ -28,10 +28,10 @@ class WorkflowNodeInfo(BaseModel):
     node_key: str
     node_type: str
     name: str
-    description: str
-    meta: dict
-    config: dict
-    extended_config: dict
+    description: str | None = None
+    meta: dict | None = None
+    config: dict | None = None
+    extended_config: dict | None = None
     
     
 class WorkflowEdgeInfo(BaseModel):
@@ -40,7 +40,7 @@ class WorkflowEdgeInfo(BaseModel):
     edge_key: str
     source_node_key: str
     target_node_key: str
-    meta: dict
+    meta: dict | None = None
     
 
 class WorkflowSnapshotInfoBase(BaseModel):
@@ -90,6 +90,7 @@ class CreateWorkflowRequest(BaseModel):
     
 
 class EditWorkflowNodePayloadBase(BaseModel):
+    node_key: str
     name: str | None = None
     description: str | None = None
     config: dict | None = None
@@ -108,13 +109,16 @@ class UpdateWorkflowNodePayload(EditWorkflowNodePayloadBase):
 
 
 class EditWorkflowEdgePayloadBase(BaseModel):
-    source_node_key: str
-    target_node_key: str
+    edge_key: str
+    source_node_key: str | None = None
+    target_node_key: str | None = None
     meta: dict | None = None
 
 
 class CreateWorkflowEdgePayload(EditWorkflowEdgePayloadBase):
     edge_key: str
+    source_node_key: str
+    target_node_key: str
     
 
 class UpdateWorkflowEdgePayload(EditWorkflowEdgePayloadBase):
@@ -138,7 +142,7 @@ class EditWorkflowSnapshotBase(BaseModel):
     end_node_key: str
     
 
-class CreateWorkflowVersionPayload(EditWorkflowSnapshotBase):
+class CreateWorkflowVersionPayload(BaseModel):
     version: str
     description: str | None = None
     

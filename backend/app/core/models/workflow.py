@@ -4,22 +4,18 @@ import enum
 import hashlib
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from sqlalchemy import JSON, DateTime, Enum, ForeignKey, ForeignKeyConstraint, Index, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.sql import select
+from sqlalchemy.sql import and_, select
 
-from infrastructure import DBAuditFieldsMixin, DBBase, DBUUIDModelMixin
+from infrastructure import DBBase, DBUUIDModelMixin
 from providers.operators.core import OperatorName
 from utils.common.datetime import utcnow
 from utils.common.json import json_dumps
-
-if TYPE_CHECKING:
-    from .app import App
-
 
 # ---------- Enums ----------
 
@@ -51,6 +47,9 @@ class Workflow(DBBase, DBUUIDModelMixin):
     """
 
     # Basic information
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, comment="Reference to the parent tenant"
+    )
     app_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("apps.id", ondelete="CASCADE"), nullable=False, comment="Reference to the parent application"
     )
@@ -64,11 +63,6 @@ class Workflow(DBBase, DBUUIDModelMixin):
         String(50), nullable=True, comment="Current version number of the workflow"
     )
     config: Mapped[dict | None] = mapped_column(JSON, comment="Workflow configuration")
-
-    # Relationships
-    app: Mapped[App] = relationship(
-        back_populates="workflow", uselist=False, cascade="all, delete", lazy="joined", foreign_keys=[app_id]
-    )
 
     nodes: Mapped[list[WorkflowNode]] = relationship(
         "WorkflowNode", back_populates="workflow", cascade="all, delete-orphan", lazy="raise"
@@ -84,6 +78,7 @@ class Workflow(DBBase, DBUUIDModelMixin):
     )
 
     __table_args__ = (
+        Index("idx_workflow_tenant", "tenant_id"),
         Index("idx_workflow_status_created", "status", "created_at"),
         Index("idx_workflow_updated", "updated_at"),
     )
@@ -91,11 +86,13 @@ class Workflow(DBBase, DBUUIDModelMixin):
     def __repr__(self) -> str:
         return f"<Workflow(app_id={self.app_id}, workflow_id={self.id})>"
 
-    async def get_snapshot(self, need_hash: bool = False) -> tuple[dict, str | None]:
+    async def get_snapshot(self, session: AsyncSession, need_hash: bool = False) -> tuple[dict, str | None]:
         snapshot_hash = None
+        nodes = await self.get_nodes(session)
+        edges = await self.get_edges(session)
         snapshot = {
-            "nodes": [node.to_dict() for node in self.nodes],
-            "edges": [edge.to_dict() for edge in self.edges],
+            "nodes": [node.to_dict(convert_uuid_to_str=True) for node in nodes],
+            "edges": [edge.to_dict(convert_uuid_to_str=True) for edge in edges],
             "config": self.config,
         }
         if need_hash:
@@ -103,12 +100,30 @@ class Workflow(DBBase, DBUUIDModelMixin):
         return snapshot, snapshot_hash
 
     async def get_end_node(self, session: AsyncSession) -> WorkflowNode:
-        result = await session.execute(select(WorkflowNode).where(WorkflowNode.node_type == OperatorName.END.value))
+        result = await session.execute(
+            select(WorkflowNode).where(
+                and_(WorkflowNode.node_type == OperatorName.END.value, WorkflowNode.workflow_id == self.id)
+            )
+        )
         return result.scalar_one_or_none()
 
     async def get_start_node(self, session: AsyncSession) -> WorkflowNode:
-        result = await session.execute(select(WorkflowNode).where(WorkflowNode.node_type == OperatorName.START.value))
+        result = await session.execute(
+            select(WorkflowNode).where(
+                and_(WorkflowNode.node_type == OperatorName.START.value, WorkflowNode.workflow_id == self.id)
+            )
+        )
         return result.scalar_one_or_none()
+
+    async def get_nodes(self, session: AsyncSession) -> list[WorkflowNode]:
+        result = await session.execute(select(WorkflowNode).where(WorkflowNode.workflow_id == self.id))
+        result = result.scalars().all()
+        return result
+
+    async def get_edges(self, session: AsyncSession) -> list[WorkflowEdge]:
+        result = await session.execute(select(WorkflowEdge).where(WorkflowEdge.workflow_id == self.id))
+        result = result.scalars().all()
+        return result
 
     @property
     def is_published(self) -> bool:
@@ -180,7 +195,7 @@ class WorkflowNode(DBBase, DBUUIDModelMixin):
         return result.scalars().all()
 
 
-class WorkflowEdge(DBBase, DBAuditFieldsMixin):
+class WorkflowEdge(DBBase, DBUUIDModelMixin):
     """Connection between two workflow nodes defining execution flow.
 
     Edges represent the transitions between nodes and can contain conditions

@@ -7,9 +7,6 @@ from loguru import logger
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.models.workflow import (
-    WorkflowNode,
-)
 from infrastructure import with_session
 from providers.operators.core import OperatorFactory
 from providers.operators.core.schemas import OperatorCallbackContext
@@ -26,7 +23,7 @@ class WorkflowTask(LifecycleMixin[TaskExecutionCallbackContext]):
 
     def __init__(
         self,
-        node: WorkflowNode,
+        node: dict,
         workflow_context: WorkflowContext,
         run_id: uuid.UUID,
         is_debug: bool = False,
@@ -41,7 +38,8 @@ class WorkflowTask(LifecycleMixin[TaskExecutionCallbackContext]):
     ):
         self._node = node
         self._workflow_context = workflow_context
-        self._is_stream = node.extended_config.get("stream_mode", False) if node.extended_config else False
+        extended_config = node.get("extended_config", {}) or {}
+        self._is_stream = extended_config.get("stream_mode", False)
         self._run_id = run_id
         self._execution_id = None
         self._is_debug = is_debug
@@ -73,6 +71,22 @@ class WorkflowTask(LifecycleMixin[TaskExecutionCallbackContext]):
             )
         )
         self._initialized = True
+        
+    @property
+    def name(self) -> str:
+        return self._node.get("name")
+
+    @property
+    def node_key(self) -> str:
+        return self._node.get("node_key")
+    
+    @property
+    def node_type(self) -> str:
+        return self._node.get("node_type")
+    
+    @property
+    def config(self) -> dict:
+        return self._node.get("config", {})
 
     @property
     def status(self) -> ExecutionStates:
@@ -105,12 +119,13 @@ class WorkflowTask(LifecycleMixin[TaskExecutionCallbackContext]):
         self,
     ) -> dict[str, Any]:
         """Create common execution context."""
+        extended_config = self._node.get("extended_config", {}) or {}
         return {
             "run_id": str(self._run_id),
             "node_run_id": str(self._execution_id),
-            "node_type": self._node.node_type,
-            "node_key": self._node.node_key,
-            "stream_mode": self._is_stream,
+            "node_type": self._node.get("node_type"),
+            "node_key": self._node.get("node_key"),
+            "stream_mode": extended_config.get("stream_mode", False),
             **self._workflow_context.execution_context,
         }
 
@@ -135,12 +150,12 @@ class WorkflowTask(LifecycleMixin[TaskExecutionCallbackContext]):
 
         await self.on_pending(self.create_callback_context())
         try:
-            operator = OperatorFactory.get_operator_instance(self._node.node_type)
+            operator = OperatorFactory.get_operator_instance(self._node.get("node_type"))
             execution_context = self._create_base_execution_context()
             operator.add_on_running_callback(self.on_operator_running)
             result = await operator.execute(
                 input_data=input_data,
-                config=self._node.config,
+                config=self.config,
                 execution_context=execution_context
             )
             
@@ -162,7 +177,7 @@ class WorkflowTask(LifecycleMixin[TaskExecutionCallbackContext]):
         except Exception as e:
             await self.on_failed(self.create_callback_context(
                 error=e,
-                operator_context={'node_type': self._node.node_type}
+                operator_context={'node_type': self.node_type}
             ))
             raise e
 
@@ -175,42 +190,42 @@ class WorkflowTask(LifecycleMixin[TaskExecutionCallbackContext]):
     async def on_created(self, context: TaskExecutionCallbackContext):
         await self._create_execution_record()
         self._initialize_logger()
-        self._logger.info(f"Task {self._node.name}({self._node.node_key}) created")
+        self._logger.info(f"Task {self.name}({self.node_key}) created")
         await self._trigger_callbacks(self._lifecycle_context.on_created_callbacks, context)
 
     async def on_pending(self, context: TaskExecutionCallbackContext):
         await self._update_execution_status(status=ExecutionStates.PENDING)
-        self._logger.info(f"Task {self._node.name}({self._node.node_key}) pending")
+        self._logger.info(f"Task {self.name}({self.node_key}) pending")
         await self._trigger_callbacks(self._lifecycle_context.on_pending_callbacks, context)
 
     async def on_running(self, context: TaskExecutionCallbackContext):
         await self._update_execution_status(status=ExecutionStates.RUNNING)
-        self._logger.info(f"Task {self._node.name}({self._node.node_key}) running")
+        self._logger.info(f"Task {self.name}({self.node_key}) running")
         await self._trigger_callbacks(self._lifecycle_context.on_running_callbacks, context)
 
     async def on_completed(self, context: TaskExecutionCallbackContext):
         await self._update_execution_status(status=ExecutionStates.COMPLETED)
-        self._logger.info(f"Task {self._node.name}({self._node.node_key}) completed")
+        self._logger.info(f"Task {self.name}({self.node_key}) completed")
         await self._trigger_callbacks(self._lifecycle_context.on_completed_callbacks, context)
 
     async def on_failed(self, context: TaskExecutionCallbackContext):
         await self._update_execution_status(status=ExecutionStates.FAILED)
-        self._logger.error(f"Task {self._node.name}({self._node.node_key}) failed: {context.error}")
+        self._logger.error(f"Task {self.name}({self.node_key}) failed: {context.error}")
         await self._trigger_callbacks(self._lifecycle_context.on_failed_callbacks, context)
 
     async def on_cancelling(self, context: TaskExecutionCallbackContext):
         await self._update_execution_status(status=ExecutionStates.CANCELLING)
-        self._logger.info(f"Task {self._node.name}({self._node.node_key}) cancelling")
+        self._logger.info(f"Task {self.name}({self.node_key}) cancelling")
         await self._trigger_callbacks(self._lifecycle_context.on_cancelling_callbacks, context)
         
     async def on_cancelled(self, context: TaskExecutionCallbackContext):
         await self._update_execution_status(status=ExecutionStates.CANCELLED)
-        self._logger.info(f"Task {self._node.name}({self._node.node_key}) cancelled")
+        self._logger.info(f"Task {self.name}({self.node_key}) cancelled")
         await self._trigger_callbacks(self._lifecycle_context.on_cancelled_callbacks, context)
 
     async def on_paused(self, context: TaskExecutionCallbackContext):
         await self._update_execution_status(status=ExecutionStates.PAUSED)
-        self._logger.info(f"Task {self._node.name}({self._node.node_key}) paused")
+        self._logger.info(f"Task {self.name}({self.node_key}) paused")
         await self._trigger_callbacks(self._lifecycle_context.on_paused_callbacks, context)
 
     @with_session
@@ -223,7 +238,7 @@ class WorkflowTask(LifecycleMixin[TaskExecutionCallbackContext]):
                 execution = execution_model(
                     run_id=self._run_id,
                     status=ExecutionStates.CREATED,
-                    node_key=self._node.node_key,
+                    node_key=self.node_key,
                     record_info={},
                     created_by=self.user_id,
                     created_at=utcnow().replace(tzinfo=None),
@@ -232,7 +247,7 @@ class WorkflowTask(LifecycleMixin[TaskExecutionCallbackContext]):
                 execution = execution_model(
                     run_id=self._run_id,
                     status=ExecutionStates.CREATED,
-                    node_key=self._node.node_key,
+                    node_key=self.node_key,
                     record_info={},
                     created_by=self.user_id,
                     created_at=utcnow().replace(tzinfo=None),

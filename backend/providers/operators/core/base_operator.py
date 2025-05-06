@@ -10,7 +10,7 @@ from .mixins import (
     TemplateHandlingMixin,
     ValidateHandlingMixin,
 )
-from .schemas import OperatorCallbackContext, OperatorState
+from .schemas import OperatorCallbackContext, OperatorConfigSchema, OperatorState
 
 
 class BaseOperator(
@@ -62,7 +62,7 @@ class BaseOperator(
         self._initialized = True
         
     @property
-    def config_schema(self) -> dict | None:
+    def config_schema(self) -> OperatorConfigSchema | None:
         if self._config_schema is None:
             operator_schema = self.get_operator_schema()
             self._config_schema = operator_schema.config_schema

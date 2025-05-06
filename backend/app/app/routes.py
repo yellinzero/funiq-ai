@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Request
+from fastapi.responses import StreamingResponse
 from fastapi_async_sqlalchemy import db
 
 from app.app.schemas import (
     AppInfo,
     AppListResponse,
+    CompletionRequest,
     ConversationInfo,
     ConversationListResponse,
     CreateAppRequest,
@@ -106,13 +108,14 @@ async def get_conversations(
         page_size: Number of items per page
         search: Optional search term
     """
-    return await ConversationService.get_conversations(
+    data = await ConversationService.get_conversations(
         session=db.session,
         app_id=app_id,
         page=page,
         page_size=page_size,
         search_term=search,
     )
+    return ResponseModel(data=data)
 
 
 @app_router.get("/conversations/{conversation_id}", response_model=ResponseModel[ConversationInfo])
@@ -179,4 +182,26 @@ async def get_messages(
     request: Request,
 ) -> ResponseModel[list[MessageInfo]]:
     """Get all messages of a conversation"""
-    return await ConversationService.get_messages(session=db.session, conversation_id=conversation_id, request=request)
+    messages = await ConversationService.get_messages(
+        session=db.session, conversation_id=conversation_id, request=request
+    )
+    return ResponseModel(data=messages)
+
+
+@app_router.post("/conversations/{conversation_id}/completion")
+async def completion(
+    conversation_id: str,
+    request: Request,
+    payload: CompletionRequest,
+) -> StreamingResponse:
+    """Completion with streaming response"""
+    generator = await ConversationService.completion(
+        session=db.session,
+        conversation_id=conversation_id,
+        payload=payload,
+        request=request
+    )
+    return StreamingResponse(
+        generator,
+        media_type="text/event-stream"
+    )

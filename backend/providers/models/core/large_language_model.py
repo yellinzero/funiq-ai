@@ -370,7 +370,7 @@ class LargeLanguageModel(AIModel):
         """
         model_schema = self.get_model_schema(model)
         if model_schema:
-            return model_schema.parameter_rules_schema
+            return model_schema.parameter_rules_schema.json_schema
 
         return []
 

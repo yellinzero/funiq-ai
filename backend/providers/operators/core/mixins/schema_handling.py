@@ -4,7 +4,7 @@ from typing import ClassVar
 
 from loguru import logger
 
-from utils.common.i18n import get_current_locale_code_with_territory
+from utils.common.i18n import get_current_locale_code_with_territory, translate_data
 
 from ..schemas import OperatorEntity
 
@@ -39,7 +39,7 @@ class SchemaHandlingMixin:
     
             # Create operator schema
             operator_schema = OperatorEntity(
-                **schema_data,
+                **translate_data(schema_data),
             )
 
             # Cache schema

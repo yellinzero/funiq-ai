@@ -10,7 +10,7 @@ from app.account.service.tenant_service import TenantService
 from app.app.service.app_service import AppService
 from app.core.errors import AppErrorCode, WorkflowErrorCode
 from app.core.models.app import Conversation, ConversationStatus, Message, MessageFrom
-from app.core.models.workflow import WorkflowVersionStatus
+from app.core.models.workflow import WorkflowVersion, WorkflowVersionStatus
 from app.workflow.service.workflow_service import WorkflowService
 from infrastructure import StreamHandler
 from infrastructure.workflow_engine import FlowExecutionCallbackContext
@@ -76,7 +76,7 @@ class ConversationService:
             query = query.order_by(Conversation.created_at.desc()).offset(offset).limit(page_size)
 
             result = await session.execute(query)
-            conversations = result.scalar().all()
+            conversations = result.scalars().all()
 
             conversations_responses = []
             for conversation in conversations:
@@ -87,7 +87,7 @@ class ConversationService:
         except Exception as e:
             logger.error(f"Error fetching conversations: {e}")
             raise AppErrorCode.CONVERSATION_FETCH_FAILED.exception(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, data={"error": str(e)}
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
             ) from e
 
     @staticmethod
@@ -110,14 +110,14 @@ class ConversationService:
     ) -> Conversation:
         """create a new conversation"""
         tenant_id, _, user = await TenantService.get_tenant_and_user(session=session, request=request)
-        name = payload.name or ""
-        
+        name = payload.name or "New chat"
+
         app = await AppService.get_app(session=session, app_id=app_id, request=request)
         if app.is_archived:
             raise AppErrorCode.APP_ARCHIVED.exception(status_code=status.HTTP_400_BAD_REQUEST)
         if app.is_inactive:
             raise AppErrorCode.APP_INACTIVE.exception(status_code=status.HTTP_400_BAD_REQUEST)
-        
+
         try:
             new_conversation = Conversation(
                 name=name,
@@ -143,17 +143,17 @@ class ConversationService:
 
     @staticmethod
     async def update_conversation(
-        session: AsyncSession, conversation_id: str, conversation_update: UpdateConversationRequest, request: Request
+        session: AsyncSession, conversation_id: str, payload: UpdateConversationRequest, request: Request
     ) -> ConversationInfo:
         """update conversation information"""
         _, _, user = await TenantService.get_tenant_and_user(session=session, request=request)
         conversation = await ConversationService.get_conversation(session=session, conversation_id=conversation_id)
 
         try:
-            if conversation_update.name:
-                conversation.name = conversation_update.name
-            if conversation_update.description:
-                conversation.description = conversation_update.description
+            if payload.name:
+                conversation.name = payload.name
+            if payload.description:
+                conversation.description = payload.description
             conversation.updated_by = user.id
 
             await conversation.save(session)
@@ -187,10 +187,10 @@ class ConversationService:
     async def get_messages(session: AsyncSession, conversation_id: str, request: Request) -> List[MessageInfo]:
         """get all messages of a conversation"""
         try:
-            conversation = await ConversationService.get_conversation(session=session, conversation_id=conversation_id)
-
-            # Use id for ordering as it's an auto-incrementing integer that guarantees message sequence
-            messages = conversation.messages
+            result = await session.execute(
+                select(Message).where(Message.conversation_id == conversation_id).order_by(Message.created_at.desc())
+            )
+            messages = result.scalars().all()
             messages_responses = []
             for message in messages:
                 messages_responses.append(ConversationService.message_to_info(message))
@@ -203,22 +203,22 @@ class ConversationService:
             ) from e
 
     @staticmethod
-    async def completion(session: AsyncSession, payload: CompletionRequest, request: Request) -> AsyncIterator[str]:
+    async def completion(
+        session: AsyncSession, conversation_id: str, payload: CompletionRequest, request: Request
+    ) -> AsyncIterator[str]:
+        """completion with streaming response"""
         tenant_id, _, user = await TenantService.get_tenant_and_user(session, request)
+        conversation = await ConversationService.get_conversation(session=session, conversation_id=conversation_id)
 
-        """completation"""
-        conversation = await ConversationService.get_conversation(
-            session=session, conversation_id=payload.conversation_id
-        )
-
-        if not conversation.is_archived:
+        if conversation.is_archived:
             raise AppErrorCode.CONVERSATION_ARCHIVED.exception(status_code=status.HTTP_400_BAD_REQUEST)
 
-        workflow_version = await WorkflowService.get_workflow_version(
-            session=session,
-            workflow_id=payload.workflow_id,
-            version=payload.workflow_version,
+        version_result = await session.execute(
+            select(WorkflowVersion).where(WorkflowVersion.id == payload.workflow_version_id)
         )
+        workflow_version = version_result.scalar_one_or_none()
+        if not workflow_version:
+            raise WorkflowErrorCode.WORKFLOW_VERSION_NOT_FOUND.exception(status_code=status.HTTP_404_NOT_FOUND)
 
         if workflow_version.status == WorkflowVersionStatus.ARCHIVED:
             raise WorkflowErrorCode.WORKFLOW_VERSION_ARCHIVED.exception(status_code=status.HTTP_400_BAD_REQUEST)
@@ -226,82 +226,91 @@ class ConversationService:
         if workflow_version.status == WorkflowVersionStatus.INACTIVE:
             raise WorkflowErrorCode.WORKFLOW_VERSION_NOT_ACTIVE.exception(status_code=status.HTTP_400_BAD_REQUEST)
 
-        # Create a new message from the user
-        new_message = Message(
-            workflow_id=payload.workflow_id,
-            workflow_version=payload.workflow_version,
+        try:
+            # Create a new message from the user
+            new_message = Message(
+                workflow_id=workflow_version.workflow_id,
+            workflow_version=workflow_version.version,
             conversation_id=conversation.id,
             content=payload.message,
             message_from=MessageFrom.USER,
             created_by=user.id,
-        )
-        await new_message.save(session)
-        await ConversationService.update_conversation_when_message_created(
-            session=session, conversation=conversation, new_message=new_message
-        )
-        await session.commit()
-
-        app_message = Message(
-            conversation_id=conversation.id,
-            workflow_id=payload.workflow_id,
-            workflow_version=payload.workflow_version,
-            content="",
-            message_from=MessageFrom.APP,
-        )
-
-        await app_message.save(session)
-        await ConversationService.update_conversation_when_message_created(
-            session=session, conversation=conversation, new_message=app_message
-        )
-        await session.commit()
-
-        async def on_created(context: FlowExecutionCallbackContext):
-            app_message.workflow_run_id = context.flow._execution_id
-            await app_message.save(session)
-            await session.flush()
+            )
+            await new_message.save(session)
+            await ConversationService.update_conversation_when_message_created(
+                session=session, conversation=conversation, new_message=new_message
+            )
             await session.commit()
 
-        workflow_config = workflow_version.snapshot.get("config", {})
-        executor = await WorkflowService.execute_workflow_stream(
-            session=session,
-            workflow_id=payload.workflow_id,
-            version=payload.workflow_version,
-            input_data={"query": payload.message},
-            execution_context={
-                "conversation_id": str(conversation.id),
-                "user_id": str(user.id),
-                "user_name": user.name,
-                "tenant_id": str(tenant_id),
-                **workflow_config,
-            },
-            on_created=[on_created],
-        )
+            app_message = Message(
+                conversation_id=conversation.id,
+                workflow_id=workflow_version.workflow_id,
+                workflow_version=workflow_version.version,
+                content="",
+                message_from=MessageFrom.APP,
+            )
 
-        await executor.initialize()
-        stream = await executor.execute()
-        content = ""
-
-        def on_chunk(chunk: EndOperatorStreamOutput):
-            nonlocal content
-            content += chunk.message.content
-
-        async def on_finish():
-            app_message.content = content
-            conversation.updated_at = utcnow().replace(tzinfo=None)
             await app_message.save(session)
-            await conversation.save(session)
+            await ConversationService.update_conversation_when_message_created(
+                session=session, conversation=conversation, new_message=app_message
+            )
             await session.commit()
 
-        async def on_error(e: Exception):
-            error_message = {"error": str(e)}
-            app_message.content = error_message
-            conversation.updated_at = utcnow().replace(tzinfo=None)
-            await app_message.save(session)
-            await conversation.save(session)
-            await session.commit()
+            async def on_created(context: FlowExecutionCallbackContext):
+                app_message.workflow_run_id = context.flow._execution_id
+                await app_message.save(session)
+                await session.flush()
+                await session.commit()
+            workflow_config = workflow_version.snapshot.get("config", {}) or {}
+            executor = await WorkflowService.execute_workflow_stream(
+                session=session,
+                workflow_id=workflow_version.workflow_id,
+                version=workflow_version.version,
+                snapshot=workflow_version.snapshot,
+                snapshot_hash=workflow_version.snapshot_hash,
+                start_node_key=workflow_version.start_node_key,
+                end_node_key=workflow_version.end_node_key,
+                input_data={"query": payload.message},
+                execution_context={
+                    "conversation_id": str(conversation.id),
+                    "user_id": str(user.id),
+                    "user_name": user.name,
+                    "tenant_id": str(tenant_id),
+                    **workflow_config,
+                },
+                on_created=[on_created],
+            )
 
-        handler = StreamHandler(
-            chunk_type=EndOperatorStreamOutput, on_chunk=on_chunk, on_finish=on_finish, on_error=on_error
-        )
+            await executor.initialize()
+            stream = await executor.execute()
+            content = ""
 
-        return handler.process_stream(stream, executor)
+            def on_chunk(chunk: EndOperatorStreamOutput):
+                nonlocal content
+                content += chunk.message.content
+
+            async def on_finish():
+                app_message.content = content
+                conversation.updated_at = utcnow().replace(tzinfo=None)
+                await app_message.save(session)
+                await conversation.save(session)
+                await session.commit()
+
+            async def on_error(e: Exception):
+                error_message = {"error": str(e)}
+                app_message.content = error_message
+                conversation.updated_at = utcnow().replace(tzinfo=None)
+                await app_message.save(session)
+                await conversation.save(session)
+                await session.commit()
+
+            handler = StreamHandler(
+                chunk_type=EndOperatorStreamOutput, on_chunk=on_chunk, on_finish=on_finish, on_error=on_error
+            )
+
+            return handler.process_stream(stream, executor)
+        except Exception as e:
+            logger.error(f"Error completing conversation: {e}")
+            raise AppErrorCode.CONVERSATION_COMPLETION_ERROR.exception(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, data={"error": str(e)}
+            ) from e

@@ -93,6 +93,12 @@ class FuniqAIError(Exception):
         self.message = message or self._default_message
         self.data = data
         self.status_code = status_code or self._default_status_code
+        
+    def __str__(self) -> str:
+        error_str = f"[{self.code}:{self.status_code}] {self.message}"
+        if self.data:
+            error_str += f" - {self.data}"
+        return error_str
 
     def to_dict(self) -> dict:
         """

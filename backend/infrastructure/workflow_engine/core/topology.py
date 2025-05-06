@@ -136,7 +136,7 @@ class WorkflowTopologyMixin:
             )
 
         except Exception as e:
-            logger.error(f"Error building topology for {self._context.workflow_name}: {e}")
+            logger.error(f"Error building topology for {self._context.workflow_id}: {e}")
             raise e
 
     def _calculate_node_levels(self, g: nx.DiGraph) -> List[List[str]]:

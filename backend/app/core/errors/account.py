@@ -28,6 +28,11 @@ class AccountErrorCode(BaseErrorCode):
     USER_ALREADY_IN_TENANT = ("B0309", "The user is already in the tenant")
     ACCOUNT_ALREADY_ACTIVE = ("B0310", "The account is already active")
     
+    # Operation related (04)
+    RESET_PASSWORD_EMAIL_FAILED = ("B0401", "Failed to send reset password email")
+    ACTIVATE_ACCOUNT_EMAIL_FAILED = ("B0402", "Failed to send activate account email")
+    SIGN_UP_EMAIL_FAILED = ("B0403", "Failed to send sign up email")
+    
     # External service - OAuth (06)
     OAUTH_INVALID_PROVIDER = ("B0601", "Invalid OAuth provider")
     OAUTH_INVALID_TOKEN = ("B0602", "Invalid OAuth token")

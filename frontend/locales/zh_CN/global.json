@@ -3,9 +3,9 @@
   "welcome": "欢迎使用{{name}}",
   "home_description": "简单易用的人工智能工作流程管理平台，让人工智能技术更易于使用",
   "chats": "对话",
-  "workflows": "工作流",
+  "apps": "应用",
   "store": "商店",
-  "integrations": "集成中心",
+  "toolkit": "工具包",
   "sign_in": "登录",
   "sign_up": "注册",
   "my_account": "我的账号",
@@ -15,5 +15,9 @@
   "models": "模型",
   "tools": "工具",
   "save": "保存",
-  "cancel": "取消"
+  "cancel": "取消",
+  "system": "系统",
+  "light": "亮色",
+  "dark": "暗色",
+  "toggle_theme": "切换主题"
 }

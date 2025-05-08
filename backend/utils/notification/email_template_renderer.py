@@ -3,6 +3,7 @@ from functools import cache
 from typing import Union
 
 import jinja2
+from loguru import logger
 
 from utils.common.i18n import NullTranslations, get_current_locale_translator, translation_registry
 
@@ -15,6 +16,7 @@ class EmailTemplateRenderer:
         :param template_dir: Path to the directory containing template files.
         """
         self.template_dir = pathlib.Path(__file__).resolve().parent.parent.parent / template_dir
+        logger.info(f"email template dir: {self.template_dir}")
         self.environment = jinja2.Environment(
             loader=jinja2.FileSystemLoader(self.template_dir),
             autoescape=True,
@@ -79,4 +81,4 @@ def _get_template(template_renderer: EmailTemplateRenderer, template_name: str) 
         raise FileNotFoundError(f"Template '{template_name}' not found in {template_renderer.template_dir}") from err
 
 
-email_template_renderer = EmailTemplateRenderer("/infrastructure/email/templates")
+email_template_renderer = EmailTemplateRenderer(template_dir="./infrastructure/email/templates")

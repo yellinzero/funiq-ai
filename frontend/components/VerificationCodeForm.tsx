@@ -1,15 +1,19 @@
 'use client'
-import type { KeyboardEvent } from 'react'
-import Toast from '@/components/Toast'
-import { zodResolver } from '@hookform/resolvers/zod'
-import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
-import FormControl from '@mui/material/FormControl'
-import TextField from '@mui/material/TextField'
-import { useRef } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+
 import { useTranslation } from 'react-i18next'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
 import * as z from 'zod'
+import { toast } from 'sonner'
+import { Button } from '@/components/base/button'
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from '@/components/base/input-otp'
+import { REGEXP_ONLY_DIGITS } from 'input-otp'
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/base/form'
 
 interface VerificationCodeFormProps {
   onSubmit: (code: string) => Promise<void>
@@ -20,7 +24,7 @@ interface VerificationCodeFormProps {
 }
 
 const verificationCodeSchema = z.object({
-  code: z.string().length(6),
+  code: z.string().length(6, 'auth.code_length'),
 })
 
 type VerificationCodeFormInputs = z.infer<typeof verificationCodeSchema>
@@ -34,30 +38,12 @@ export default function VerificationCodeForm({
 }: VerificationCodeFormProps) {
   const { t } = useTranslation(['auth'])
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<VerificationCodeFormInputs>({
+  const form = useForm<VerificationCodeFormInputs>({
     resolver: zodResolver(verificationCodeSchema),
     defaultValues: {
       code: '',
     },
   })
-
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([])
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, index: number) => {
-    if (e.key === 'Backspace' && !e.currentTarget.value && index > 0) {
-      inputRefs.current[index - 1]?.focus()
-    }
-  }
-
-  const handleInput = (value: string, index: number) => {
-    if (value.length === 1 && index < 5) {
-      inputRefs.current[index + 1]?.focus()
-    }
-  }
 
   const handleFormSubmit = async (data: VerificationCodeFormInputs) => {
     try {
@@ -65,65 +51,57 @@ export default function VerificationCodeForm({
     }
     catch (e) {
       console.error('Verification error:', e)
-      Toast.error({ message: errorMessage ?? t('verification_failed') })
+      toast.error(errorMessage ?? t('auth.verification_failed'))
     }
   }
 
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit(handleFormSubmit)}
-      sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 2 }}
-    >
-      <FormControl>
-        <Controller
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="flex flex-col gap-4 w-full items-center">
+        <FormField
+          control={form.control}
           name="code"
-          control={control}
           render={({ field }) => (
-            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-              {[0, 1, 2, 3, 4, 5].map(index => (
-                <TextField
-                  key={index}
-                  inputRef={el => (inputRefs.current[index] = el)}
-                  inputProps={{
-                    maxLength: 1,
-                    style: { textAlign: 'center' },
-                  }}
-                  sx={{ width: '48px' }}
-                  variant="outlined"
-                  error={!!errors.code}
-                  value={field.value[index] || ''}
-                  onChange={(e) => {
-                    const newValue = e.target.value.replace(/\D/g, '')
-                    const codeArray = field.value.split('')
-                    codeArray[index] = newValue
-                    field.onChange(codeArray.join(''))
-                    handleInput(newValue, index)
-                  }}
-                  onKeyDown={e => handleKeyDown(e as unknown as KeyboardEvent<HTMLInputElement>, index)}
-                />
-              ))}
-            </Box>
+            <FormItem>
+              <FormControl>
+                <InputOTP
+                  maxLength={6}
+                  {...field}
+                  pattern={REGEXP_ONLY_DIGITS}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} className="size-12" />
+                    <InputOTPSlot index={1} className="size-12" />
+                    <InputOTPSlot index={2} className="size-12" />
+                  </InputOTPGroup>
+                  <InputOTPSeparator />
+                  <InputOTPGroup>
+                    <InputOTPSlot index={3} className="size-12" />
+                    <InputOTPSlot index={4} className="size-12" />
+                    <InputOTPSlot index={5} className="size-12" />
+                  </InputOTPGroup>
+                </InputOTP>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
         />
-        {errors.code && (
-          <Box sx={{ mt: 1, color: 'error.main', fontSize: '0.75rem' }}>
-            {t('invalid_verification_code')}
-          </Box>
-        )}
-      </FormControl>
-      <Button type="submit" fullWidth variant="contained">
-        {submitButtonText ?? t('verify')}
-      </Button>
-      <Button
-        variant="text"
-        disabled={countdown > 0}
-        onClick={onResend}
-      >
-        {countdown > 0
-          ? t('resend_code_countdown', { seconds: countdown })
-          : t('resend_code')}
-      </Button>
-    </Box>
+
+        <Button type="submit" className="w-full">
+          {submitButtonText ?? t('auth.verify')}
+        </Button>
+
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={countdown > 0}
+          onClick={onResend}
+        >
+          {countdown > 0
+            ? t('auth.resend_code_countdown', { seconds: countdown })
+            : t('auth.resend_code')}
+        </Button>
+      </form>
+    </Form>
   )
 }

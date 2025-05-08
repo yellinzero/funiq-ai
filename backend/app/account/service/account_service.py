@@ -140,7 +140,6 @@ class AccountService:
         token_data = await token_manager.get_signup_email_verification_data(token=payload.token)
         if not token_data:
             raise CommonErrorCode.EMAIL_VERIFICATION_CODE_EXPIRED.exception(status_code=status.HTTP_400_BAD_REQUEST)
-
         email = token_data.get("email")
         if token_data.get("code") != payload.code:
             raise CommonErrorCode.INVALID_VERIFICATION_CODE.exception(
@@ -164,7 +163,9 @@ class AccountService:
         await token_manager.revoke_signup_email_verification_token(email=email)
 
         # Handle authentication
-        return await AccountService._handle_successful_auth(session, account, request)
+        return await AccountService._handle_successful_auth(
+            session=session, account=account, request=request, need_check_tenant=False
+        )
 
     @staticmethod
     async def send_sign_up_verification_email(account: Account, request: Request) -> str:
@@ -178,15 +179,21 @@ class AccountService:
                 data={"email": account.email}, status_code=status.HTTP_429_TOO_MANY_REQUESTS
             )
 
-        code = "".join([str(secrets.randbelow(10)) for _ in range(6)])
-        token = await token_manager.generate_signup_email_verification_token(email=account.email, code=code)
-        send_signup_verification_email_task.delay(
-            language=request.state.language or "en",
-            to=account.email,
-            code=code,
-        )
-        await AccountService.signup_email_verification_limit.record_attempt(identifier=account.email)
-        return token
+        try:
+            code = "".join([str(secrets.randbelow(10)) for _ in range(6)])
+            token = await token_manager.generate_signup_email_verification_token(email=account.email, code=code)
+            send_signup_verification_email_task.delay(
+                language=request.state.language or "en",
+                to=account.email,
+                code=code,
+            )
+            await AccountService.signup_email_verification_limit.record_attempt(identifier=account.email)
+            return token
+        except Exception as e:
+            logger.error(f"Failed to queue activate sign up email task: {e!s}")
+            raise AccountErrorCode.SIGN_UP_EMAIL_FAILED.exception(
+                data={"email": account.email}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
 
     # endregion
 
@@ -217,34 +224,36 @@ class AccountService:
 
     @staticmethod
     async def _handle_successful_auth(
-        session: AsyncSession, account: Account, request: Request
-    ) -> tuple[str, str, str]:
+        session: AsyncSession, account: Account, request: Request, need_check_tenant: bool = True
+    ) -> tuple[str, str, str | None]:
         """
         Handle successful authentication by updating account info and generating tokens.
         """
-        # Check if user belongs to any tenant
-        result = await session.execute(select(User).where(User.account_id == account.id))
-        user_tenants = result.scalars().all()
+        current_tenant_id = None
+        if need_check_tenant:
+            # Check if user belongs to any tenant
+            result = await session.execute(select(User).where(User.account_id == account.id))
+            user_tenants = result.scalars().all()
 
-        if not user_tenants:
-            raise AccountErrorCode.NO_TENANT_ASSOCIATED.exception(status_code=status.HTTP_403_FORBIDDEN)
+            if not user_tenants:
+                raise AccountErrorCode.NO_TENANT_ASSOCIATED.exception(status_code=status.HTTP_403_FORBIDDEN)
 
-        # Set last login tenant based on X-Tenant-ID header if present
-        requested_tenant_id = request.state.tenant_id
-        if requested_tenant_id:
-            # Verify the requested tenant is valid for this user
-            if any(str(user.tenant_id) == requested_tenant_id for user in user_tenants):
-                current_tenant_id = requested_tenant_id
+            # Set last login tenant based on X-Tenant-ID header if present
+            requested_tenant_id = request.state.tenant_id
+            if requested_tenant_id:
+                # Verify the requested tenant is valid for this user
+                if any(str(user.tenant_id) == requested_tenant_id for user in user_tenants):
+                    current_tenant_id = requested_tenant_id
+                else:
+                    raise AccountErrorCode.INVALID_TENANT.exception(status_code=status.HTTP_403_FORBIDDEN)
             else:
-                raise AccountErrorCode.INVALID_TENANT.exception(status_code=status.HTTP_403_FORBIDDEN)
-        else:
-            # Fall back to last login tenant or first available tenant
-            if account.last_login_tenant_id and any(
-                user.tenant_id == account.last_login_tenant_id for user in user_tenants
-            ):
-                current_tenant_id = account.last_login_tenant_id
-            else:
-                current_tenant_id = user_tenants[0].tenant_id
+                # Fall back to last login tenant or first available tenant
+                if account.last_login_tenant_id and any(
+                    user.tenant_id == account.last_login_tenant_id for user in user_tenants
+                ):
+                    current_tenant_id = account.last_login_tenant_id
+                else:
+                    current_tenant_id = user_tenants[0].tenant_id
 
         # Update account info
         account.last_login_at = utcnow().replace(tzinfo=None)
@@ -256,7 +265,7 @@ class AccountService:
         # Generate tokens
         access_token, refresh_token = create_token_pair({"aid": str(account.id)})
         await session.commit()
-        return access_token, refresh_token, str(current_tenant_id)
+        return access_token, refresh_token, str(current_tenant_id) if current_tenant_id else None
 
     @staticmethod
     async def login(session: AsyncSession, payload: LoginRequest, request: Request) -> tuple[str, str, str]:
@@ -267,7 +276,9 @@ class AccountService:
             account = await AccountService._verify_login_account(session, payload.email, payload.password)
             invalidate_refresh_token(account_id=str(account.id))
 
-            tokens = await AccountService._handle_successful_auth(session, account, request)
+            tokens = await AccountService._handle_successful_auth(
+                session=session, account=account, request=request
+            )
             logger.info(f"Successful login for email: {payload.email}")
             return tokens
 
@@ -301,15 +312,21 @@ class AccountService:
                 data={"email": account.email}, status_code=status.HTTP_429_TOO_MANY_REQUESTS
             )
 
-        code = "".join([str(secrets.randbelow(10)) for _ in range(6)])
-        token = await token_manager.generate_activate_account_token(email=account.email, code=code)
-        send_activate_account_email_task.delay(
-            language=request.state.language or account.language or "en",
-            to=account.email,
-            code=code,
-        )
-        await AccountService.activate_account_limit.record_attempt(identifier=account.email)
-        return token
+        try:
+            code = "".join([str(secrets.randbelow(10)) for _ in range(6)])
+            token = await token_manager.generate_activate_account_token(email=account.email, code=code)
+            send_activate_account_email_task.delay(
+                language=request.state.language or account.language or "en",
+                to=account.email,
+                code=code,
+            )
+            await AccountService.activate_account_limit.record_attempt(identifier=account.email)
+            return token
+        except Exception as e:
+            logger.error(f"Failed to queue activate account email task: {e!s}")
+            raise AccountErrorCode.ACTIVATE_ACCOUNT_EMAIL_FAILED.exception(
+                data={"email": account.email}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
 
     @staticmethod
     async def activate_account(session: AsyncSession, payload: SignupRequest, request: Request) -> str:
@@ -354,19 +371,24 @@ class AccountService:
                 data={"email": payload.email}, status_code=status.HTTP_404_NOT_FOUND
             )
 
-        # Generate verification code and token
-        code = "".join([str(secrets.randbelow(10)) for _ in range(6)])
-        token = await token_manager.generate_reset_password_token(email=account.email, code=code)
+        try:
+            # Generate verification code and token
+            code = "".join([str(secrets.randbelow(10)) for _ in range(6)])
+            token = await token_manager.generate_reset_password_token(email=account.email, code=code)
+            # Send email
+            send_reset_password_verification_email_task.delay(
+                language=request.state.language or account.language or "en",
+                to=account.email,
+                code=code,
+            )
 
-        # Send email
-        send_reset_password_verification_email_task.delay(
-            language=request.state.language or account.language or "en",
-            to=account.email,
-            code=code,
-        )
-
-        await AccountService.reset_password_limit.record_attempt(identifier=account.email)
-        return token
+            await AccountService.reset_password_limit.record_attempt(identifier=account.email)
+            return token
+        except Exception as e:
+            logger.error(f"Failed to queue reset password email task: {e!s}")
+            raise AccountErrorCode.RESET_PASSWORD_EMAIL_FAILED.exception(
+                data={"email": account.email}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
 
     @staticmethod
     async def reset_password(session: AsyncSession, payload: ResetPasswordRequest) -> None:
@@ -472,7 +494,9 @@ class AccountService:
         await token_manager.revoke_activate_account_token(email=email)
 
         # Handle authentication
-        return await AccountService._handle_successful_auth(session, account, request)
+        return await AccountService._handle_successful_auth(
+            session=session, account=account, request=request, need_check_tenant=False
+        )
 
     @staticmethod
     async def get_account_info(session: AsyncSession, account_id: str) -> Account:
@@ -606,7 +630,9 @@ class AccountService:
                 )
                 await oauth_provider.save(session)
 
-            tokens = await AccountService._handle_successful_auth(session, account, request)
+            tokens = await AccountService._handle_successful_auth(
+                session=session, account=account, request=request
+            )
             logger.info(f"Successfully completed OAuth login for email: {payload.email}")
             return tokens
 

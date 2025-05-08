@@ -8,16 +8,15 @@ import type {
   MaybeOptionalInit,
   Middleware,
 } from 'openapi-fetch'
-import Toast from '@/components/Toast'
+import { toast } from 'sonner'
 import { initTranslations } from '@/plugins/i18n'
 import { I18N_COOKIE_NAME } from '@/plugins/i18n/settings'
-import { SESSION_COOKIE_NAME } from '@/utils/constants'
+import { SESSION_COOKIE_NAME, TENANT_HEADER_NAME } from '@/utils/constants'
 import createClient from 'openapi-fetch'
 import { Cookies } from 'react-cookie'
 import { redirect } from 'next/navigation'
 import { TFunction } from 'i18next'
 
-export const TENANT_HEADER_NAME = 'X-Tenant-ID'
 // Types
 export type HttpMethod = 'get' | 'put' | 'post' | 'delete' | 'options' | 'head' | 'patch' | 'trace'
 
@@ -60,7 +59,10 @@ export type CustomFetchResponse<Path extends keyof paths, Method extends HttpMet
 
 export interface ExtraConfig {
   disableErrorToast?: boolean
+  disableErrorToastStatusList?: number[]
+  disableErrorToastCodeList?: string[]
 }
+
 // Constants
 const namespaces = ['error']
 
@@ -128,7 +130,10 @@ const requestContextMiddleware: Middleware = {
     const { language, session } = await getCookieContext()
 
     request.headers.set(I18N_COOKIE_NAME, language)
-    request.headers.set(TENANT_HEADER_NAME, session.tenantId)
+
+    if (session.tenantId) {
+      request.headers.set(TENANT_HEADER_NAME, session.tenantId)
+    }
     if (session.accessToken) {
       request.headers.set('Authorization', `Bearer ${session.accessToken}`)
     }
@@ -143,15 +148,6 @@ const requestContextMiddleware: Middleware = {
         .join('; ')
       request.headers.set('Cookie', cookie)
     }
-    return request
-  },
-}
-
-const publicRequestContextMiddleware: Middleware = {
-  async onRequest({ request }) {
-    const { language } = await getCookieContext()
-
-    request.headers.set(I18N_COOKIE_NAME, language)
     return request
   },
 }
@@ -178,7 +174,8 @@ const responseMiddleware: Middleware = {
     if (status >= 400 && status < 600) {
       switch (status) {
         case 401: {
-          redirect('sign-in')
+          redirect('/sign-in')
+          break
         }
         default: {
           break
@@ -195,26 +192,44 @@ const responseMiddleware: Middleware = {
 // Apply middlewares
 apiFetch.use(requestContextMiddleware)
 apiFetch.use(responseMiddleware)
-publicApiFetch.use(publicRequestContextMiddleware)
-publicApiFetch.use(responseMiddleware)
 
+const defaultDisableErrorToastStatusList = [401] as number[]
+const defaultDisableErrorToastCodeList = [] as string[]
 
-// Error Handling
-export const showErrorToast = async (code: string | number, t?: TFunction) => {
-  if (typeof window === 'undefined') return
-
-  const { t: translator } = t ? { t } : await initTranslations('en', namespaces)
-
-  if (typeof code === 'number') {
-    Toast.error({ message: translator(`HCODE${code}`, { ns: 'error' }) })
-  } else {
-    Toast.error({
-      message: translator(code, { ns: 'error' }) || translator('undefined_error', { ns: 'error' })
-    })
+export async function showErrorInfo(
+  data: ResponseData | null,
+  error: ResponseData | null,
+  response: Response,
+  t: TFunction,
+  extraConfig?: ExtraConfig,
+): Promise<boolean> {
+  let disableToast = false
+  if (extraConfig) {
+    const { disableErrorToast, disableErrorToastStatusList, disableErrorToastCodeList } = extraConfig
+    disableToast = !!(
+      disableErrorToast
+      || disableErrorToastStatusList?.includes(response.status)
+      || disableErrorToastCodeList?.includes(data?.code || error?.code || '')
+    )
   }
+
+  const hasError = (data && data.code && data.code !== '0')
+    || (error && error.code && error.code !== '0')
+    || (response.status >= 400 && response.status < 600)
+
+  if (!disableToast && hasError) {
+    if ((data && data.code && data.code !== '0')
+      || (error && error.code && error.code !== '0')) {
+      toast.error(t(`error.${data?.code || error?.code}`) || t('error.undefined_error'))
+    }
+    else if (response.status >= 400 && response.status < 600) {
+      toast.error(t(`error.http_status.${response.status}`))
+    }
+  }
+
+  return hasError
 }
 
-// API Factory
 export function createFetchApi(client: Client<paths>) {
   const handleResponse = async <Path extends keyof paths, Method extends HttpMethod>(
     promise: ReturnType<ClientMethod<{}, Method, Path>>,
@@ -222,22 +237,36 @@ export function createFetchApi(client: Client<paths>) {
   ): Promise<CustomFetchResponse<Path, Method>> => {
     const { data, response, error } = await promise
     const { language } = await getCookieContext()
-
     const { t } = await initTranslations(language, namespaces)
-    const errorCode = data?.code || error?.code
-    if (errorCode && errorCode !== '0') {
-      if (!config?.disableErrorToast) {
-        await showErrorToast(errorCode, t)
-      }
-      throw new HttpError(data?.message || error?.message, response, data || error)
+
+    const mergedConfig = {
+      ...config,
+      disableErrorToastStatusList: [
+        ...(config?.disableErrorToastStatusList || []),
+        ...defaultDisableErrorToastStatusList,
+      ],
+      disableErrorToastCodeList: [
+        ...(config?.disableErrorToastCodeList || []),
+        ...defaultDisableErrorToastCodeList,
+      ],
     }
-    else if (response.status >= 400 && response.status < 600) {
-      if (!config?.disableErrorToast) {
-        await showErrorToast(response.status, t)
-      }
-      const httpErrorMsg = t(`HCODE${response.status}`, { ns: 'error' })
-      throw new HttpError(httpErrorMsg, response, data || error)
+
+    const hasError = await showErrorInfo(
+      data as ResponseData,
+      error as ResponseData,
+      response,
+      t,
+      mergedConfig,
+    )
+
+    if (hasError) {
+      throw new HttpError(
+        data?.message || error?.message || response.statusText,
+        response,
+        data || error,
+      )
     }
+
     return {
       data: data?.data,
       error: response.error,
@@ -279,6 +308,4 @@ export function createFetchApi(client: Client<paths>) {
   }
 }
 
-// Export API instances
 export const fetchApi = createFetchApi(apiFetch)
-export const fetchPublicApi = createFetchApi(publicApiFetch)

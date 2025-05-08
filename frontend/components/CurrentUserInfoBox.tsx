@@ -1,47 +1,46 @@
 'use client'
 import type { IAccountResponse } from '@/apis/types'
-
-import { Avatar, Box, Stack, Typography } from '@mui/material'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/base/avatar'
 
 interface IUserInfoBoxProps {
   userInfo?: IAccountResponse
-  width?: number
-  height?: number
   showName?: boolean
   showEmail?: boolean
 }
 
 export default function CurrentUserInfoBox({
   userInfo,
-  width = 36,
-  height = 36,
   showName = false,
   showEmail = false,
 }: IUserInfoBoxProps) {
+  if (!userInfo) return null
+
   return (
-    userInfo
-      ? (
-          <Stack direction="row" sx={{ gap: showName || showEmail ? 1 : 0, alignItems: 'center', justifyContent: 'center' }}>
-            <Avatar
-              sizes="small"
-              alt={userInfo?.name ?? ''}
-              src={userInfo?.avatar ?? ''}
-              sx={{ width, height }}
-            />
-            <Box sx={{ mr: 'auto', display: 'flex', flexDirection: 'column', gap: 0.5, justifyContent: 'center' }}>
-              {showName && (
-                <Typography variant="body2">
-                  {userInfo?.name}
-                </Typography>
-              )}
-              {showEmail && (
-                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                  {userInfo?.email}
-                </Typography>
-              )}
-            </Box>
-          </Stack>
-        )
-      : null
+    <div className="flex items-center justify-center gap-4">
+      <Avatar className="h-9 w-9">
+        <AvatarImage
+          src={userInfo.avatar ?? ''}
+          alt={userInfo.name ?? ''}
+        />
+        <AvatarFallback>
+          {userInfo.name?.[0]?.toUpperCase() ?? 'U'}
+        </AvatarFallback>
+      </Avatar>
+
+      {(showName || showEmail) && (
+        <div className="flex flex-col gap-1">
+          {showName && (
+            <p className="text-sm font-medium leading-none">
+              {userInfo.name}
+            </p>
+          )}
+          {showEmail && (
+            <p className="text-xs text-muted-foreground">
+              {userInfo.email}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
   )
 }

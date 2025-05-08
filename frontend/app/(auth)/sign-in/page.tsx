@@ -1,38 +1,30 @@
 'use client'
+
 import { loginApi } from '@/apis'
 import { HttpError } from '@/apis/core'
-import Toast from '@/components/Toast'
+import { toast } from 'sonner'
 import { useSessionCookie } from '@/hooks/useSessionCookie'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { passwordValidation } from '@/utils/validate_rules'
-import { Link } from '@mui/material'
-import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
-import MuiCard from '@mui/material/Card'
-import FormControl from '@mui/material/FormControl'
-import FormLabel from '@mui/material/FormLabel'
-import { styled } from '@mui/material/styles'
-import TextField from '@mui/material/TextField'
-import Typography from '@mui/material/Typography'
+import { passwordValidation } from '@/utils/constants'
 import { useRouter } from 'next/navigation'
-import { Controller, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
-
-const Card = styled(MuiCard)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  alignSelf: 'center',
-  width: '100%',
-  padding: theme.spacing(4),
-  gap: theme.spacing(2),
-  [theme.breakpoints.up('sm')]: {
-    maxWidth: '450px',
-  },
-}))
+import { Card, CardContent } from '@/components/base/card'
+import { Button } from '@/components/base/button'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/base/form'
+import { Input } from '@/components/base/input'
+import Link from 'next/link'
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email('auth.enter_valid_email'),
   password: passwordValidation,
 })
 type LoginFormInputs = z.infer<typeof loginSchema>
@@ -42,138 +34,109 @@ export default function Login() {
   const { setAuth } = useSessionCookie()
   const router = useRouter()
 
-  const {
-    control,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<LoginFormInputs>({
+  const form = useForm<LoginFormInputs>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
     mode: 'onChange'
   })
 
-  const emailValue = watch('email')
+  const emailValue = form.watch('email')
 
   const onSubmit = async (data: LoginFormInputs) => {
     try {
       const res = await loginApi(data)
       if (res.data) {
         setAuth(res.data.access_token, res.data.tenant_id ?? undefined)
-
         router.push('/chat')
-
-        Toast.success({ message: t('login_success') })
+        toast.success(t('auth.login_success'))
       }
     }
     catch (e: unknown) {
       console.error('Login error:', e)
-      if (e instanceof HttpError && e.code === 'B0004') {
+      if (e instanceof HttpError && e.code === 'B0102') {
         router.push(`/activate?email=${encodeURIComponent(data.email)}`)
       }
     }
   }
 
   return (
-    <>
-      <Card sx={{ height: '70%' }}>
-        <Typography
-          component="h1"
-          variant="h4"
-          sx={{ width: '100%', fontSize: '1.5rem' }}
-        >
-          {t('welcome', {
-            name: t('product_name', {
-              ns: 'global',
-            }),
-            ns: 'global',
-          })}
-        </Typography>
-        <Box
-          component="form"
-          onSubmit={handleSubmit(onSubmit)}
-          noValidate
-          sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 2 }}
-        >
-          <FormControl>
-            <FormLabel htmlFor="email">{t('email')}</FormLabel>
-            <Controller
-              name="email"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  id="email"
-                  type="email"
-                  placeholder="your@email.com"
-                  autoComplete="email"
-                  fullWidth
-                  variant="outlined"
-                  error={!!errors.email}
-                  helperText={errors.email
-                    ? t('enter_valid_email')
-                    : undefined}
-                />
-              )}
-            />
-          </FormControl>
-          <FormControl>
-            <FormLabel htmlFor="password">{t('password')}</FormLabel>
-            <Controller
-              name="password"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  id="password"
-                  type="password"
-                  placeholder="••••••"
-                  autoComplete="current-password"
-                  fullWidth
-                  variant="outlined"
-                  error={!!errors.password}
-                  helperText={errors.password ? t(errors.password.message as string) : undefined}
-                />
-              )}
-            />
-          </FormControl>
-          <Button type="submit" fullWidth variant="contained">
-            {t('sign_in', {
-              ns: 'global',
+    <div className="flex flex-col items-center gap-4 w-full max-w-[450px] h-[70%]">
+      <Card className="flex-1 p-6 w-full shadow-lg">
+        <CardContent className="p-0 space-y-4">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {t('global.welcome', {
+              name: t('global.product_name'),
             })}
-          </Button>
-          <Box sx={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'end',
-          }}
-          >
-            <Link
-              href={`/forgot-password${emailValue ? `?email=${encodeURIComponent(emailValue)}` : ''}`}
-              underline="hover"
-            >
-              {t('forgot_password')}
-            </Link>
-          </Box>
+          </h1>
 
-        </Box>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('auth.email')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="email"
+                        placeholder="your@email.com"
+                        autoComplete="email"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('auth.password')}</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="password"
+                        placeholder="••••••"
+                        autoComplete="current-password"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button type="submit" className="w-full">
+                {t('global.sign_in')}
+              </Button>
+
+              <div className="flex justify-end">
+                <Link
+                  href={`/forgot-password${emailValue ? `?email=${encodeURIComponent(emailValue)}` : ''}`}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {t('auth.forgot_password')}
+                </Link>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
       </Card>
-      <Box
-        component="span"
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-        }}
-      >
-        <Box component="span" sx={{ color: 'text.secondary' }}>
-          {t('no_account')}
-        </Box>
 
-        <Link href="/sign-up" underline="hover">
-          {t('sign_up_now')}
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground">
+          {t('auth.no_account')}
+        </span>
+        <Link
+          href="/sign-up"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {t('auth.sign_up_now')}
         </Link>
-      </Box>
-    </>
+      </div>
+    </div>
   )
 }

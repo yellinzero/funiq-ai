@@ -3,9 +3,9 @@
   "welcome": "Welcome to {{name}}",
   "home_description": "A simple and user-friendly AI workflow management platform, making AI technology more accessible",
   "chats": "Chats",
-  "workflows": "Workflows",
+  "apps": "Apps",
   "store": "Store",
-  "integrations": "Integrations",
+  "toolkit": "Toolkit",
   "sign_in": "Sign in",
   "sign_up": "Sign up",
   "my_account": "My account",
@@ -15,5 +15,9 @@
   "models": "Models",
   "tools": "Tools",
   "save": "Save",
-  "cancel": "Cancel"
+  "cancel": "Cancel",
+  "system": "System",
+  "light": "Light",
+  "dark": "Dark",
+  "toggle_theme": "Toggle theme"
 }

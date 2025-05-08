@@ -1,18 +1,23 @@
 # Funiq AI Frontend
 
-The frontend application for Funiq AI, built with Next.js and Material UI.
+The frontend application for Funiq AI, built with Next.js and Shadcn UI.
 
 ## 🛠 Tech Stack
 
 - Next.js 15
 - React 19
-- Material UI v6
+- Shadcn UI
+- Tailwind CSS 4
 - TypeScript
 - i18next
 - React Query 5
 - React Hook Form 7
 - Zod 3
-- Emotion
+- Radix UI
+- Lucide React
+- Sonner (Toast notifications)
+- Next Themes
+- Zustand (State management)
 
 ## 📋 Prerequisites
 
@@ -61,7 +66,6 @@ frontend/
 ├── app/             # Next.js application pages
 ├── components/      # React components
 ├── hooks/          # Custom React hooks
-├── theme/          # Theme configuration
 ├── plugins/        # Plugin configurations
 ├── public/         # Static assets
 ├── types/          # TypeScript type definitions

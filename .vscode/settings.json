@@ -30,9 +30,6 @@
   "i18n-ally.localesPaths": [
     "frontend/locales"
   ],
-  "i18n-ally.enabledFrameworks": [
-    "react-i18next"
-  ],
   "i18n-ally.enabledParsers": [
     "json"
   ],
@@ -45,6 +42,9 @@
     },
     "editor.defaultFormatter": "charliermarsh.ruff"
   },
-  "i18n-ally.keystyle": "nested"
+  "i18n-ally.keystyle": "nested",
+  "css.customData": [
+    ".vscode/tailwind.json"
+  ],
 }
   

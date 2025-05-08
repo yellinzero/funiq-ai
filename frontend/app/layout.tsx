@@ -2,10 +2,10 @@ import { initTranslations } from '@/plugins/i18n'
 import { getLocaleFromServer } from '@/plugins/i18n/server'
 
 import { Roboto } from 'next/font/google'
-import InitColorSchemeScript from '@mui/material/InitColorSchemeScript'
 import React from 'react'
 import Providers from '@/components/Providers'
-
+import './globals.css'
+import { Toaster } from '@/components/base/sonner'
 const namespaces = ['global']
 
 export const roboto = Roboto({
@@ -13,7 +13,7 @@ export const roboto = Roboto({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-roboto',
-  preload: false,
+  preload: true,
 })
 
 export default async function RootLayout({
@@ -26,17 +26,11 @@ export default async function RootLayout({
   return (
     <React.StrictMode>
       <html lang={locale} className={roboto.variable} suppressHydrationWarning>
-        <body style={
-          {
-            width: '100vw',
-            height: '100vh',
-          }
-        }
-        >
-          <InitColorSchemeScript />
+        <body className="w-full h-screen">
           <Providers locale={locale}>
             {children}
           </Providers>
+          <Toaster richColors position="top-right" />
         </body>
       </html>
     </React.StrictMode>

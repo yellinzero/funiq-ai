@@ -1,4 +1,4 @@
-import Form from '@rjsf/mui';
+import Form from '@rjsf/shadcn';
 import { FormProps } from '@rjsf/core';
 import type FormType from '@rjsf/core';
 import { forwardRef } from 'react';

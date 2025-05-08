@@ -1,25 +1,22 @@
 import { meOptions } from '@/apis'
-import SideMenu from '@/app/(workspace)/components/SideMenu'
+import WorkspaceSideBar from '@/app/(workspace)/components/side-bar/WorkspaceSidebar'
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/base/breadcrumb'
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/base/sidebar'
 import { getQueryClient } from '@/utils/get-query-client'
-import Box from '@mui/material/Box'
+import { Separator } from '@radix-ui/react-separator'
+import WorkspaceMainPage from './components/WorkspaceMainPage'
 
 export default function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const queryClient = getQueryClient()
 
   void queryClient.prefetchQuery(meOptions)
+
   return (
-    <Box sx={{ display: 'flex', height: '100vh', width: '100vw' }}>
-      <SideMenu />
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          backgroundColor: 'background.default',
-          overflow: 'auto',
-        }}
-      >
+    <SidebarProvider>
+     <WorkspaceSideBar variant="inset"/>
+      <WorkspaceMainPage>
         {children}
-      </Box>
-    </Box>
+      </WorkspaceMainPage>
+    </SidebarProvider>
   )
 }

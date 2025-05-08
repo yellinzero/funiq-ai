@@ -1,25 +1,17 @@
 'use client'
-import { Box, Stack } from '@mui/material'
+
 import { useTranslation } from 'react-i18next'
-import ChatHeader from './components/ChatHeader'
 
 export default function Chat() {
   const { t } = useTranslation()
+
   return (
-    <Stack
-      spacing={2}
-      sx={{
-        alignItems: 'center',
-        mx: 3,
-        pb: 5,
-        position: 'relative',
-      }}
-    >
-      <ChatHeader />
-      {t('welcome', {
-        name: t('product_name', { ns: 'global' }),
-        ns: 'global',
-      })}
-    </Stack>
+    <div className="flex flex-col items-center mx-12 pb-20 relative gap-8">
+      <div className="text-center">
+        {t('global.welcome', {
+          name: t('global.product_name'),
+        })}
+      </div>
+    </div>
   )
 }

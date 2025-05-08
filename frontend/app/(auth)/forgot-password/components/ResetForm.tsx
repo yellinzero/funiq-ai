@@ -1,22 +1,29 @@
+'use client'
+
 import { zodResolver } from '@hookform/resolvers/zod'
-import { passwordValidation } from '@/utils/validate_rules'
-import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
-import FormControl from '@mui/material/FormControl'
-import FormLabel from '@mui/material/FormLabel'
-import TextField from '@mui/material/TextField'
-import { Controller, useForm } from 'react-hook-form'
+import { passwordValidation } from '@/utils/constants'
+import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
+import { Button } from '@/components/base/button'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/base/form'
+import { Input } from '@/components/base/input'
 
 const resetSchema = z.object({
-  code: z.string().min(6).max(6),
+  code: z.string().length(6, 'auth.code_length'),
   password: passwordValidation,
   confirmPassword: z.string()
-    .min(8, { message: 'password_min_length' })
+    .min(8, 'auth.password_min_length')
 }).refine((data: Record<string, string>) => data['password'] === data['confirmPassword'], {
   path: ['confirmPassword'],
-  message: 'passwords_dont_match'
+  message: 'auth.passwords_dont_match'
 })
 
 type ResetFormInputs = z.infer<typeof resetSchema>
@@ -29,89 +36,84 @@ interface ResetFormProps {
 
 export default function ResetForm({ onSubmit, countdown, onResend }: ResetFormProps) {
   const { t } = useTranslation(['auth'])
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<ResetFormInputs>({
+
+  const form = useForm<ResetFormInputs>({
     resolver: zodResolver(resetSchema),
     defaultValues: { code: '', password: '', confirmPassword: '' },
     mode: 'onChange'
   })
 
   return (
-    <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 2 }}>
-      <FormControl>
-        <FormLabel htmlFor="code">{t('verification_code')}</FormLabel>
-        <Controller
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
           name="code"
-          control={control}
           render={({ field }) => (
-            <TextField
-              {...field}
-              id="code"
-              type="text"
-              placeholder={t('enter_code')}
-              fullWidth
-              variant="outlined"
-              error={!!errors.code}
-              helperText={errors.code ? t('invalid_verification_code') : undefined}
-            />
+            <FormItem>
+              <FormLabel>{t('auth.verification_code')}</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  type="text"
+                  placeholder={t('auth.enter_code')}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
         />
-      </FormControl>
 
-      <FormControl>
-        <FormLabel htmlFor="password">{t('new_password')}</FormLabel>
-        <Controller
+        <FormField
+          control={form.control}
           name="password"
-          control={control}
           render={({ field }) => (
-            <TextField
-              {...field}
-              id="password"
-              type="password"
-              fullWidth
-              variant="outlined"
-              error={!!errors.password}
-              helperText={errors.password ? t(errors.password.message as string) : undefined}
-            />
+            <FormItem>
+              <FormLabel>{t('auth.new_password')}</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  type="password"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
         />
-      </FormControl>
 
-      <FormControl>
-        <FormLabel htmlFor="confirmPassword">{t('confirm_password')}</FormLabel>
-        <Controller
+        <FormField
+          control={form.control}
           name="confirmPassword"
-          control={control}
           render={({ field }) => (
-            <TextField
-              {...field}
-              id="confirmPassword"
-              type="password"
-              fullWidth
-              variant="outlined"
-              error={!!errors.confirmPassword}
-              helperText={errors.confirmPassword ? t('passwords_dont_match') : undefined}
-            />
+            <FormItem>
+              <FormLabel>{t('auth.confirm_password')}</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  type="password"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
         />
-      </FormControl>
 
-      <Button type="submit" fullWidth variant="contained">
-        {t('reset_password')}
-      </Button>
+        <Button type="submit" className="w-full">
+          {t('auth.reset_password')}
+        </Button>
 
-      <Button
-        variant="text"
-        disabled={countdown > 0}
-        onClick={onResend}
-      >
-        {countdown > 0
-          ? t('resend_code_countdown', { seconds: countdown })
-          : t('resend_code')}
-      </Button>
-    </Box>
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={countdown > 0}
+          onClick={onResend}
+          className="w-full"
+        >
+          {countdown > 0
+            ? t('auth.resend_code_countdown', { seconds: countdown })
+            : t('auth.resend_code')}
+        </Button>
+      </form>
+    </Form>
   )
 }

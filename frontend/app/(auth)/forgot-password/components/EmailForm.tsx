@@ -1,15 +1,22 @@
+'use client'
+
 import { zodResolver } from '@hookform/resolvers/zod'
-import Box from '@mui/material/Box'
-import Button from '@mui/material/Button'
-import FormControl from '@mui/material/FormControl'
-import FormLabel from '@mui/material/FormLabel'
-import TextField from '@mui/material/TextField'
-import { Controller, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
+import { Button } from '@/components/base/button'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/base/form'
+import { Input } from '@/components/base/input'
 
 const emailSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email('auth.enter_valid_email'),
 })
 
 type EmailFormInputs = z.infer<typeof emailSchema>
@@ -21,42 +28,39 @@ interface EmailFormProps {
 
 export default function EmailForm({ onSubmit, initialEmail = '' }: EmailFormProps) {
   const { t } = useTranslation(['auth'])
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<EmailFormInputs>({
+
+  const form = useForm<EmailFormInputs>({
     resolver: zodResolver(emailSchema),
     defaultValues: { email: initialEmail },
     mode: 'onChange'
   })
 
   return (
-    <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 2 }}>
-      <FormControl>
-        <FormLabel htmlFor="email">{t('email')}</FormLabel>
-        <Controller
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
           name="email"
-          control={control}
           render={({ field }) => (
-            <TextField
-              {...field}
-              id="email"
-              type="email"
-              placeholder="your@email.com"
-              autoComplete="email"
-              fullWidth
-              variant="outlined"
-              error={!!errors.email}
-              helperText={errors.email ? t('enter_valid_email') : undefined}
-            />
+            <FormItem>
+              <FormLabel>{t('auth.email')}</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  type="email"
+                  placeholder="your@email.com"
+                  autoComplete="email"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
         />
-      </FormControl>
 
-      <Button type="submit" fullWidth variant="contained">
-        {t('send_code')}
-      </Button>
-    </Box>
+        <Button type="submit" className="w-full">
+          {t('auth.send_code')}
+        </Button>
+      </form>
+    </Form>
   )
 }

@@ -2,27 +2,16 @@
 
 import LangSelect from '@/components/LangSelect'
 import { LogoWithName } from '@/components/SiteLogo'
-import ColorModeIconDropdown from '@/theme/ColorModeIconDropdown'
-import { Stack } from '@mui/material'
-import Box from '@mui/material/Box'
+import ThemeModeToggle from '@/components/ThemeModeToggle'
 
 export default function AuthHeader() {
   return (
-    <Box sx={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      position: 'fixed',
-      width: '100%',
-      top: '0',
-      padding: '12px',
-    }}
-    >
+    <header className="fixed top-0 w-full p-3 flex items-center justify-between">
       <LogoWithName />
-      <Stack direction="row" sx={{ gap: 1 }}>
+      <div className="flex items-center">
         <LangSelect />
-        <ColorModeIconDropdown />
-      </Stack>
-    </Box>
+        <ThemeModeToggle />
+      </div>
+    </header>
   )
 }

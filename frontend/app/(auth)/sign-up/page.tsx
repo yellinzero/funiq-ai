@@ -1,28 +1,14 @@
 'use client'
 import { resendVerificationCodeApi, signupVerifyApi } from '@/apis'
-import Toast from '@/components/Toast'
+import { toast } from 'sonner'
 import VerificationCodeForm from '@/components/VerificationCodeForm'
 import { useCountdown } from '@/hooks/useCountdown'
 import { useSessionCookie } from '@/hooks/useSessionCookie'
-import { styled } from '@mui/material'
-import MuiCard from '@mui/material/Card'
-import Typography from '@mui/material/Typography'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import SignUpForm from './components/SignUpForm'
-
-const Card = styled(MuiCard)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  alignSelf: 'center',
-  width: '100%',
-  padding: theme.spacing(4),
-  gap: theme.spacing(2),
-  [theme.breakpoints.up('sm')]: {
-    maxWidth: '450px',
-  },
-}))
+import { Card, CardContent } from '@/components/base/card'
 
 export default function SignUp() {
   const { t } = useTranslation(['auth', 'global'])
@@ -43,16 +29,23 @@ export default function SignUp() {
   const handleVerifyEmailSuccess = (data: { access_token: string, tenant_id?: string }) => {
     if (data) {
       setAuth(data.access_token, data.tenant_id)
-      router.push('/create-tenant')
+      if (!data.tenant_id) {
+        router.push('/create-tenant')
+      }
+      else {
+        router.push('/chat')
+      }
     }
   }
 
   const handleResendCode = async () => {
-    // Add resend verification code logic here
     try {
-      // Call your resend API
-      await resendVerificationCodeApi({ email, code_type: 'signup_email' })
-      startCountdown()
+      const {data} = await resendVerificationCodeApi({ email, code_type: 'signup_email' })
+      if (data) {
+        setToken(data.token)
+        startCountdown()
+      }
+
     }
     catch (e) {
       console.error('Resend verification code error:', e)
@@ -62,7 +55,7 @@ export default function SignUp() {
   const handleVerificationSubmit = async (code: string) => {
     const res = await signupVerifyApi({ code, token })
     if (res.data) {
-      Toast.success({ message: t('email_verified_success') })
+      toast.success(t('auth.email_verified_success'))
       handleVerifyEmailSuccess({
         access_token: res.data.access_token,
         tenant_id: res.data.tenant_id ?? undefined,
@@ -71,34 +64,30 @@ export default function SignUp() {
   }
 
   return (
-    <Card sx={{ height: '70%' }}>
-      <Typography
-        component="h1"
-        variant="h4"
-        sx={{ width: '100%', fontSize: '1.5rem' }}
-      >
-        {t('welcome', {
-          name: t('product_name', { ns: 'global' }),
-        })}
-      </Typography>
-      <Typography
-        component="h1"
-        variant="h4"
-        sx={{ width: '100%', fontSize: 'clamp(2rem, 10vw, 2.15rem)' }}
-      >
-        {showVerifyEmail ? t('verify_email') : t('sign_up', { ns: 'global' })}
-      </Typography>
-      {showVerifyEmail
-        ? (
-            <VerificationCodeForm
-              onSubmit={handleVerificationSubmit}
-              countdown={countdown}
-              onResend={handleResendCode}
-            />
-          )
-        : (
-            <SignUpForm onSuccess={handleSignUpSuccess} />
-          )}
+    <Card className="w-full max-w-[450px] mx-auto p-6 space-y-4 h-[70%]">
+      <CardContent className="p-0 space-y-4">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {t('global.welcome', {
+            name: t('global.product_name'),
+          })}
+        </h1>
+
+        <h2 className="text-2xl font-semibold tracking-tight text-[clamp(2rem,10vw,2.15rem)]">
+          {showVerifyEmail ? t('auth.verify_email') : t('global.sign_up')}
+        </h2>
+
+        {showVerifyEmail
+          ? (
+              <VerificationCodeForm
+                onSubmit={handleVerificationSubmit}
+                countdown={countdown}
+                onResend={handleResendCode}
+              />
+            )
+          : (
+              <SignUpForm onSuccess={handleSignUpSuccess} />
+            )}
+      </CardContent>
     </Card>
   )
 }

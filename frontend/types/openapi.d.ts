@@ -424,120 +424,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/workflows": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Workflow List
-         * @description Get paginated list of workflows with optional search.
-         *
-         *     Args:
-         *         app_id: Application ID to filter workflows
-         *         page: Page number (1-based)
-         *         page_size: Number of items per page
-         *         search: Optional search term to filter workflows by name or description
-         */
-        get: operations["get_workflow_list_workflows_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/workflows/{workflow_id}/execute": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Execute Workflow
-         * @description Execute a workflow synchronously with specific version.
-         *
-         *     Args:
-         *         workflow_id: Workflow ID
-         *         execute_request: Execution request containing input data and version
-         */
-        post: operations["execute_workflow_workflows__workflow_id__execute_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/workflows/{workflow_id}/debug": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Debug Workflow
-         * @description Debug a workflow asynchronously using a specific snapshot.
-         *
-         *     Args:
-         *         workflow_id: Workflow ID
-         *         debug_request: Debug request containing input data
-         */
-        post: operations["debug_workflow_workflows__workflow_id__debug_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/workflows/{workflow_id}/save-graph": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Workflow
-         * @description Save workflow graph data with batch operations.
-         */
-        post: operations["save_workflow_workflows__workflow_id__save_graph_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/workflows/{workflow_id}/save-meta": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Update Workflow Meta
-         * @description Update workflow metadata (name, description).
-         */
-        put: operations["update_workflow_meta_workflows__workflow_id__save_meta_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/workflows/{workflow_id}": {
         parameters: {
             query?: never;
@@ -545,15 +431,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Workflow
-         * @description Get complete workflow information including nodes and edges.
-         *
-         *     Args:
-         *         workflow_id: ID of the workflow to retrieve
-         */
+        /** Get Workflow */
         get: operations["get_workflow_workflows__workflow_id__get"];
-        put?: never;
+        /** Update Workflow */
+        put: operations["update_workflow_workflows__workflow_id__put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -570,11 +451,76 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Publish Workflow
-         * @description Publish a workflow with a specific version.
-         */
+        /** Publish Workflow */
         post: operations["publish_workflow_workflows__workflow_id__publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workflows/{workflow_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Workflow Versions */
+        get: operations["get_workflow_versions_workflows__workflow_id__versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workflows/{workflow_id}/debug-snapshots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Workflow Debug Snapshots */
+        get: operations["get_workflow_debug_snapshots_workflows__workflow_id__debug_snapshots_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workflows/{workflow_id}/nodes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Workflow Nodes */
+        get: operations["get_workflow_nodes_workflows__workflow_id__nodes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/workflows/{workflow_id}/edges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Workflow Edges */
+        get: operations["get_workflow_edges_workflows__workflow_id__edges_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -589,7 +535,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List Apps
+         * Get Apps
          * @description Get list of apps with pagination and search support.
          *
          *     Args:
@@ -597,13 +543,13 @@ export interface paths {
          *         page_size: Number of items per page
          *         search: Optional search term
          */
-        get: operations["list_apps_apps_get"];
+        get: operations["get_apps_apps_get"];
         put?: never;
         /**
-         * Create Application
+         * Create App
          * @description Create a new application
          */
-        post: operations["create_application_apps_post"];
+        post: operations["create_app_apps_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -638,7 +584,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/apps/{app_id}/versions": {
+    "/apps/{app_id}/conversations": {
         parameters: {
             query?: never;
             header?: never;
@@ -646,10 +592,68 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List App Versions
-         * @description Get all versions of a specific application
+         * Get Conversations
+         * @description Get list of conversations with pagination and search support.
+         *
+         *     Args:
+         *         app_id: App Id
+         *         page: Page number (1-based)
+         *         page_size: Number of items per page
+         *         search: Optional search term
          */
-        get: operations["list_app_versions_apps__app_id__versions_get"];
+        get: operations["get_conversations_apps__app_id__conversations_get"];
+        put?: never;
+        /**
+         * Create Conversation
+         * @description Create a new conversation
+         */
+        post: operations["create_conversation_apps__app_id__conversations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/apps/conversations/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Conversation
+         * @description Get details of a specific conversation
+         */
+        get: operations["get_conversation_apps_conversations__conversation_id__get"];
+        /**
+         * Update Conversation
+         * @description Update an existing conversation
+         */
+        put: operations["update_conversation_apps_conversations__conversation_id__put"];
+        post?: never;
+        /**
+         * Delete Conversation
+         * @description Delete a conversation
+         */
+        delete: operations["delete_conversation_apps_conversations__conversation_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/apps/conversations/{conversation_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Messages
+         * @description Get all messages of a conversation
+         */
+        get: operations["get_messages_apps_conversations__conversation_id__messages_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -658,27 +662,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/apps/tree": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Apps Tree
-         * @description Get all apps with their version information in a tree structure
-         */
-        get: operations["get_apps_tree_apps_tree_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/apps/{app_id}/publish": {
+    "/apps/conversations/{conversation_id}/completion": {
         parameters: {
             query?: never;
             header?: never;
@@ -688,81 +672,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Publish App Version
-         * @description Publish a new version of an application
+         * Completion
+         * @description Completion with streaming response
          */
-        post: operations["publish_app_version_apps__app_id__publish_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/conversations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Conversations */
-        get: operations["list_conversations_conversations_get"];
-        put?: never;
-        /** Create Conversation */
-        post: operations["create_conversation_conversations_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/conversations/{conversation_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Conversation */
-        get: operations["get_conversation_conversations__conversation_id__get"];
-        /** Update Conversation */
-        put: operations["update_conversation_conversations__conversation_id__put"];
-        post?: never;
-        /** Delete Conversation */
-        delete: operations["delete_conversation_conversations__conversation_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/conversations/{conversation_id}/messages": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Messages */
-        get: operations["list_messages_conversations__conversation_id__messages_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/conversations/{conversation_id}/completion": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Completion */
-        post: operations["completion_conversations__conversation_id__completion_post"];
+        post: operations["completion_apps_conversations__conversation_id__completion_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -876,191 +789,64 @@ export interface components {
             /** Models */
             models: components["schemas"]["ActiveModelProviderModelItem"][];
         };
-        /** AppCreate */
-        AppCreate: {
+        /** AppInfo */
+        AppInfo: {
+            /** Id */
+            id: string;
             /** Name */
             name: string;
+            /** Workflow Id */
+            workflow_id?: string | null;
             /** Description */
             description?: string | null;
-            /** Support File */
-            support_file?: boolean | null;
-            /** Support Image */
-            support_image?: boolean | null;
-            /** Support Audio */
-            support_audio?: boolean | null;
-            /** Support Thinking */
-            support_thinking?: boolean | null;
-            /** Support Tool */
-            support_tool?: boolean | null;
+            /** Created By */
+            created_by: string;
+            /** Updated By */
+            updated_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** AppListResponse */
         AppListResponse: {
-            /** Items */
-            items: components["schemas"]["AppResponse"][];
+            /** Apps */
+            apps: components["schemas"]["AppInfo"][];
             /** Total */
             total: number;
         };
-        /** AppPublishRequest */
-        AppPublishRequest: {
-            /** Version */
-            version: string;
-            /** Workflow Version */
-            workflow_version: string;
-        };
-        /** AppResponse */
-        AppResponse: {
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Support File */
-            support_file?: boolean | null;
-            /** Support Image */
-            support_image?: boolean | null;
-            /** Support Audio */
-            support_audio?: boolean | null;
-            /** Support Thinking */
-            support_thinking?: boolean | null;
-            /** Support Tool */
-            support_tool?: boolean | null;
-            /** Id */
-            id: string;
-            /** Tenant Id */
-            tenant_id: string;
-            /** Workflow Id */
-            workflow_id: string;
-            /** Version */
-            version?: string | null;
-            /** Created By */
-            created_by: string;
-            /** Updated By */
-            updated_by: string;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
-        /** AppTreeNode */
-        AppTreeNode: {
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Support File */
-            support_file?: boolean | null;
-            /** Support Image */
-            support_image?: boolean | null;
-            /** Support Audio */
-            support_audio?: boolean | null;
-            /** Support Thinking */
-            support_thinking?: boolean | null;
-            /** Support Tool */
-            support_tool?: boolean | null;
-            /** Id */
-            id: string;
-            /** Tenant Id */
-            tenant_id: string;
-            /** Workflow Id */
-            workflow_id: string;
-            /** Version */
-            version?: string | null;
-            /** Created By */
-            created_by: string;
-            /** Updated By */
-            updated_by: string;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-            /** Versions */
-            versions: components["schemas"]["AppVersionResponse"][];
-        };
-        /** AppUpdate */
-        AppUpdate: {
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Support File */
-            support_file?: boolean | null;
-            /** Support Image */
-            support_image?: boolean | null;
-            /** Support Audio */
-            support_audio?: boolean | null;
-            /** Support Thinking */
-            support_thinking?: boolean | null;
-            /** Support Tool */
-            support_tool?: boolean | null;
-        };
-        /** AppVersionResponse */
-        AppVersionResponse: {
-            /** Version */
-            version: string;
-            /** Workflow Version */
-            workflow_version: string;
-            /** Status */
-            status: string;
-            /**
-             * Published At
-             * Format: date-time
-             */
-            published_at: string;
-            /** Published By */
-            published_by: string;
-            /** Id */
-            id: string;
-            /** App Id */
-            app_id: string;
-        };
-        /**
-         * AssistantPromptMessage
-         * @description Model class for assistant prompt message.
-         */
-        AssistantPromptMessage: {
-            /** @default assistant */
-            role: components["schemas"]["PromptMessageRole"];
-            /** Content */
-            content?: string | components["schemas"]["PromptMessageContent"][] | null;
-            /** Name */
-            name?: string | null;
-            /**
-             * Tool Calls
-             * @default []
-             */
-            tool_calls: components["schemas"]["ToolCall"][];
-        };
         /** CompletionRequest */
         CompletionRequest: {
+            /** Workflow Version Id */
+            workflow_version_id: string;
             /** Message */
             message: string;
+            /** Files */
+            files?: Record<string, never>[] | null;
+            /** Images */
+            images?: Record<string, never>[] | null;
+            /** Audios */
+            audios?: Record<string, never>[] | null;
         };
-        /** ConversationCreate */
-        ConversationCreate: {
-            /** Name */
-            name: string;
-        };
-        /** ConversationResponse */
-        ConversationResponse: {
-            /** Name */
-            name: string;
+        /** ConversationInfo */
+        ConversationInfo: {
             /** Id */
             id: string;
-            /** Status */
-            status: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            status: components["schemas"]["ConversationStatus"];
             /** Message Count */
             message_count: number;
+            /** Last Message Id */
+            last_message_id?: number | null;
             /** Created By */
             created_by: string;
             /** Updated By */
@@ -1076,10 +862,67 @@ export interface components {
              */
             updated_at: string;
         };
-        /** ConversationUpdate */
-        ConversationUpdate: {
+        /** ConversationListResponse */
+        ConversationListResponse: {
+            /** Conversations */
+            conversations: components["schemas"]["ConversationInfo"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * ConversationStatus
+         * @description Defines the status of a conversation
+         * @enum {string}
+         */
+        ConversationStatus: "active" | "archived";
+        /** CreateAppRequest */
+        CreateAppRequest: {
             /** Name */
             name: string;
+            /** Description */
+            description?: string | null;
+        };
+        /** CreateConversationRequest */
+        CreateConversationRequest: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+        };
+        /** CreateWorkflowEdgePayload */
+        CreateWorkflowEdgePayload: {
+            /** Edge Key */
+            edge_key: string;
+            /** Source Node Key */
+            source_node_key: string;
+            /** Target Node Key */
+            target_node_key: string;
+            /** Meta */
+            meta?: Record<string, never> | null;
+        };
+        /** CreateWorkflowNodePayload */
+        CreateWorkflowNodePayload: {
+            /** Node Key */
+            node_key: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Config */
+            config?: Record<string, never> | null;
+            /** Extended Config */
+            extended_config?: Record<string, never> | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+            /** Node Type */
+            node_type: string;
+        };
+        /** CreateWorkflowVersionPayload */
+        CreateWorkflowVersionPayload: {
+            /** Version */
+            version: string;
+            /** Description */
+            description?: string | null;
         };
         /** ForgotPasswordRequest */
         ForgotPasswordRequest: {
@@ -1108,40 +951,19 @@ export interface components {
             /** Total */
             total: number;
         };
-        /** GetOperatorsResponse */
-        GetOperatorsResponse: {
-            /** Operators */
-            operators: components["schemas"]["OperatorEntity"][];
+        /** GetWorkflowDebugSnapshotsResponse */
+        GetWorkflowDebugSnapshotsResponse: {
+            /** Snapshots */
+            snapshots: components["schemas"]["WorkflowDebugSnapshotInfo"][];
             /** Total */
             total: number;
         };
-        /** GetWorkflowResponseBase */
-        GetWorkflowResponseBase: {
-            /** Id */
-            id: string;
-            /** App Id */
-            app_id: string;
-            status: components["schemas"]["WorkflowStatus"];
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Version */
-            version?: string | null;
-            /** Created By */
-            created_by: string;
-            /** Updated By */
-            updated_by: string;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
+        /** GetWorkflowVersionsResponse */
+        GetWorkflowVersionsResponse: {
+            /** Versions */
+            versions: components["schemas"]["WorkflowVersionInfo"][];
+            /** Total */
+            total: number;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1176,39 +998,54 @@ export interface components {
          * @enum {string}
          */
         MessageFrom: "user" | "app";
-        /** MessageResponse */
-        MessageResponse: {
-            /** Content */
-            content: string;
-            /** App Version Id */
-            app_version_id: string;
+        /** MessageInfo */
+        MessageInfo: {
             /** Id */
-            id: number;
+            id: string;
+            /** Workflow Id */
+            workflow_id?: string | null;
+            /** Workflow Version */
+            workflow_version?: string | null;
             /** Conversation Id */
             conversation_id: string;
-            /** Execution Id */
-            execution_id: string | null;
+            /** Workflow Run Id */
+            workflow_run_id?: string | null;
             message_from: components["schemas"]["MessageFrom"];
+            /** Content */
+            content?: string | null;
+            /** Error */
+            error?: string | null;
+            /** Thinking Content */
+            thinking_content?: string | null;
+            /** Images */
+            images?: Record<string, never>[] | null;
+            /** Files */
+            files?: Record<string, never>[] | null;
+            /** Audios */
+            audios?: Record<string, never>[] | null;
+            /** Tools */
+            tools?: Record<string, never>[] | null;
             /**
              * Created At
              * Format: date-time
              */
             created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
             /** Created By */
-            created_by: string | null;
-            /** Search Results */
-            search_results: Record<string, never>[] | null;
-            /** Thinking Content */
-            thinking_content: string | null;
-            /** Files */
-            files: Record<string, never>[] | null;
+            created_by: string;
+            /** Updated By */
+            updated_by: string;
         };
         /**
          * ModelFeature
          * @description Enum class for llm feature.
          * @enum {string}
          */
-        ModelFeature: "tool-call" | "multi-tool-call" | "agent-thought" | "vision" | "stream-tool-call";
+        ModelFeature: "tool-call" | "multi-tool-call" | "agent-thought" | "vision" | "stream-tool-call" | "document";
         /**
          * ModelInfo
          * @description Model info for a provider
@@ -1255,6 +1092,13 @@ export interface components {
          * @enum {string}
          */
         ModelType: "llm" | "text-embedding" | "rerank" | "speech2text" | "moderation" | "tts" | "text2img";
+        /** OperatorConfigSchema */
+        OperatorConfigSchema: {
+            /** Json Schema */
+            json_schema: Record<string, never>;
+            /** Ui Schema */
+            ui_schema?: Record<string, never> | null;
+        };
         /**
          * OperatorEntity
          * @description Model class for operator schema.
@@ -1269,10 +1113,7 @@ export interface components {
             description: string;
             /** Output Schema */
             output_schema: Record<string, never>;
-            /** Config Schema */
-            config_schema: Record<string, never>;
-            /** Config Ui Schema */
-            config_ui_schema?: Record<string, never> | null;
+            config_schema: components["schemas"]["OperatorConfigSchema"];
         };
         /**
          * OperatorName
@@ -1306,27 +1147,6 @@ export interface components {
             /** Currency */
             currency: string;
         };
-        /**
-         * PromptMessageContent
-         * @description Model class for prompt message content.
-         */
-        PromptMessageContent: {
-            type: components["schemas"]["PromptMessageContentType"];
-            /** Data */
-            data: string;
-        };
-        /**
-         * PromptMessageContentType
-         * @description Enum class for prompt message content type.
-         * @enum {string}
-         */
-        PromptMessageContentType: "text" | "image" | "audio" | "file";
-        /**
-         * PromptMessageRole
-         * @description Enum class for prompt message.
-         * @enum {string}
-         */
-        PromptMessageRole: "system" | "user" | "assistant" | "tool";
         /** ProviderConfigSchema */
         ProviderConfigSchema: {
             /** Json Schema */
@@ -1371,29 +1191,6 @@ export interface components {
             provider: string;
             /** Credentials */
             credentials?: Record<string, never> | null;
-        };
-        /** PublishWorkflowRequest */
-        PublishWorkflowRequest: {
-            /** Version */
-            version: string;
-            /** Description */
-            description?: string | null;
-        };
-        /** PublishWorkflowResponse */
-        PublishWorkflowResponse: {
-            /** Workflow Id */
-            workflow_id: string;
-            /** Version */
-            version: string;
-            /** Description */
-            description: string;
-            /**
-             * Published At
-             * Format: date-time
-             */
-            published_at: string;
-            /** Published By */
-            published_by: string;
         };
         /** ResendVerificationCodeRequest */
         ResendVerificationCodeRequest: {
@@ -1475,6 +1272,20 @@ export interface components {
             msg: string;
             data: components["schemas"]["ActivateAccountVerifyResponse"];
         };
+        /** ResponseModel[AppInfo] */
+        ResponseModel_AppInfo_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["AppInfo"];
+        };
         /** ResponseModel[AppListResponse] */
         ResponseModel_AppListResponse_: {
             /**
@@ -1489,8 +1300,8 @@ export interface components {
             msg: string;
             data: components["schemas"]["AppListResponse"];
         };
-        /** ResponseModel[AppResponse] */
-        ResponseModel_AppResponse_: {
+        /** ResponseModel[ConversationInfo] */
+        ResponseModel_ConversationInfo_: {
             /**
              * Code
              * @default 0
@@ -1501,10 +1312,10 @@ export interface components {
              * @default success
              */
             msg: string;
-            data: components["schemas"]["AppResponse"];
+            data: components["schemas"]["ConversationInfo"];
         };
-        /** ResponseModel[AppVersionResponse] */
-        ResponseModel_AppVersionResponse_: {
+        /** ResponseModel[ConversationListResponse] */
+        ResponseModel_ConversationListResponse_: {
             /**
              * Code
              * @default 0
@@ -1515,21 +1326,7 @@ export interface components {
              * @default success
              */
             msg: string;
-            data: components["schemas"]["AppVersionResponse"];
-        };
-        /** ResponseModel[ConversationResponse] */
-        ResponseModel_ConversationResponse_: {
-            /**
-             * Code
-             * @default 0
-             */
-            code: string;
-            /**
-             * Msg
-             * @default success
-             */
-            msg: string;
-            data: components["schemas"]["ConversationResponse"];
+            data: components["schemas"]["ConversationListResponse"];
         };
         /** ResponseModel[ForgotPasswordResponse] */
         ResponseModel_ForgotPasswordResponse_: {
@@ -1573,8 +1370,8 @@ export interface components {
             msg: string;
             data: components["schemas"]["GetModelsResponse"];
         };
-        /** ResponseModel[GetOperatorsResponse] */
-        ResponseModel_GetOperatorsResponse_: {
+        /** ResponseModel[GetWorkflowDebugSnapshotsResponse] */
+        ResponseModel_GetWorkflowDebugSnapshotsResponse_: {
             /**
              * Code
              * @default 0
@@ -1585,10 +1382,10 @@ export interface components {
              * @default success
              */
             msg: string;
-            data: components["schemas"]["GetOperatorsResponse"];
+            data: components["schemas"]["GetWorkflowDebugSnapshotsResponse"];
         };
-        /** ResponseModel[List[AppTreeNode]] */
-        ResponseModel_List_AppTreeNode__: {
+        /** ResponseModel[GetWorkflowVersionsResponse] */
+        ResponseModel_GetWorkflowVersionsResponse_: {
             /**
              * Code
              * @default 0
@@ -1599,53 +1396,7 @@ export interface components {
              * @default success
              */
             msg: string;
-            /** Data */
-            data: components["schemas"]["AppTreeNode"][];
-        };
-        /** ResponseModel[List[AppVersionResponse]] */
-        ResponseModel_List_AppVersionResponse__: {
-            /**
-             * Code
-             * @default 0
-             */
-            code: string;
-            /**
-             * Msg
-             * @default success
-             */
-            msg: string;
-            /** Data */
-            data: components["schemas"]["AppVersionResponse"][];
-        };
-        /** ResponseModel[List[ConversationResponse]] */
-        ResponseModel_List_ConversationResponse__: {
-            /**
-             * Code
-             * @default 0
-             */
-            code: string;
-            /**
-             * Msg
-             * @default success
-             */
-            msg: string;
-            /** Data */
-            data: components["schemas"]["ConversationResponse"][];
-        };
-        /** ResponseModel[List[MessageResponse]] */
-        ResponseModel_List_MessageResponse__: {
-            /**
-             * Code
-             * @default 0
-             */
-            code: string;
-            /**
-             * Msg
-             * @default success
-             */
-            msg: string;
-            /** Data */
-            data: components["schemas"]["MessageResponse"][];
+            data: components["schemas"]["GetWorkflowVersionsResponse"];
         };
         /** ResponseModel[LoginResponse] */
         ResponseModel_LoginResponse_: {
@@ -1690,20 +1441,6 @@ export interface components {
             msg: string;
             data: components["schemas"]["ProviderResponse"];
         };
-        /** ResponseModel[PublishWorkflowResponse] */
-        ResponseModel_PublishWorkflowResponse_: {
-            /**
-             * Code
-             * @default 0
-             */
-            code: string;
-            /**
-             * Msg
-             * @default success
-             */
-            msg: string;
-            data: components["schemas"]["PublishWorkflowResponse"];
-        };
         /** ResponseModel[ResendVerificationCodeResponse] */
         ResponseModel_ResendVerificationCodeResponse_: {
             /**
@@ -1717,20 +1454,6 @@ export interface components {
              */
             msg: string;
             data: components["schemas"]["ResendVerificationCodeResponse"];
-        };
-        /** ResponseModel[SaveWorkflowResponse] */
-        ResponseModel_SaveWorkflowResponse_: {
-            /**
-             * Code
-             * @default 0
-             */
-            code: string;
-            /**
-             * Msg
-             * @default success
-             */
-            msg: string;
-            data: components["schemas"]["SaveWorkflowResponse"];
         };
         /** ResponseModel[SignupResponse] */
         ResponseModel_SignupResponse_: {
@@ -1802,8 +1525,8 @@ export interface components {
             msg: string;
             data: components["schemas"]["UserInfo"];
         };
-        /** ResponseModel[WorkflowDebugResponse] */
-        ResponseModel_WorkflowDebugResponse_: {
+        /** ResponseModel[WorkflowInfo] */
+        ResponseModel_WorkflowInfo_: {
             /**
              * Code
              * @default 0
@@ -1814,10 +1537,10 @@ export interface components {
              * @default success
              */
             msg: string;
-            data: components["schemas"]["WorkflowDebugResponse"];
+            data: components["schemas"]["WorkflowInfo"];
         };
-        /** ResponseModel[WorkflowExecuteResponse] */
-        ResponseModel_WorkflowExecuteResponse_: {
+        /** ResponseModel[WorkflowVersionInfo] */
+        ResponseModel_WorkflowVersionInfo_: {
             /**
              * Code
              * @default 0
@@ -1828,35 +1551,7 @@ export interface components {
              * @default success
              */
             msg: string;
-            data: components["schemas"]["WorkflowExecuteResponse"];
-        };
-        /** ResponseModel[WorkflowListResponse] */
-        ResponseModel_WorkflowListResponse_: {
-            /**
-             * Code
-             * @default 0
-             */
-            code: string;
-            /**
-             * Msg
-             * @default success
-             */
-            msg: string;
-            data: components["schemas"]["WorkflowListResponse"];
-        };
-        /** ResponseModel[WorkflowResponse] */
-        ResponseModel_WorkflowResponse_: {
-            /**
-             * Code
-             * @default 0
-             */
-            code: string;
-            /**
-             * Msg
-             * @default success
-             */
-            msg: string;
-            data: components["schemas"]["WorkflowResponse"];
+            data: components["schemas"]["WorkflowVersionInfo"];
         };
         /** ResponseModel[list[ActiveModelProviderWithModels]] */
         ResponseModel_list_ActiveModelProviderWithModels__: {
@@ -1872,6 +1567,36 @@ export interface components {
             msg: string;
             /** Data */
             data: components["schemas"]["ActiveModelProviderWithModels"][];
+        };
+        /** ResponseModel[list[MessageInfo]] */
+        ResponseModel_list_MessageInfo__: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            /** Data */
+            data: components["schemas"]["MessageInfo"][];
+        };
+        /** ResponseModel[list[OperatorEntity]] */
+        ResponseModel_list_OperatorEntity__: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            /** Data */
+            data: components["schemas"]["OperatorEntity"][];
         };
         /** ResponseModel[list[TenantResponse]] */
         ResponseModel_list_TenantResponse__: {
@@ -1903,6 +1628,36 @@ export interface components {
             /** Data */
             data: components["schemas"]["UserInfo"][];
         };
+        /** ResponseModel[list[WorkflowEdgeInfo]] */
+        ResponseModel_list_WorkflowEdgeInfo__: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            /** Data */
+            data: components["schemas"]["WorkflowEdgeInfo"][];
+        };
+        /** ResponseModel[list[WorkflowNodeInfo]] */
+        ResponseModel_list_WorkflowNodeInfo__: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            /** Data */
+            data: components["schemas"]["WorkflowNodeInfo"][];
+        };
         /**
          * SaveProviderRequest
          * @description Request schema for saving a provider
@@ -1913,31 +1668,19 @@ export interface components {
         };
         /** SaveWorkflowRequest */
         SaveWorkflowRequest: {
-            /** Operations */
-            operations: components["schemas"]["WorkflowOperation"][];
-        };
-        /** SaveWorkflowResponse */
-        SaveWorkflowResponse: {
-            /** Added Nodes */
-            added_nodes?: string[];
-            /** Updated Nodes */
-            updated_nodes?: string[];
-            /** Deleted Nodes */
-            deleted_nodes?: string[];
-            /** Added Edges */
-            added_edges?: string[];
-            /** Updated Edges */
-            updated_edges?: string[];
-            /** Deleted Edges */
-            deleted_edges?: string[];
-            /** Snapshot */
-            snapshot: Record<string, never>;
-            /** Snapshot Hash */
-            snapshot_hash: string;
-            /** Start Node Key */
-            start_node_key: string;
-            /** End Node Key */
-            end_node_key: string;
+            /** Update Nodes */
+            update_nodes?: components["schemas"]["UpdateWorkflowNodePayload"][] | null;
+            /** Update Edges */
+            update_edges?: components["schemas"]["UpdateWorkflowEdgePayload"][] | null;
+            /** Create Nodes */
+            create_nodes?: components["schemas"]["CreateWorkflowNodePayload"][] | null;
+            /** Create Edges */
+            create_edges?: components["schemas"]["CreateWorkflowEdgePayload"][] | null;
+            /** Delete Nodes */
+            delete_nodes?: string[] | null;
+            /** Delete Edges */
+            delete_edges?: string[] | null;
+            config?: components["schemas"]["WorkflowConfig"] | null;
         };
         /** SignupRequest */
         SignupRequest: {
@@ -1999,28 +1742,19 @@ export interface components {
          * @enum {string}
          */
         TenantUserRole: "owner" | "admin" | "member" | "guest";
-        /**
-         * ToolCall
-         * @description Model class for assistant prompt message tool call.
-         */
-        ToolCall: {
-            /** Index */
-            index: number;
-            /** Id */
-            id: string;
-            /** Type */
-            type: string;
-            function: components["schemas"]["ToolCallFunction"];
-        };
-        /**
-         * ToolCallFunction
-         * @description Model class for assistant prompt message tool call function.
-         */
-        ToolCallFunction: {
+        /** UpdateAppRequest */
+        UpdateAppRequest: {
             /** Name */
-            name: string;
-            /** Arguments */
-            arguments: string;
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+        };
+        /** UpdateConversationRequest */
+        UpdateConversationRequest: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
         };
         /** UpdateUserResponse */
         UpdateUserResponse: {
@@ -2032,15 +1766,31 @@ export interface components {
             tenant_id: string;
             role: components["schemas"]["TenantUserRole"];
         };
-        /**
-         * UpdateWorkflowMetaRequest
-         * @description Request model for updating workflow metadata.
-         */
-        UpdateWorkflowMetaRequest: {
+        /** UpdateWorkflowEdgePayload */
+        UpdateWorkflowEdgePayload: {
+            /** Edge Key */
+            edge_key: string;
+            /** Source Node Key */
+            source_node_key?: string | null;
+            /** Target Node Key */
+            target_node_key?: string | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+        };
+        /** UpdateWorkflowNodePayload */
+        UpdateWorkflowNodePayload: {
+            /** Node Key */
+            node_key: string;
             /** Name */
             name?: string | null;
             /** Description */
             description?: string | null;
+            /** Config */
+            config?: Record<string, never> | null;
+            /** Extended Config */
+            extended_config?: Record<string, never> | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
         };
         /** UserAddRequest */
         UserAddRequest: {
@@ -2084,164 +1834,73 @@ export interface components {
             /** Error Type */
             type: string;
         };
-        /** WorkflowDebugRequest */
-        WorkflowDebugRequest: {
-            input_data: components["schemas"]["WorkflowExecuteInputData"];
+        /** WorkflowConfig */
+        WorkflowConfig: {
+            /** Support Image */
+            support_image?: boolean | null;
+            /** Support File */
+            support_file?: boolean | null;
+            /** Support Audio */
+            support_audio?: boolean | null;
+            /** Support Tool */
+            support_tool?: boolean | null;
+        };
+        /** WorkflowDebugSnapshotInfo */
+        WorkflowDebugSnapshotInfo: {
+            /** Id */
+            id: string;
+            /** Workflow Id */
+            workflow_id: string;
+            /** Snapshot */
+            snapshot: Record<string, never>;
+            /** Snapshot Hash */
+            snapshot_hash: string;
+            /** Start Node Key */
+            start_node_key: string;
+            /** End Node Key */
+            end_node_key: string;
             /**
              * Snapshot Timestamp
              * Format: date-time
              */
             snapshot_timestamp: string;
+            /** Created By */
+            created_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
         };
-        /** WorkflowDebugResponse */
-        WorkflowDebugResponse: {
-            /** Task Id */
-            task_id: string;
-        };
-        /** WorkflowEdgeOperation */
-        WorkflowEdgeOperation: {
-            /** Edge Key */
-            edge_key: string;
-            /** Source Node Key */
-            source_node_key?: string | null;
-            /** Target Node Key */
-            target_node_key?: string | null;
-            /** Meta */
-            meta?: Record<string, never> | null;
-        };
-        /** WorkflowEdgeResponse */
-        WorkflowEdgeResponse: {
-            /** Edge Key */
-            edge_key: string;
+        /** WorkflowEdgeInfo */
+        WorkflowEdgeInfo: {
+            /** Id */
+            id: string;
             /** Workflow Id */
             workflow_id: string;
+            /** Edge Key */
+            edge_key: string;
             /** Source Node Key */
             source_node_key: string;
             /** Target Node Key */
             target_node_key: string;
             /** Meta */
             meta?: Record<string, never> | null;
-            /** Created By */
-            created_by: string;
-            /** Updated By */
-            updated_by: string;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
         };
-        /** WorkflowExecuteInputData */
-        WorkflowExecuteInputData: {
-            /** Query */
-            query: string;
-            /** Image List */
-            image_list?: string[] | null;
-            /** File List */
-            file_list?: string[] | null;
-            /** Audio List */
-            audio_list?: string[] | null;
-        };
-        /** WorkflowExecuteRequest */
-        WorkflowExecuteRequest: {
-            input_data: components["schemas"]["WorkflowExecuteInputData"];
-            /** Version */
-            version: string;
-        };
-        /** WorkflowExecuteResponse */
-        WorkflowExecuteResponse: {
-            message: components["schemas"]["AssistantPromptMessage"];
-        };
-        /** WorkflowListResponse */
-        WorkflowListResponse: {
-            /** Workflows */
-            workflows: components["schemas"]["GetWorkflowResponseBase"][];
-            /** Total */
-            total: number;
-        };
-        /** WorkflowNodeOperation */
-        WorkflowNodeOperation: {
-            /** Node Key */
-            node_key: string;
-            node_type?: components["schemas"]["OperatorName"] | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Meta */
-            meta?: Record<string, never> | null;
-            /** Config */
-            config?: Record<string, never> | null;
-            /** Extended Config */
-            extended_config?: Record<string, never> | null;
-        };
-        /** WorkflowNodeResponse */
-        WorkflowNodeResponse: {
-            /** Node Key */
-            node_key: string;
-            node_type: components["schemas"]["OperatorName"];
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Meta */
-            meta?: Record<string, never> | null;
-            /** Config */
-            config?: Record<string, never> | null;
-            /** Extended Config */
-            extended_config?: Record<string, never> | null;
-            /** Workflow Id */
-            workflow_id: string;
-            /** Created By */
-            created_by: string;
-            /** Updated By */
-            updated_by: string;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
-        /** WorkflowOperation */
-        WorkflowOperation: {
-            operation_type: components["schemas"]["WorkflowOperationType"];
-            /** Nodes */
-            nodes?: components["schemas"]["WorkflowNodeOperation"][];
-            /** Edges */
-            edges?: components["schemas"]["WorkflowEdgeOperation"][];
-        };
-        /**
-         * WorkflowOperationType
-         * @enum {string}
-         */
-        WorkflowOperationType: "add_node" | "update_node" | "delete_node" | "add_edge" | "update_edge" | "delete_edge";
-        /** WorkflowResponse */
-        WorkflowResponse: {
+        /** WorkflowInfo */
+        WorkflowInfo: {
             /** Id */
             id: string;
             /** App Id */
             app_id: string;
             status: components["schemas"]["WorkflowStatus"];
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Version */
-            version?: string | null;
-            /** Created By */
-            created_by: string;
-            /** Updated By */
-            updated_by: string;
+            /** Config */
+            config?: Record<string, never> | null;
             /**
              * Created At
              * Format: date-time
@@ -2252,10 +1911,33 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
-            /** Nodes */
-            nodes: components["schemas"]["WorkflowNodeResponse"][];
-            /** Edges */
-            edges: components["schemas"]["WorkflowEdgeResponse"][];
+            /** Created By */
+            created_by: string;
+            /** Updated By */
+            updated_by: string;
+            /** Version */
+            version: string | null;
+        };
+        /** WorkflowNodeInfo */
+        WorkflowNodeInfo: {
+            /** Id */
+            id: string;
+            /** Workflow Id */
+            workflow_id: string;
+            /** Node Key */
+            node_key: string;
+            /** Node Type */
+            node_type: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+            /** Config */
+            config?: Record<string, never> | null;
+            /** Extended Config */
+            extended_config?: Record<string, never> | null;
         };
         /**
          * WorkflowStatus
@@ -2263,6 +1945,39 @@ export interface components {
          * @enum {string}
          */
         WorkflowStatus: "draft" | "published";
+        /** WorkflowVersionInfo */
+        WorkflowVersionInfo: {
+            /** Id */
+            id: string;
+            /** Workflow Id */
+            workflow_id: string;
+            /** Snapshot */
+            snapshot: Record<string, never>;
+            /** Snapshot Hash */
+            snapshot_hash: string;
+            /** Start Node Key */
+            start_node_key: string;
+            /** End Node Key */
+            end_node_key: string;
+            /** Version */
+            version: string;
+            status: components["schemas"]["WorkflowVersionStatus"];
+            /** Description */
+            description: string;
+            /**
+             * Published At
+             * Format: date-time
+             */
+            published_at: string;
+            /** Published By */
+            published_by: string;
+        };
+        /**
+         * WorkflowVersionStatus
+         * @description Workflow version status enum defining possible states of a workflow version.
+         * @enum {string}
+         */
+        WorkflowVersionStatus: "deprecated" | "archived" | "inactive" | "active";
     };
     responses: never;
     parameters: never;
@@ -3077,181 +2792,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResponseModel_GetOperatorsResponse_"];
-                };
-            };
-        };
-    };
-    get_workflow_list_workflows_get: {
-        parameters: {
-            query: {
-                app_id: string;
-                page?: number | null;
-                page_size?: number | null;
-                search?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResponseModel_WorkflowListResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    execute_workflow_workflows__workflow_id__execute_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workflow_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WorkflowExecuteRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResponseModel_WorkflowExecuteResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    debug_workflow_workflows__workflow_id__debug_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workflow_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WorkflowDebugRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResponseModel_WorkflowDebugResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    save_workflow_workflows__workflow_id__save_graph_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workflow_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveWorkflowRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResponseModel_SaveWorkflowResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_workflow_meta_workflows__workflow_id__save_meta_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workflow_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateWorkflowMetaRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResponseModel_WorkflowResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ResponseModel_list_OperatorEntity__"];
                 };
             };
         };
@@ -3273,7 +2814,42 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResponseModel_WorkflowResponse_"];
+                    "application/json": components["schemas"]["ResponseModel_WorkflowInfo_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_workflow_workflows__workflow_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workflow_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveWorkflowRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_WorkflowInfo_"];
                 };
             };
             /** @description Validation Error */
@@ -3298,7 +2874,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PublishWorkflowRequest"];
+                "application/json": components["schemas"]["CreateWorkflowVersionPayload"];
             };
         };
         responses: {
@@ -3308,7 +2884,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResponseModel_PublishWorkflowResponse_"];
+                    "application/json": components["schemas"]["ResponseModel_WorkflowVersionInfo_"];
                 };
             };
             /** @description Validation Error */
@@ -3322,11 +2898,135 @@ export interface operations {
             };
         };
     };
-    list_apps_apps_get: {
+    get_workflow_versions_workflows__workflow_id__versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workflow_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_GetWorkflowVersionsResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_workflow_debug_snapshots_workflows__workflow_id__debug_snapshots_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workflow_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_GetWorkflowDebugSnapshotsResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_workflow_nodes_workflows__workflow_id__nodes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workflow_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_list_WorkflowNodeInfo__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_workflow_edges_workflows__workflow_id__edges_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workflow_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_list_WorkflowEdgeInfo__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_apps_apps_get: {
         parameters: {
             query?: {
-                page?: number | null;
-                page_size?: number | null;
+                page?: number;
+                page_size?: number;
                 search?: string | null;
             };
             header?: never;
@@ -3355,7 +3055,7 @@ export interface operations {
             };
         };
     };
-    create_application_apps_post: {
+    create_app_apps_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -3364,17 +3064,17 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AppCreate"];
+                "application/json": components["schemas"]["CreateAppRequest"];
             };
         };
         responses: {
             /** @description Successful Response */
-            201: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResponseModel_AppResponse_"];
+                    "application/json": components["schemas"]["ResponseModel_AppInfo_"];
                 };
             };
             /** @description Validation Error */
@@ -3405,7 +3105,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResponseModel_AppResponse_"];
+                    "application/json": components["schemas"]["ResponseModel_AppInfo_"];
                 };
             };
             /** @description Validation Error */
@@ -3430,7 +3130,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AppUpdate"];
+                "application/json": components["schemas"]["UpdateAppRequest"];
             };
         };
         responses: {
@@ -3440,7 +3140,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResponseModel_AppResponse_"];
+                    "application/json": components["schemas"]["ResponseModel_AppInfo_"];
                 };
             };
             /** @description Validation Error */
@@ -3466,11 +3166,13 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Successful Response */
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": unknown;
+                };
             };
             /** @description Validation Error */
             422: {
@@ -3483,9 +3185,13 @@ export interface operations {
             };
         };
     };
-    list_app_versions_apps__app_id__versions_get: {
+    get_conversations_apps__app_id__conversations_get: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                page_size?: number;
+                search?: string | null;
+            };
             header?: never;
             path: {
                 app_id: string;
@@ -3500,7 +3206,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResponseModel_List_AppVersionResponse__"];
+                    "application/json": components["schemas"]["ResponseModel_ConversationListResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -3514,27 +3220,7 @@ export interface operations {
             };
         };
     };
-    get_apps_tree_apps_tree_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResponseModel_List_AppTreeNode__"];
-                };
-            };
-        };
-    };
-    publish_app_version_apps__app_id__publish_post: {
+    create_conversation_apps__app_id__conversations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -3545,38 +3231,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AppPublishRequest"];
+                "application/json": components["schemas"]["CreateConversationRequest"];
             };
         };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResponseModel_AppVersionResponse_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_conversations_conversations_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -3584,31 +3241,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResponseModel_List_ConversationResponse__"];
-                };
-            };
-        };
-    };
-    create_conversation_conversations_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConversationCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResponseModel_ConversationResponse_"];
+                    "application/json": components["schemas"]["ResponseModel_ConversationInfo_"];
                 };
             };
             /** @description Validation Error */
@@ -3622,7 +3255,7 @@ export interface operations {
             };
         };
     };
-    get_conversation_conversations__conversation_id__get: {
+    get_conversation_apps_conversations__conversation_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -3639,7 +3272,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResponseModel_ConversationResponse_"];
+                    "application/json": components["schemas"]["ResponseModel_ConversationInfo_"];
                 };
             };
             /** @description Validation Error */
@@ -3653,7 +3286,7 @@ export interface operations {
             };
         };
     };
-    update_conversation_conversations__conversation_id__put: {
+    update_conversation_apps_conversations__conversation_id__put: {
         parameters: {
             query?: never;
             header?: never;
@@ -3664,7 +3297,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ConversationUpdate"];
+                "application/json": components["schemas"]["UpdateConversationRequest"];
             };
         };
         responses: {
@@ -3674,7 +3307,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResponseModel_ConversationResponse_"];
+                    "application/json": components["schemas"]["ResponseModel_ConversationInfo_"];
                 };
             };
             /** @description Validation Error */
@@ -3688,36 +3321,7 @@ export interface operations {
             };
         };
     };
-    delete_conversation_conversations__conversation_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                conversation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_messages_conversations__conversation_id__messages_get: {
+    delete_conversation_apps_conversations__conversation_id__delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -3734,7 +3338,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResponseModel_List_MessageResponse__"];
+                    "application/json": components["schemas"]["ResponseModel_NoneType_"];
                 };
             };
             /** @description Validation Error */
@@ -3748,11 +3352,40 @@ export interface operations {
             };
         };
     };
-    completion_conversations__conversation_id__completion_post: {
+    get_messages_apps_conversations__conversation_id__messages_get: {
         parameters: {
-            query: {
-                app_version_id: string;
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
             };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseModel_list_MessageInfo__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    completion_apps_conversations__conversation_id__completion_post: {
+        parameters: {
+            query?: never;
             header?: never;
             path: {
                 conversation_id: string;

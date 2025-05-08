@@ -11,10 +11,7 @@ class AppErrorCode(BaseErrorCode):
     APP_VERSION_PERMISSION_DENIED = ("D0102", "You don't have permission to publish or modify app versions")
 
     # Input/Parameter validation (02)
-    INVALID_APP_NAME = (
-        "D0201",
-        "Invalid app name - Name must be 3-64 characters and contain only letters, numbers, and hyphens",
-    )
+    INVALID_APP_NAME = ("D0201", "Invalid app name")
     INVALID_VERSION_FORMAT = ("D0202", "Invalid version format - Must follow semantic versioning (e.g., 1.0.0)")
 
     # Resource related (03)
@@ -53,6 +50,5 @@ class AppErrorCode(BaseErrorCode):
 
     # Business logic/Status related (10)
     APP_DISABLED = ("D1001", "The app is currently disabled")
-    APP_VERSION_INACTIVE = ("D1002", "The requested app version is not active")
-    APP_VERSION_NOT_ACTIVE = ("D1003", "The requested app version is not active")
-    CONVERSATION_ARCHIVED = ("D1004", "The requested conversation is archived")
+    APP_VERSION_INACTIVE = ("D1002", "The requested app version is inactive")
+    CONVERSATION_ARCHIVED = ("D1003", "The requested conversation is archived")

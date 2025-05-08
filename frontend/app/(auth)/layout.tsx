@@ -1,5 +1,4 @@
 import AuthHeader from '@/app/(auth)/components/AuthHeader'
-import Box from '@mui/material/Box'
 
 export default function AuthLayout(props: {
   children: React.ReactNode
@@ -7,34 +6,12 @@ export default function AuthLayout(props: {
   const { children } = props
 
   return (
-    <Box
-      component="main"
-      sx={{
-        display: 'flex',
-        backgroundColor: 'background.default',
-        overflow: 'auto',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '100%',
-        height: '100%',
-      }}
-    >
+    <main className="flex bg-background overflow-auto items-center justify-center size-full">
       <AuthHeader />
 
-      <Box
-        component="div"
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexDirection: 'column',
-          gap: 2,
-          height: '100%',
-          width: '100%',
-        }}
-      >
+      <div className="flex-1 flex items-center justify-center flex-col gap-4">
         {children}
-      </Box>
-    </Box>
+      </div>
+    </main>
   )
 }

@@ -15,7 +15,7 @@ from pydantic_core.core_schema import with_info_plain_validator_function
 from configs import funiq_ai_config
 from utils.common.context import ContextStorage
 
-all_domains = ["templates", "providers"]
+all_domains = ["messages", "templates", "providers"]
 
 
 class TranslationRegistry:

@@ -1,9 +1,9 @@
 'use client'
 
 import i18next from '@/plugins/i18n/client'
-import { Box, CircularProgress } from '@mui/material'
 import React, { useState } from 'react'
 import { I18nextProvider } from 'react-i18next'
+import FullPageLoading from './FullPageLoading'
 
 export default function I18nProvider({
   children,
@@ -25,16 +25,6 @@ export default function I18nProvider({
   return initialized
     ? <I18nextProvider i18n={i18next}>{children}</I18nextProvider>
     : (
-        <Box sx={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'background.default',
-        }}
-        >
-          <CircularProgress />
-        </Box>
+        <FullPageLoading />
       )
 }

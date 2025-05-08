@@ -20,7 +20,7 @@ RUN poetry config virtualenvs.create false \
     && rm -rf ~/.cache/pip
 
 # Start fresh from a smaller image
-FROM python:3.10-slim-bookworm
+FROM python:3.10-slim-bookworm AS final
 
 WORKDIR /app
 

@@ -17,6 +17,21 @@ export function useSessionCookie() {
     })
   }
 
+  function updateTenantId(tenantId: string) {
+    const currentSession = cookies[SESSION_COOKIE_NAME]
+    if (!currentSession) return
+
+    setCookies(SESSION_COOKIE_NAME, {
+      ...currentSession,
+      tenantId,
+    }, {
+      secure: true,
+      sameSite: 'lax',
+      expires: expiresAt,
+      path: '/',
+    })
+  }
+
   function getAuth() {
     const session = cookies[SESSION_COOKIE_NAME]
     return {
@@ -33,5 +48,6 @@ export function useSessionCookie() {
     setAuth,
     getAuth,
     clearAuth,
+    updateTenantId,
   }
 }

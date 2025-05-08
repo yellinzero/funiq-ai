@@ -11,6 +11,7 @@ export function getOptions(lang = fallbackLang, ns = defaultNS) {
     lng: lang,
     fallbackNS: defaultNS,
     defaultNS,
+    nsSeparator: '.',
     ns,
   }
 }

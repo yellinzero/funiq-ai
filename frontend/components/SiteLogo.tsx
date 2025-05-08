@@ -15,9 +15,14 @@ export function LogoWithName(props: {
   const [_cookie] = useCookies()
 
   const theme = _cookie.theme
-  return theme === 'dark'
-    ? <Image src={LogoWhiteSvg} height={height} width={width} style={{ objectFit: 'contain' }} alt="Logo" priority />
-    : <Image src={LogoGraySvg} height={height} width={width} style={{ objectFit: 'contain' }} alt="Logo" priority />
+  return (
+    <Image
+      src={theme === 'dark' ? LogoWhiteSvg : LogoGraySvg}
+      height={height} width={width}
+      alt="Logo"
+      priority
+    />
+  )
 }
 
 export function Logo(props: {
@@ -29,7 +34,12 @@ export function Logo(props: {
   const [_cookie] = useCookies()
 
   const theme = _cookie.theme
-  return theme === 'dark'
-    ? <Image src={PureLogoWhiteSvg} height={height} width={width} style={{ objectFit: 'contain' }} alt="Logo" priority />
-    : <Image src={PureLogoGraySvg} height={height} width={width} style={{ objectFit: 'contain' }} alt="Logo" priority />
+  return (
+    <Image
+      src={theme === 'dark' ? PureLogoWhiteSvg : PureLogoGraySvg}
+      height={height} width={width}
+      alt="Logo"
+      priority
+    />
+  )
 }

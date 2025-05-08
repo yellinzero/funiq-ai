@@ -23,12 +23,12 @@ class SMTPClient:
         try:
             if self.use_tls:
                 if self.opportunistic_tls:
-                    smtp = smtplib.SMTP(self.server, self.port, timeout=10)
+                    smtp = smtplib.SMTP(self.server, self.port, timeout=30)
                     smtp.starttls()
                 else:
-                    smtp = smtplib.SMTP_SSL(self.server, self.port, timeout=10)
+                    smtp = smtplib.SMTP_SSL(self.server, self.port, timeout=30)
             else:
-                smtp = smtplib.SMTP(self.server, self.port, timeout=10)
+                smtp = smtplib.SMTP(self.server, self.port, timeout=30)
 
             if self.username and self.password:
                 smtp.login(self.username, self.password)

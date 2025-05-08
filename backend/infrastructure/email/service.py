@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from loguru import logger
 from pydantic import EmailStr
 
 from configs import funiq_ai_config
@@ -36,32 +37,38 @@ class EmailService:
 
     def send(self, to: EmailStr, subject: str, html: str, from_: str | None = None):
         """Send an email."""
-        if not self._client:
-            raise ValueError("Email client is not initialized")
+        logger.info(f"Sending email to {to} with subject {subject}")
+        try:
+            if not self._client:
+                raise ValueError("Email client is not initialized")
 
-        if not from_:
-            from_ = self._default_send_from
+            if not from_:
+                from_ = self._default_send_from
 
-        if not from_:
-            raise ValueError("Email sender (from) is not set")
+            if not from_:
+                raise ValueError("Email sender (from) is not set")
 
-        if not to:
-            raise ValueError("Email recipient (to) is not set")
+            if not to:
+                raise ValueError("Email recipient (to) is not set")
 
-        if not subject:
-            raise ValueError("Email subject is not set")
+            if not subject:
+                raise ValueError("Email subject is not set")
 
-        if not html:
-            raise ValueError("Email content is not set")
+            if not html:
+                raise ValueError("Email content is not set")
 
-        self._client.send(
-            {
-                "from": from_,
-                "to": to,
-                "subject": subject,
-                "html": html,
-            }
-        )
+            self._client.send(
+                {
+                    "from": from_,
+                    "to": to,
+                    "subject": subject,
+                    "html": html,
+                }
+            )
+            logger.info(f"Email sent successfully to {to}")
+        except Exception as e:
+            logger.error(f"Error sending email: {e}")
+            raise e
 
 
 # Initialize the email service in FastAPI

@@ -33,12 +33,12 @@ export default function WorkspaceSidebarContent() {
       icon: AppWindow,
       isActive: isSelected('/apps')
     },
-    {
-      title: t('global.store'),
-      url: '/store',
-      icon: Store,
-      isActive: isSelected('/store')
-    },
+    // {
+    //   title: t('global.store'),
+    //   url: '/store',
+    //   icon: Store,
+    //   isActive: isSelected('/store')
+    // },
     {
       title: t('global.toolkit'),
       url: '/toolkit',

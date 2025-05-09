@@ -41,7 +41,6 @@ export default function Activate() {
     }
     catch (e) {
       console.error('Send activation code error:', e)
-      toast.error(t('auth.send_code_failed'))
       router.push('/sign-in')
     }
   }
@@ -57,7 +56,6 @@ export default function Activate() {
     }
     catch (e) {
       console.error('Resend verification code error:', e)
-      toast.error(t('auth.send_code_failed'))
     }
   }
 

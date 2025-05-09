@@ -52,7 +52,6 @@ export default function SignUpForm({ onSuccess }: SignUpFormProps) {
     }
     catch (e) {
       console.error(e)
-      toast.error(t('auth.signup_failed'))
     }
   }
 

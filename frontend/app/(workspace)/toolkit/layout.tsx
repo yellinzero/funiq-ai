@@ -18,10 +18,10 @@ export default async function IntegrationsLayout({
       label: t('global.models'),
       value: '/toolkit/models',
     },
-    {
-      label: t('global.tools'),
-      value: '/toolkit/tools',
-    },
+    // {
+    //   label: t('global.tools'),
+    //   value: '/toolkit/tools',
+    // },
   ]
 
   return (

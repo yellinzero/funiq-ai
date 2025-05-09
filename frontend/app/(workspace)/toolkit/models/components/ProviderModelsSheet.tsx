@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next'
 import { useEffect, useState } from 'react'
-import { X } from 'lucide-react'
 import FullPageLoading from '@/components/FullPageLoading'
 import ModelCard from './ModelCard'
 import { useModelsStore, useModelsQuery } from '@/app/(workspace)/toolkit/models/stores/useModelsStore'
@@ -13,7 +12,6 @@ import {
   SheetTitle,
   SheetFooter,
 } from '@/components/base/sheet'
-import { Button } from '@/components/base/button'
 
 interface ProviderModelsDrawerProps {
   provider: IProviderInfo
@@ -21,7 +19,7 @@ interface ProviderModelsDrawerProps {
   onClose: () => void
 }
 
-export default function ProviderModelsDrawer({ provider, open, onClose }: ProviderModelsDrawerProps) {
+export default function ProviderModelsSheet({ provider, open, onClose }: ProviderModelsDrawerProps) {
   const { i18n, t } = useTranslation()
   const { setCurrentProvider } = useModelsStore()
   const { isLoading: isModelsLoading, refetch: refetchModels } = useModelsQuery(open ? provider.provider : null, i18n.language)
@@ -45,7 +43,7 @@ export default function ProviderModelsDrawer({ provider, open, onClose }: Provid
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent
         side="right"
-        className="w-[40%] min-w-[600px] p-0 flex flex-col"
+        className="w-[40%] p-0 flex flex-col"
       >
         {/* Header */}
         <SheetHeader className="border-b p-4">

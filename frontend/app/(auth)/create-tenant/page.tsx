@@ -52,7 +52,6 @@ export default function CreateTenant() {
     }
     catch (e) {
       console.error('Create tenant error:', e)
-      toast.error(t('auth.tenant_creation_failed'))
     }
   }
 

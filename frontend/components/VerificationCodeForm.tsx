@@ -51,7 +51,6 @@ export default function VerificationCodeForm({
     }
     catch (e) {
       console.error('Verification error:', e)
-      toast.error(errorMessage ?? t('auth.verification_failed'))
     }
   }
 

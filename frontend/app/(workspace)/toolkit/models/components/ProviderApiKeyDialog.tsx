@@ -13,28 +13,25 @@ import {
 } from '@/components/base/dialog'
 import { Button } from '@/components/base/button'
 import { Loader2 } from 'lucide-react'
-
+import { IProviderInfo } from '@/apis/types'
 interface ProviderApiKeyDialogProps {
-  providerName: string
-  schema: RJSFSchema
-  uiSchema?: UiSchema
+  provider: IProviderInfo
   open: boolean
   onClose: () => void
 }
 
 export default function ProviderApiKeyDialog({
-  providerName,
-  schema,
-  uiSchema,
+  provider,
   open,
   onClose,
 }: ProviderApiKeyDialogProps) {
   const { t, i18n } = useTranslation()
   const formRef = React.useRef<FormType>(null)
-  const { data: providerData } = useProviderQuery(open ? providerName : '')
-  const { mutateAsync: saveProvider, isPending } = useProviderMutation(providerName)
+  const { data: providerData } = useProviderQuery(open ? provider.provider : '')
+  const { mutateAsync: saveProvider, isPending } = useProviderMutation(provider.provider)
   const [formData, setFormData] = React.useState({})
-
+  const schema = provider.config_schema?.json_schema as RJSFSchema
+  const uiSchema = provider.config_schema?.ui_schema as UiSchema
   React.useEffect(() => {
     if (providerData?.credentials) {
       setFormData(providerData.credentials)
@@ -65,7 +62,7 @@ export default function ProviderApiKeyDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {providerName} {t('toolkit.api_key')}
+            {provider.label} {t('toolkit.api_key')}
           </DialogTitle>
         </DialogHeader>
 

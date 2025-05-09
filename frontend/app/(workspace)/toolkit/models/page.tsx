@@ -1,10 +1,9 @@
 'use client'
 
 import ProviderCard from '@/app/(workspace)/toolkit/models/components/ProviderCard'
-import ProviderModelsDrawer from '@/app/(workspace)/toolkit/models/components/ProviderModelsDrawer'
+import ProviderModelsSheet from '@/app/(workspace)/toolkit/models/components/ProviderModelsSheet'
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
-import { RJSFSchema, UiSchema } from '@rjsf/utils'
 import ProviderApiKeyDialog from './components/ProviderApiKeyDialog'
 import FullPageLoading from '@/components/FullPageLoading'
 import { useProvidersStore, useProvidersQuery } from './stores/useProvidersStore'
@@ -55,16 +54,14 @@ export default function ModelsPage() {
 
       {selectedProvider && (
         <>
-          <ProviderModelsDrawer
+          <ProviderModelsSheet
             provider={selectedProvider}
             open={openDrawer}
             onClose={() => setOpenDrawer(false)}
           />
           {selectedProvider.config_schema && (
             <ProviderApiKeyDialog
-              providerName={selectedProvider.provider}
-              schema={selectedProvider.config_schema?.json_schema as RJSFSchema}
-              uiSchema={selectedProvider.config_schema?.ui_schema as UiSchema}
+              provider={selectedProvider}
               open={openApiKeyDialog}
               onClose={() => setOpenApiKeyDialog(false)}
             />

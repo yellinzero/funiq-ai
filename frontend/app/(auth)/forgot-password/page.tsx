@@ -28,12 +28,11 @@ export default function ForgotPassword() {
       if (res.data?.token) {
         setToken(res.data.token)
         setStep(2)
-        toast.success(t('reset_code_sent'))
+        toast.success(t('auth.reset_code_sent'))
       }
     }
     catch (e) {
       console.error('Send reset code error:', e)
-      toast.error(t('send_code_failed'))
     }
   }
 
@@ -44,12 +43,11 @@ export default function ForgotPassword() {
         code: data.code,
         new_password: data.password,
       })
-      toast.success(t('password_reset_success'))
+      toast.success(t('auth.password_reset_success'))
       router.push('/sign-in')
     }
     catch (e) {
       console.error('Reset password error:', e)
-      toast.error(t('password_reset_failed'))
     }
   }
 
@@ -57,7 +55,7 @@ export default function ForgotPassword() {
     <Card className="w-full max-w-[450px] mx-auto p-6 space-y-4 h-[70%]">
       <CardContent className="p-0 space-y-4">
         <h1 className="text-2xl font-semibold tracking-tight">
-        {t('forgot_password')}
+          {t('auth.forgot_password')}
         </h1>
 
       {step === 1

@@ -9,6 +9,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/base/sidebar"
+import { cn } from '@/utils/ui'
 
 export default function WorkspaceSidebarContent() {
   const { t } = useTranslation()
@@ -54,7 +55,10 @@ export default function WorkspaceSidebarContent() {
             <SidebarMenuButton
               tooltip={item.title}
               onClick={() => router.push(item.url)}
-              className={isSelected(item.url) ? "bg-accent text-accent-foreground" : ""}
+              className={cn(
+                isSelected(item.url) ? "bg-accent text-accent-foreground" : "",
+                "cursor-pointer"
+              )}
             >
               <item.icon className="h-4 w-4" />
               <span>{item.title}</span>

@@ -1,9 +1,13 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { cn } from '@/utils/ui'
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+} from "@/components/base/tabs"
 
-interface IntegrationsTabsProps {
+interface ToolkitTabsProps {
   labels: {
     label: string
     value: string
@@ -11,7 +15,7 @@ interface IntegrationsTabsProps {
   children?: React.ReactNode
 }
 
-export default function ToolkitTabs({ labels, children }: IntegrationsTabsProps) {
+export default function ToolkitTabs({ labels, children }: ToolkitTabsProps) {
   const router = useRouter()
   const pathname = usePathname()
 
@@ -24,31 +28,26 @@ export default function ToolkitTabs({ labels, children }: IntegrationsTabsProps)
   }
 
   return (
-    <div className="flex items-center justify-between gap-8 px-8">
-      <div className="flex-1">
-        <div className="flex space-x-1 border-b">
-        {labels.map((label) => (
-            <button
-            key={label.value}
-              onClick={() => handleTabChange(label.value)}
-              className={cn(
-                "inline-flex items-center justify-center whitespace-nowrap py-4 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-                "border-b-2 -mb-px",
-                pathname === label.value
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {label.label}
-            </button>
-        ))}
-        </div>
+    <div className="border-b">
+      <div className="container">
+        <Tabs
+          value={pathname}
+          onValueChange={handleTabChange}
+          className="w-full"
+        >
+          <TabsList className="h-auto justify-start gap-6 bg-transparent p-0">
+            {labels.map((label) => (
+              <TabsTrigger
+                key={label.value}
+                value={label.value}
+                className="cursor-pointer relative h-12 rounded-none border-0 bg-transparent px-2 font-medium data-[state=active]:bg-transparent data-[state=active]:shadow-none before:absolute before:bottom-0 before:left-0 before:h-0.5 before:w-full before:bg-transparent data-[state=active]:before:bg-primary"
+              >
+                {label.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </div>
-      {children && (
-        <div>
-          {children}
-        </div>
-      )}
     </div>
   )
 }

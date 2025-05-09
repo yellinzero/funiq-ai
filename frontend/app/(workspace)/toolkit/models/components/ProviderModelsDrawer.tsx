@@ -49,18 +49,7 @@ export default function ProviderModelsDrawer({ provider, open, onClose }: Provid
       >
         {/* Header */}
         <SheetHeader className="border-b p-4">
-          <div className="flex items-center justify-between">
-            <SheetTitle>{t('global.models')}</SheetTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-              <span className="sr-only">Close</span>
-            </Button>
-          </div>
+          <SheetTitle>{t('global.models')}</SheetTitle>
         </SheetHeader>
 
         {/* Content */}

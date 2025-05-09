@@ -1,8 +1,8 @@
 from utils.common.i18n import gettext_lazy as _
 
 schema = {
-    "model": "o3",
-    "label": "o3",
+    "model": "o3-2025-04-16",
+    "label": "o3-2025-04-16",
     "model_type": "llm",
     "group": "o3",
     "features": [

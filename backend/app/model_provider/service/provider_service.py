@@ -9,6 +9,7 @@ from app.core.errors import ModelProviderErrorCode
 from app.core.models.model_provider import ModelProvider as DBModelProvider
 from configs import funiq_ai_config
 from providers.models.core import ModelProvider, ProviderFactory
+from providers.models.core.errors import CredentialsValidateFailedError
 from providers.models.core.schemas import AIModelEntity
 
 from ..schemas import ActiveModelProviderWithModels, ModelInfo, ProviderInfo, SaveProviderRequest
@@ -113,39 +114,60 @@ class ProviderService:
 
         Returns:
             DBModelProvider: The saved or updated provider configuration.
+
+        Raises:
+            CredentialsValidateFailedError: If the provider credentials validation fails.
         """
         logger.info(
             "Saving provider configuration",
             extra={"tenant_id": tenant_id, "provider": provider_name},
         )
 
-        # Check for existing provider configuration
-        result = await session.execute(
-            select(DBModelProvider).where(
-                DBModelProvider.tenant_id == tenant_id, DBModelProvider.provider == provider_name
+        # Get provider instance and validate credentials
+        try:
+            provider_instance = ProviderFactory.get_provider_instance(provider_name)
+            provider_instance.validate_provider_credentials(payload.credentials)
+        except CredentialsValidateFailedError as e:
+            raise ModelProviderErrorCode.CREDENTIALS_VALIDATE_FAILED.exception(
+                status_code=status.HTTP_403_FORBIDDEN
+            ) from e
+        except Exception as e:
+            raise ModelProviderErrorCode.CREDENTIALS_VALIDATE_FAILED.exception(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                data={"error": str(e)},
+            ) from e
+
+        try:
+            # Check for existing provider configuration
+            result = await session.execute(
+                select(DBModelProvider).where(
+                    DBModelProvider.tenant_id == tenant_id, DBModelProvider.provider == provider_name
+                )
             )
-        )
-        provider = result.scalars().first()
+            provider = result.scalars().first()
 
-        if provider:
-            logger.info("Updating existing provider configuration", extra={"provider": provider.provider})
-            provider.credentials = payload.credentials
+            if provider:
+                provider.credentials = payload.credentials
+                await provider.save(session)
+                return provider
+
+            # Create new provider configuration
+            provider_data = {
+                "tenant_id": tenant_id,
+                "provider": provider_name,
+                "credentials": payload.credentials,
+            }
+
+            provider = DBModelProvider(**provider_data)
             await provider.save(session)
+
+            await session.commit()
             return provider
-
-        # Create new provider configuration
-        provider_data = {
-            "tenant_id": tenant_id,
-            "provider": provider_name,
-            "credentials": payload.credentials,
-        }
-
-        provider = DBModelProvider(**provider_data)
-        await provider.save(session)
-
-        await session.commit()
-        logger.info("Created new provider configuration", extra={"provider": provider.provider})
-        return provider
+        except Exception as e:
+            logger.error(f"Error saving provider configuration: {e}")
+            raise ModelProviderErrorCode.SAVE_PROVIDER_FAILED.exception(
+                status_code=status.HTTP_400_BAD_REQUEST,
+            ) from e
 
     @staticmethod
     async def get_provider(session: AsyncSession, tenant_id: str, provider_name: str) -> DBModelProvider:

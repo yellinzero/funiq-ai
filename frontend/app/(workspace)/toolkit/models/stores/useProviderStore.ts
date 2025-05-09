@@ -50,8 +50,12 @@ export const useProviderMutation = (providerName: string) => {
 
   return useMutation({
     mutationFn: async (data: SaveProviderRequest) => {
-      const response = await saveProviderApi(providerName, data)
-      return response.data
+      try {
+        const response = await saveProviderApi(providerName, data)
+        return response.data
+      } catch (error) {
+        throw error
+      }
     },
     onSuccess: (data) => {
       setProvider(data || null)
@@ -60,6 +64,7 @@ export const useProviderMutation = (providerName: string) => {
     },
     onError: (error: Error) => {
       setError(error)
+      throw error
     },
   })
 }

@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from '@/components/base/dialog'
 import { Button } from '@/components/base/button'
+import { Loader2 } from 'lucide-react'
 
 interface ProviderApiKeyDialogProps {
   providerName: string
@@ -31,7 +32,7 @@ export default function ProviderApiKeyDialog({
   const { t, i18n } = useTranslation()
   const formRef = React.useRef<FormType>(null)
   const { data: providerData } = useProviderQuery(open ? providerName : '')
-  const { mutate: saveProvider } = useProviderMutation(providerName)
+  const { mutateAsync: saveProvider, isPending } = useProviderMutation(providerName)
   const [formData, setFormData] = React.useState({})
 
   React.useEffect(() => {
@@ -46,15 +47,21 @@ export default function ProviderApiKeyDialog({
         await saveProvider({
           credentials: formData
         })
-        onClose()
+        handleClose()
       } catch (error) {
         console.error('Failed to save provider credentials:', error)
       }
     }
   }
 
+  const handleClose = () => {
+    if (isPending) return
+    setFormData({})
+    onClose()
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
@@ -73,16 +80,19 @@ export default function ProviderApiKeyDialog({
           />
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2">
           <Button
             variant="outline"
-            onClick={onClose}
+            onClick={handleClose}
+            disabled={isPending}
           >
             {t('global.cancel')}
           </Button>
           <Button
             onClick={handleSubmit}
+            disabled={isPending}
           >
+            {isPending && <Loader2 className="animate-spin" />}
             {t('global.save')}
           </Button>
         </DialogFooter>

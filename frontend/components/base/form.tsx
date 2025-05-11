@@ -12,7 +12,7 @@ import {
   type FieldPath,
   type FieldValues,
 } from "react-hook-form"
-import { useTranslation } from 'react-i18next'
+import { useTranslation } from '@/plugins/i18n/client'
 
 import { cn } from "@/utils/ui"
 import { Label } from "@/components/base/label"
@@ -138,7 +138,7 @@ function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
 
 function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
   const { error, formMessageId } = useFormField()
-  const { t } = useTranslation()
+  const { t } = useTranslation(['global'])
 
   let body = props.children
   if (error) {

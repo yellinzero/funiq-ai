@@ -13,8 +13,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/base/dropdown-menu'
 import { Button } from '@/components/base/button'
-import { THEME_COOKIE_NAME } from '@/utils/constants'
-import { useTranslation } from 'react-i18next'
+import { useTranslation } from '@/plugins/i18n/client'
+
 export default function ThemeModeToggle() {
   const { t } = useTranslation(['global'])
   const { setTheme } = useTheme()
@@ -22,8 +22,6 @@ export default function ThemeModeToggle() {
   const router = useRouter()
 
   const handleMode = (targetMode: 'system' | 'light' | 'dark') => {
-    setCookie(THEME_COOKIE_NAME, targetMode)
-    router.refresh()
     setTheme(targetMode)
   }
 

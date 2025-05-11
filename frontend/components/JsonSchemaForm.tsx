@@ -1,10 +1,9 @@
 import Form from '@rjsf/shadcn';
 import { FormProps } from '@rjsf/core';
 import type FormType from '@rjsf/core';
-import { forwardRef } from 'react';
 import {customizeValidator} from '@rjsf/validator-ajv8';
 import ajvLocalizer from 'ajv-i18n';
-import { Locale, fallbackLang } from '@/plugins/i18n/settings';
+import { Locale, fallbackLng } from '@/plugins/i18n/settings';
 import { Localize } from 'ajv-i18n/localize/types';
 export interface JsonSchemaFormProps extends FormProps {
   hideSubmitButton?: boolean
@@ -20,7 +19,7 @@ const localizer: Record<Locale, Localize> = {
 
 export default function JsonSchemaForm(props: Omit<JsonSchemaFormProps, 'validator'>) {
   const { ref, ...rest } = props
-  const locale = props.locale ?? fallbackLang
+  const locale = props.locale ?? fallbackLng
   const noHtml5Validate = props.noHtml5Validate ?? true
   const showErrorList = props.showErrorList ?? false
   const validator = customizeValidator({}, localizer[locale])

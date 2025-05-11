@@ -2,11 +2,10 @@
 
 import { logoutApi } from '@/apis/openapis/auth'
 import { useSessionCookie } from '@/hooks/useSessionCookie'
-import { I18N_COOKIE_NAME, languagesOptions } from '@/plugins/i18n/settings'
+import { languagesOptions } from '@/plugins/i18n/settings'
 import { LogOut, Languages } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import * as React from 'react'
-import { useCookies } from 'react-cookie'
 import { useTranslation } from 'react-i18next'
 import CurrentUserInfoBox from '@/components/CurrentUserInfoBox'
 import { useSuspenseQuery } from '@tanstack/react-query'
@@ -22,20 +21,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/base/dropdown-menu'
 import { cn } from '@/utils/ui'
+import { useChangeLanguage } from '@/plugins/i18n/client'
 
 export default function UserActionsMenu() {
   const { data } = useSuspenseQuery(meOptions)
   const userInfo = data?.data
   const { t, i18n } = useTranslation()
-  const [_cookie, setCookie] = useCookies()
   const sessionCookie = useSessionCookie()
   const router = useRouter()
-
-  const handleChangeLang = (lang: string) => {
-    i18n.changeLanguage(lang)
-    setCookie(I18N_COOKIE_NAME, lang, { path: '/' })
-    router.refresh()
-  }
+  const { changeLanguage } = useChangeLanguage()
 
   async function handleLogout() {
     await logoutApi()
@@ -69,7 +63,7 @@ export default function UserActionsMenu() {
                 {languagesOptions.map(item => (
                   <DropdownMenuItem
                     key={item.value}
-                    onClick={() => handleChangeLang(item.value)}
+                    onClick={() => changeLanguage(item.value)}
                     className={cn(
                       'cursor-pointer',
                       i18n.language === item.value && 'bg-accent'

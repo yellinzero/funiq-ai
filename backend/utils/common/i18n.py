@@ -113,7 +113,7 @@ class LocaleTranslator:
         Falls back to default locale if the requested locale is not supported.
 
         Args:
-            locale_code: The locale code (e.g., 'en', 'zh-CN')
+            locale_code: The locale code (e.g., 'en', 'zh_CN')
 
         Returns:
             LocaleTranslator instance for the requested or default locale

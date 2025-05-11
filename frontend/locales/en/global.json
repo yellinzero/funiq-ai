@@ -19,5 +19,6 @@
   "system": "System",
   "light": "Light",
   "dark": "Dark",
-  "toggle_theme": "Toggle theme"
+  "toggle_theme": "Toggle theme",
+  "toggle": "Toggle"
 }

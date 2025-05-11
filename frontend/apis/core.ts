@@ -9,13 +9,13 @@ import type {
   Middleware,
 } from 'openapi-fetch'
 import { toast } from 'sonner'
-import { initTranslations } from '@/plugins/i18n'
 import { I18N_COOKIE_NAME } from '@/plugins/i18n/settings'
 import { SESSION_COOKIE_NAME, TENANT_HEADER_NAME } from '@/utils/constants'
 import createClient from 'openapi-fetch'
 import { Cookies } from 'react-cookie'
 import { redirect } from 'next/navigation'
-import { TFunction } from 'i18next'
+import i18next, { TFunction } from 'i18next'
+
 
 // Types
 export type HttpMethod = 'get' | 'put' | 'post' | 'delete' | 'options' | 'head' | 'patch' | 'trace'
@@ -236,8 +236,7 @@ export function createFetchApi(client: Client<paths>) {
     config?: ExtraConfig,
   ): Promise<CustomFetchResponse<Path, Method>> => {
     const { data, response, error } = await promise
-    const { language } = await getCookieContext()
-    const { t } = await initTranslations(language, namespaces)
+    const { t } = i18next
 
     const mergedConfig = {
       ...config,

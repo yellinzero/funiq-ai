@@ -1,9 +1,7 @@
 'use client'
 
-import { I18N_COOKIE_NAME, languagesOptions } from '@/plugins/i18n/settings'
-import { useRouter } from 'next/navigation'
+import { languagesOptions } from '@/plugins/i18n/settings'
 import * as React from 'react'
-import { useCookies } from 'react-cookie'
 import { useTranslation } from 'react-i18next'
 import { Languages } from 'lucide-react'
 
@@ -16,27 +14,18 @@ import {
 import { Button } from '@/components/base/button'
 import { cn } from '@/utils/ui'
 
+import { useChangeLanguage } from '@/plugins/i18n/client'
 export default function LangSelect() {
-  const router = useRouter()
-  const [_cookie, setCookie] = useCookies()
   const { i18n } = useTranslation()
-  const currLangLabel = languagesOptions.find(option => option.value === i18n.language)?.label || 'English'
-
-  function changeLanguage(lang: string) {
-    i18n.changeLanguage(lang)
-    setCookie(I18N_COOKIE_NAME, lang, { path: '/' })
-    router.refresh()
-  }
-
+  const { changeLanguage } = useChangeLanguage()
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="flex items-center gap-2 text-muted-foreground"
+          className="size-9 text-muted-foreground"
         >
-          <Languages className="h-4 w-4" />
-          <span>{currLangLabel}</span>
+          <Languages className="size-4.5" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -45,6 +34,7 @@ export default function LangSelect() {
             key={option.value}
             className={cn(
               'cursor-pointer',
+              i18n.resolvedLanguage === option.value && 'bg-accent'
             )}
             onClick={() => changeLanguage(option.value)}
           >

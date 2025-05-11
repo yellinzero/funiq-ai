@@ -1,5 +1,4 @@
 export const SESSION_COOKIE_NAME = 'session'
-export const THEME_COOKIE_NAME = 'theme'
 export const TENANT_HEADER_NAME = 'X-Tenant-ID'
 
 import * as z from 'zod'

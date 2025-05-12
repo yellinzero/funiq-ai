@@ -3,7 +3,7 @@ import { useTranslation } from '@/plugins/i18n/client'
 import React from 'react'
 import type FormType from '@rjsf/core'
 import JsonSchemaForm from '@/components/JsonSchemaForm'
-import { useProviderMutation, useProviderQuery } from '../stores/useProviderStore'
+import { useProviderMutation, useProviderQuery } from '../stores/use-provider-store'
 import {
   Dialog,
   DialogContent,

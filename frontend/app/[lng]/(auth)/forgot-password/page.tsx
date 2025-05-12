@@ -2,7 +2,7 @@
 
 import { forgotPasswordApi, resendVerificationCodeApi, resetPasswordApi } from '@/apis'
 import { toast } from 'sonner'
-import { useCountdown } from '@/hooks/useCountdown'
+import { useCountdown } from '@/hooks/use-countdown'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import { useTranslation } from '@/plugins/i18n/client'

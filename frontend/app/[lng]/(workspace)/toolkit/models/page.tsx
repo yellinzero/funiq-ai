@@ -5,7 +5,7 @@ import ProviderModelsSheet from '@/app/[lng]/(workspace)/toolkit/models/componen
 import { useState } from 'react'
 import ProviderApiKeyDialog from './components/ProviderApiKeyDialog'
 import FullPageLoading from '@/components/FullPageLoading'
-import { useProvidersStore, useProvidersQuery } from './stores/useProvidersStore'
+import { useProvidersStore, useProvidersQuery } from './stores/use-providers-store'
 import { IProviderInfo } from '@/apis/types'
 import { useTranslation } from '@/plugins/i18n/client'
 

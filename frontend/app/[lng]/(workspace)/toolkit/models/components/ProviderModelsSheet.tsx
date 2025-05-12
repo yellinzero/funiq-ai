@@ -2,8 +2,8 @@ import { useTranslation } from '@/plugins/i18n/client'
 import { useEffect, useState } from 'react'
 import FullPageLoading from '@/components/FullPageLoading'
 import ModelCard from './ModelCard'
-import { useModelsStore, useModelsQuery } from '@/app/[lng]/(workspace)/toolkit/models/stores/useModelsStore'
-import { useProviderQuery, useProviderStore } from '@/app/[lng]/(workspace)/toolkit/models/stores/useProviderStore'
+import { useModelsStore, useModelsQuery } from '@/app/[lng]/(workspace)/toolkit/models/stores/use-models-store'
+import { useProviderQuery, useProviderStore } from '@/app/[lng]/(workspace)/toolkit/models/stores/use-provider-store'
 import { IModelInfo, IProviderInfo } from '@/apis/types'
 import {
   Sheet,

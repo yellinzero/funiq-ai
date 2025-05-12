@@ -19,7 +19,7 @@ import {
   FormMessage,
 } from '@/components/base/form'
 import { Input } from '@/components/base/input'
-import { useSessionCookie } from '@/hooks/useSessionCookie'
+import { useSessionCookie } from '@/hooks/use-session-cookie'
 
 const tenantSchema = z.object({
   name: z.string().min(1, 'auth.tenant_name_required'),

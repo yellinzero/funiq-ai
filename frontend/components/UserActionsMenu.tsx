@@ -1,7 +1,7 @@
 'use client'
 
 import { logoutApi } from '@/apis/openapis/auth'
-import { useSessionCookie } from '@/hooks/useSessionCookie'
+import { useSessionCookie } from '@/hooks/use-session-cookie'
 import { languagesOptions } from '@/plugins/i18n/settings'
 import { LogOut, Languages } from 'lucide-react'
 import { useRouter } from 'next/navigation'

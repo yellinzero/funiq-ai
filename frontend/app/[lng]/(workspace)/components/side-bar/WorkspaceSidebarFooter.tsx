@@ -10,7 +10,7 @@ import { useChangeLanguage, useTranslation } from '@/plugins/i18n/client'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { meOptions } from '@/apis'
 import { logoutApi } from '@/apis/openapis/auth'
-import { useSessionCookie } from '@/hooks/useSessionCookie'
+import { useSessionCookie } from '@/hooks/use-session-cookie'
 import { languagesOptions } from '@/plugins/i18n/settings'
 import {
   Avatar,

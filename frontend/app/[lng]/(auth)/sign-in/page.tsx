@@ -3,7 +3,7 @@
 import { loginApi } from '@/apis'
 import { HttpError } from '@/apis/core'
 import { toast } from 'sonner'
-import { useSessionCookie } from '@/hooks/useSessionCookie'
+import { useSessionCookie } from '@/hooks/use-session-cookie'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { passwordValidation } from '@/utils/constants'
 import { useRouter } from 'next/navigation'

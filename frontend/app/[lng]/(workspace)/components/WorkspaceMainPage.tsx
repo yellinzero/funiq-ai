@@ -4,7 +4,7 @@ import WorkspaceHeader from './WorkspaceHeader'
 
 export default function WorkspaceMainPage({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarInset>
+    <SidebarInset className="overflow-hidden">
       <WorkspaceHeader />
       {children}
     </SidebarInset>

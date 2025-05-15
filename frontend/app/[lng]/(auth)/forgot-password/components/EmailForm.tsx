@@ -1,9 +1,5 @@
 'use client'
 
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import { useTranslation } from '@/plugins/i18n/client'
-import * as z from 'zod'
 import { Button } from '@/components/base/button'
 import {
   Form,
@@ -14,9 +10,13 @@ import {
   FormMessage,
 } from '@/components/base/form'
 import { Input } from '@/components/base/input'
+import { useTranslation } from '@/plugins/i18n/client'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
 
 const emailSchema = z.object({
-  email: z.string().email('auth.enter_valid_email'),
+  email: z.string().email('auth.text.enter_valid_email'),
 })
 
 type EmailFormInputs = z.infer<typeof emailSchema>
@@ -32,7 +32,7 @@ export default function EmailForm({ onSubmit, initialEmail = '' }: EmailFormProp
   const form = useForm<EmailFormInputs>({
     resolver: zodResolver(emailSchema),
     defaultValues: { email: initialEmail },
-    mode: 'onChange'
+    mode: 'onChange',
   })
 
   return (
@@ -58,7 +58,7 @@ export default function EmailForm({ onSubmit, initialEmail = '' }: EmailFormProp
         />
 
         <Button type="submit" className="w-full">
-          {t('auth.send_code')}
+          {t('auth.text.send_code')}
         </Button>
       </form>
     </Form>

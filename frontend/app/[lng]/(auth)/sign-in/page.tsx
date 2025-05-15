@@ -2,16 +2,8 @@
 
 import { loginApi } from '@/apis'
 import { HttpError } from '@/apis/core'
-import { toast } from 'sonner'
-import { useSessionCookie } from '@/hooks/use-session-cookie'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { passwordValidation } from '@/utils/constants'
-import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
-import { useTranslation } from '@/plugins/i18n/client'
-import * as z from 'zod'
-import { Card, CardContent } from '@/components/base/card'
 import { Button } from '@/components/base/button'
+import { Card, CardContent } from '@/components/base/card'
 import {
   Form,
   FormControl,
@@ -21,10 +13,18 @@ import {
   FormMessage,
 } from '@/components/base/form'
 import { Input } from '@/components/base/input'
+import { useSessionCookie } from '@/hooks/use-session-cookie'
+import { useTranslation } from '@/plugins/i18n/client'
+import { passwordValidation } from '@/utils/constants'
+import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import * as z from 'zod'
 
 const loginSchema = z.object({
-  email: z.string().email('auth.enter_valid_email'),
+  email: z.string().email('auth.text.enter_valid_email'),
   password: passwordValidation,
 })
 type LoginFormInputs = z.infer<typeof loginSchema>
@@ -37,7 +37,7 @@ export default function SignIn() {
   const form = useForm<LoginFormInputs>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
-    mode: 'onChange'
+    mode: 'onChange',
   })
 
   const emailValue = form.watch('email')
@@ -64,7 +64,7 @@ export default function SignIn() {
       <Card className="flex-1 p-6 w-full shadow-lg">
         <CardContent className="p-0 space-y-4">
           <h1 className="text-2xl font-semibold tracking-tight">
-            {t('global.welcome', {
+            {t('global.text.welcome', {
               name: t('global.product_name'),
             })}
           </h1>

@@ -17,9 +17,26 @@ export function useSessionCookie() {
     })
   }
 
+  function updateAccessToken(accessToken: string) {
+    const currentSession = cookies[SESSION_COOKIE_NAME]
+    if (!currentSession)
+      return
+
+    setCookies(SESSION_COOKIE_NAME, {
+      ...currentSession,
+      accessToken,
+    }, {
+      secure: true,
+      sameSite: 'lax',
+      expires: expiresAt,
+      path: '/',
+    })
+  }
+
   function updateTenantId(tenantId: string) {
     const currentSession = cookies[SESSION_COOKIE_NAME]
-    if (!currentSession) return
+    if (!currentSession)
+      return
 
     setCookies(SESSION_COOKIE_NAME, {
       ...currentSession,
@@ -30,6 +47,16 @@ export function useSessionCookie() {
       expires: expiresAt,
       path: '/',
     })
+  }
+
+  function getTenantId() {
+    const session = cookies[SESSION_COOKIE_NAME]
+    return session?.tenantId
+  }
+
+  function getAccessToken() {
+    const session = cookies[SESSION_COOKIE_NAME]
+    return session?.accessToken
   }
 
   function getAuth() {
@@ -49,5 +76,8 @@ export function useSessionCookie() {
     getAuth,
     clearAuth,
     updateTenantId,
+    getTenantId,
+    getAccessToken,
+    updateAccessToken,
   }
 }

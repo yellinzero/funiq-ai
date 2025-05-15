@@ -1,22 +1,12 @@
 'use client'
 
-import {
-  Languages,
-  LogOut,
-  ChevronsUpDown,
-} from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useChangeLanguage, useTranslation } from '@/plugins/i18n/client'
-import { useSuspenseQuery } from '@tanstack/react-query'
-import { meOptions } from '@/apis'
 import { logoutApi } from '@/apis/openapis/auth'
-import { useSessionCookie } from '@/hooks/use-session-cookie'
-import { languagesOptions } from '@/plugins/i18n/settings'
+import { useCurrentUser } from '@/app/[lng]/stores/use-global-store'
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@/components/base/avatar"
+} from '@/components/base/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,18 +24,25 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/base/sidebar"
+} from '@/components/base/sidebar'
+import { useSessionCookie } from '@/hooks/use-session-cookie'
+import { useChangeLanguage, useTranslation } from '@/plugins/i18n/client'
+import { languagesOptions } from '@/plugins/i18n/settings'
 import { cn } from '@/utils/ui'
+import {
+  ChevronsUpDown,
+  Languages,
+  LogOut,
+} from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 export default function WorkspaceSidebarFooter() {
-  const { data } = useSuspenseQuery(meOptions)
-  const userInfo = data?.data
+  const userInfo = useCurrentUser()
   const { changeLanguage } = useChangeLanguage()
   const { t, i18n } = useTranslation(['global'])
   const sessionCookie = useSessionCookie()
   const router = useRouter()
   const { isMobile } = useSidebar()
-
 
   async function handleLogout() {
     await logoutApi()
@@ -53,7 +50,8 @@ export default function WorkspaceSidebarFooter() {
     router.push('/')
   }
 
-  if (!userInfo) return null
+  if (!userInfo)
+    return null
 
   return (
     <SidebarMenu>
@@ -78,7 +76,7 @@ export default function WorkspaceSidebarFooter() {
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-            side={isMobile ? "bottom" : "right"}
+            side={isMobile ? 'bottom' : 'right'}
             align="end"
             sideOffset={4}
           >
@@ -109,7 +107,7 @@ export default function WorkspaceSidebarFooter() {
                       onClick={() => changeLanguage(item.value)}
                       className={cn(
                         'cursor-pointer',
-                        i18n.language === item.value && 'bg-accent'
+                        i18n.language === item.value && 'bg-accent',
                       )}
                     >
                       {item.label}

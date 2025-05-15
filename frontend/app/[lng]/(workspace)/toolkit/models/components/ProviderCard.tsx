@@ -1,8 +1,7 @@
-import { useTranslation } from '@/plugins/i18n/client'
-import { IProviderInfo } from '@/apis/types'
-import { Card, CardContent } from '@/components/base/card'
+import type { IProviderInfo } from '@/apis'
 import { Button } from '@/components/base/button'
-import { cn } from '@/utils/ui'
+import { Card, CardContent } from '@/components/base/card'
+import { useTranslation } from '@/plugins/i18n/client'
 
 export type ProviderCardProps = IProviderInfo & {
   onClickAPIKey?: (provider: IProviderInfo) => void
@@ -32,44 +31,44 @@ export default function ProviderCard(props: ProviderCardProps) {
     <Card className="flex min-w-[300px] flex-1 flex-col gap-4 overflow-auto p-4">
       <CardContent className="p-0">
         <div className="flex flex-wrap items-center justify-between gap-4">
-        {icon?.large && (
-          <img
-            src={icon.large}
-            alt={label}
+          {icon?.large && (
+            <img
+              src={icon.large}
+              alt={label}
               className="h-6 object-contain"
-          />
-        )}
+            />
+          )}
           <div className="flex items-center gap-2">
-          <Button
+            <Button
               variant="outline"
               size="sm"
               className="min-w-[100px]"
-            onClick={() => onClickAPIKey?.(props)}
-          >
-            {t('toolkit.api_key')}
-          </Button>
-          <Button
+              onClick={() => onClickAPIKey?.(props)}
+            >
+              {t('toolkit.api_key')}
+            </Button>
+            <Button
               variant="outline"
               size="sm"
               className="min-w-[100px]"
-            onClick={() => onClickModels?.(props)}
-          >
-            {t('toolkit.configure_models')}
-          </Button>
+              onClick={() => onClickModels?.(props)}
+            >
+              {t('toolkit.configure_models')}
+            </Button>
           </div>
         </div>
 
         <p className="mt-4 text-sm text-muted-foreground">
-        {description}
+          {description}
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-1">
-        {model_types.map((type) => (
-          <Chip
-            key={type}
-            label={type.toUpperCase()}
-          />
-        ))}
+          {model_types.map(type => (
+            <Chip
+              key={type}
+              label={type.toUpperCase()}
+            />
+          ))}
         </div>
       </CardContent>
     </Card>

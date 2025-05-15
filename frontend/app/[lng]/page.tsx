@@ -1,25 +1,15 @@
-import { getAccountInfoApi } from '@/apis/openapis/account'
+import { getCurrentUser } from '@/apis'
+import { Button } from '@/components/base/button'
 import CurrentUserInfoBox from '@/components/CurrentUserInfoBox'
 import HomePageHeader from '@/components/HomePageHeader'
 import { Logo } from '@/components/SiteLogo'
-import { cookies } from 'next/headers'
-import { IAccountResponse } from '@/apis/types'
-import { Button } from '@/components/base/button'
-import Link from 'next/link'
 import { getTranslation } from '@/plugins/i18n'
+import Link from 'next/link'
+
 export default async function Home() {
   const { t } = await getTranslation(['global'])
-  let userInfo: IAccountResponse | undefined
-  const session = (await cookies()).get('session')?.value
-  if(session) {
-    try {
-      const { data } = await getAccountInfoApi()
-      userInfo = data
-    }
-    catch (_error) {
-      // ignore
-    }
-  }
+
+  const userInfo = await getCurrentUser()
 
   return (
     <main className="w-screen h-screen bg-background flex flex-col">
@@ -29,7 +19,7 @@ export default async function Home() {
         <Logo className="h-[120px] w-[360px]" />
 
         <p className="text-muted-foreground text-center max-w-[600px] text-lg sm:text-xl">
-          {t('global.home_description')}
+          {t('global.text.home_description')}
         </p>
 
         {userInfo && (

@@ -1,17 +1,17 @@
-import { useTranslation } from '@/plugins/i18n/client'
-import { useEffect, useState } from 'react'
-import FullPageLoading from '@/components/FullPageLoading'
-import ModelCard from './ModelCard'
-import { useModelsStore, useModelsQuery } from '@/app/[lng]/(workspace)/toolkit/models/stores/use-models-store'
+import type { IModelInfo, IProviderInfo } from '@/apis'
+import { useModelsQuery, useModelsStore } from '@/app/[lng]/(workspace)/toolkit/models/stores/use-models-store'
 import { useProviderQuery, useProviderStore } from '@/app/[lng]/(workspace)/toolkit/models/stores/use-provider-store'
-import { IModelInfo, IProviderInfo } from '@/apis/types'
 import {
   Sheet,
   SheetContent,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetFooter,
 } from '@/components/base/sheet'
+import FullPageLoading from '@/components/FullPageLoading'
+import { useTranslation } from '@/plugins/i18n/client'
+import { useEffect, useState } from 'react'
+import ModelCard from './ModelCard'
 
 interface ProviderModelsDrawerProps {
   provider: IProviderInfo
@@ -22,7 +22,7 @@ interface ProviderModelsDrawerProps {
 export default function ProviderModelsSheet({ provider, open, onClose }: ProviderModelsDrawerProps) {
   const { t, i18n } = useTranslation(['global', 'toolkit'])
   const { setCurrentProvider } = useModelsStore()
-  const { isLoading: isModelsLoading, refetch: refetchModels } = useModelsQuery(open ? provider.provider : null, i18n.language)
+  const { isLoading: isModelsLoading } = useModelsQuery(open ? provider.provider : null, i18n.language)
   const { isLoading: isProviderLoading } = useProviderQuery(open ? provider.provider : '')
   const { models } = useModelsStore()
   const { provider: currentProvider } = useProviderStore()
@@ -30,7 +30,7 @@ export default function ProviderModelsSheet({ provider, open, onClose }: Provide
 
   useEffect(() => {
     setCurrentProvider(open ? provider : null)
-  }, [open, provider])
+  }, [open, provider, setCurrentProvider])
 
   useEffect(() => {
     setIsProviderUnavailable(!currentProvider)
@@ -52,17 +52,19 @@ export default function ProviderModelsSheet({ provider, open, onClose }: Provide
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-4">
-          {isLoading ? (
-            <FullPageLoading />
-          ) : (
-            <div className="grid gap-4">
-              {providerModels.map((model: IModelInfo) => (
-                <div key={model.model}>
-                  <ModelCard {...model} icon={provider.icon} disabled={isProviderUnavailable} />
+          {isLoading
+            ? (
+                <FullPageLoading />
+              )
+            : (
+                <div className="grid gap-4">
+                  {providerModels.map((model: IModelInfo) => (
+                    <div key={model.model}>
+                      <ModelCard {...model} icon={provider.icon} disabled={isProviderUnavailable} />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              )}
         </div>
 
         {/* Footer */}

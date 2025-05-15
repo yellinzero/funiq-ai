@@ -1,13 +1,13 @@
 'use client'
 
+import type { IProviderInfo } from '@/apis'
 import ProviderCard from '@/app/[lng]/(workspace)/toolkit/models/components/ProviderCard'
 import ProviderModelsSheet from '@/app/[lng]/(workspace)/toolkit/models/components/ProviderModelsSheet'
+import FullPageLoading from '@/components/FullPageLoading'
+import { useTranslation } from '@/plugins/i18n/client'
 import { useState } from 'react'
 import ProviderApiKeyDialog from './components/ProviderApiKeyDialog'
-import FullPageLoading from '@/components/FullPageLoading'
-import { useProvidersStore, useProvidersQuery } from './stores/use-providers-store'
-import { IProviderInfo } from '@/apis/types'
-import { useTranslation } from '@/plugins/i18n/client'
+import { useProvidersQuery, useProvidersStore } from './stores/use-providers-store'
 
 const namespaces = ['global', 'toolkit']
 
@@ -37,7 +37,7 @@ export default function ModelsPage() {
     <>
       <div className="h-full w-full min-w-[700px] p-4">
         <div className="grid grid-cols-2 gap-6">
-          {providers.map((provider) => (
+          {providers.map(provider => (
             <div
               key={provider.provider}
               className="flex"

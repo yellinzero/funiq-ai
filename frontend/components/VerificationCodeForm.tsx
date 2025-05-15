@@ -1,30 +1,28 @@
 'use client'
 
-import { useTranslation } from '@/plugins/i18n/client'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import * as z from 'zod'
-import { toast } from 'sonner'
 import { Button } from '@/components/base/button'
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/base/form'
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSeparator,
   InputOTPSlot,
 } from '@/components/base/input-otp'
+import { useTranslation } from '@/plugins/i18n/client'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { REGEXP_ONLY_DIGITS } from 'input-otp'
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/base/form'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
 
 interface VerificationCodeFormProps {
   onSubmit: (code: string) => Promise<void>
   submitButtonText?: string
   countdown: number
   onResend: () => void
-  errorMessage?: string
 }
 
 const verificationCodeSchema = z.object({
-  code: z.string().length(6, 'auth.code_length'),
+  code: z.string().length(6, 'auth.text.code_length'),
 })
 
 type VerificationCodeFormInputs = z.infer<typeof verificationCodeSchema>
@@ -34,7 +32,6 @@ export default function VerificationCodeForm({
   submitButtonText,
   countdown,
   onResend,
-  errorMessage,
 }: VerificationCodeFormProps) {
   const { t } = useTranslation(['auth'])
 
@@ -98,7 +95,7 @@ export default function VerificationCodeForm({
         >
           {countdown > 0
             ? t('auth.resend_code_countdown', { seconds: countdown })
-            : t('auth.resend_code')}
+            : t('auth.text.resend_code')}
         </Button>
       </form>
     </Form>

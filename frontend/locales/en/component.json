@@ -1,0 +1,9 @@
+{
+  "pagination": {
+    "total_zero": "No items",
+    "total_one": "{{count}} item",
+    "total_other": "{{count}} items",
+    "page_size": "Items per page",
+    "jump_to": "Go to"
+  }
+}

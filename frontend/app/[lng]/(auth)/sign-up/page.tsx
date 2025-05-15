@@ -1,14 +1,14 @@
 'use client'
 import { resendVerificationCodeApi, signupVerifyApi } from '@/apis'
-import { toast } from 'sonner'
+import { Card, CardContent } from '@/components/base/card'
 import VerificationCodeForm from '@/components/VerificationCodeForm'
 import { useCountdown } from '@/hooks/use-countdown'
 import { useSessionCookie } from '@/hooks/use-session-cookie'
+import { useTranslation } from '@/plugins/i18n/client'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { useTranslation } from '@/plugins/i18n/client'
+import { toast } from 'sonner'
 import SignUpForm from './components/SignUpForm'
-import { Card, CardContent } from '@/components/base/card'
 
 export default function SignUp() {
   const { t } = useTranslation(['auth', 'global'])
@@ -40,12 +40,11 @@ export default function SignUp() {
 
   const handleResendCode = async () => {
     try {
-      const {data} = await resendVerificationCodeApi({ email, code_type: 'signup_email' })
+      const { data } = await resendVerificationCodeApi({ email, code_type: 'signup_email' })
       if (data) {
         setToken(data.token)
         startCountdown()
       }
-
     }
     catch (e) {
       console.error('Resend verification code error:', e)
@@ -55,7 +54,7 @@ export default function SignUp() {
   const handleVerificationSubmit = async (code: string) => {
     const res = await signupVerifyApi({ code, token })
     if (res.data) {
-      toast.success(t('auth.email_verified_success'))
+      toast.success(t('auth.text.email_verified_success'))
       handleVerifyEmailSuccess({
         access_token: res.data.access_token,
         tenant_id: res.data.tenant_id ?? undefined,
@@ -67,7 +66,7 @@ export default function SignUp() {
     <Card className="w-full max-w-[450px] mx-auto p-6 space-y-4 h-[70%]">
       <CardContent className="p-0 space-y-4">
         <h1 className="text-2xl font-semibold tracking-tight">
-          {t('global.welcome', {
+          {t('global.text.welcome', {
             name: t('global.product_name'),
           })}
         </h1>

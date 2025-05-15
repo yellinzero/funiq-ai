@@ -1,25 +1,21 @@
 'use client'
 
-import * as React from 'react'
-import { Moon, Sun, Monitor } from 'lucide-react'
-import { useTheme } from 'next-themes'
-import { useCookies } from 'react-cookie'
-import { useRouter } from 'next/navigation'
-
+import { Button } from '@/components/base/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/base/dropdown-menu'
-import { Button } from '@/components/base/button'
 import { useTranslation } from '@/plugins/i18n/client'
+import { Monitor, Moon, Sun } from 'lucide-react'
+
+import { useTheme } from 'next-themes'
+import * as React from 'react'
 
 export default function ThemeModeToggle() {
   const { t } = useTranslation(['global'])
   const { setTheme } = useTheme()
-  const [_cookies, setCookie] = useCookies()
-  const router = useRouter()
 
   const handleMode = (targetMode: 'system' | 'light' | 'dark') => {
     setTheme(targetMode)

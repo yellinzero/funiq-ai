@@ -1,20 +1,21 @@
 'use client'
 
-import { languagesOptions } from '@/plugins/i18n/settings'
-import * as React from 'react'
-import { useTranslation } from 'react-i18next'
-import { Languages } from 'lucide-react'
-
+import { Button } from '@/components/base/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/base/dropdown-menu'
-import { Button } from '@/components/base/button'
-import { cn } from '@/utils/ui'
-
 import { useChangeLanguage } from '@/plugins/i18n/client'
+import { languagesOptions } from '@/plugins/i18n/settings'
+
+import { cn } from '@/utils/ui'
+import { Languages } from 'lucide-react'
+import * as React from 'react'
+
+import { useTranslation } from 'react-i18next'
+
 export default function LangSelect() {
   const { i18n } = useTranslation()
   const { changeLanguage } = useChangeLanguage()
@@ -34,7 +35,7 @@ export default function LangSelect() {
             key={option.value}
             className={cn(
               'cursor-pointer',
-              i18n.resolvedLanguage === option.value && 'bg-accent'
+              i18n.resolvedLanguage === option.value && 'bg-accent',
             )}
             onClick={() => changeLanguage(option.value)}
           >

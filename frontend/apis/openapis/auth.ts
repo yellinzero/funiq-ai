@@ -1,4 +1,14 @@
-import { type ExtractBodyType, fetchApi } from '@/apis/core'
+import type {
+  IActivateAccountRequest,
+  IActivateAccountVerifyRequest,
+  IForgotPasswordRequest,
+  ILoginRequest,
+  IResendVerificationCodeRequest,
+  IResetPasswordRequest,
+  ISignupRequest,
+  ISignupVerifyRequest,
+} from '@/apis/types'
+import { fetchApi } from '@/apis/core'
 import {
   activateAccountUrl,
   activateAccountVerifyUrl,
@@ -11,35 +21,35 @@ import {
   signupVerifyUrl,
 } from '@/apis/paths'
 
-export async function loginApi(body: ExtractBodyType<'post', typeof loginUrl>) {
+export async function loginApi(body: ILoginRequest) {
   return await fetchApi.POST(loginUrl, { body })
 }
 
-export async function signupApi(body: ExtractBodyType<'post', typeof signupUrl>) {
+export async function signupApi(body: ISignupRequest) {
   return await fetchApi.POST(signupUrl, { body })
 }
 
-export async function signupVerifyApi(body: ExtractBodyType<'post', typeof signupVerifyUrl>) {
+export async function signupVerifyApi(body: ISignupVerifyRequest) {
   return await fetchApi.POST(signupVerifyUrl, { body })
 }
 
-export async function activateAccountApi(body: ExtractBodyType<'post', typeof activateAccountUrl>) {
+export async function activateAccountApi(body: IActivateAccountRequest) {
   return await fetchApi.POST(activateAccountUrl, { body })
 }
 
-export async function activateAccountVerifyApi(body: ExtractBodyType<'post', typeof activateAccountVerifyUrl>) {
+export async function activateAccountVerifyApi(body: IActivateAccountVerifyRequest) {
   return await fetchApi.POST(activateAccountVerifyUrl, { body })
 }
 
-export async function forgotPasswordApi(body: ExtractBodyType<'post', typeof forgotPasswordUrl>) {
+export async function forgotPasswordApi(body: IForgotPasswordRequest) {
   return await fetchApi.POST(forgotPasswordUrl, { body })
 }
 
-export async function resetPasswordApi(body: ExtractBodyType<'post', typeof resetPasswordUrl>) {
+export async function resetPasswordApi(body: IResetPasswordRequest) {
   return await fetchApi.POST(resetPasswordUrl, { body })
 }
 
-export async function resendVerificationCodeApi(body: ExtractBodyType<'post', typeof resendVerificationCodeUrl>) {
+export async function resendVerificationCodeApi(body: IResendVerificationCodeRequest) {
   return await fetchApi.POST(resendVerificationCodeUrl, { body })
 }
 

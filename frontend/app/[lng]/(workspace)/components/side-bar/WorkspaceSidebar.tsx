@@ -1,9 +1,9 @@
 'use client'
 
-import SideMenuContent from './WorkspaceSidebarContent'
-import WorkspaceSidebarHeader from './WorkspaceSidebarHeader'
 import { Sidebar } from '@/components/base/sidebar'
+import SideMenuContent from './WorkspaceSidebarContent'
 import WorkspaceSidebarFooter from './WorkspaceSidebarFooter'
+import WorkspaceSidebarHeader from './WorkspaceSidebarHeader'
 
 export default function WorkspaceSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (

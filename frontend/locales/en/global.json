@@ -1,7 +1,5 @@
 {
   "product_name": "Funiq AI",
-  "welcome": "Welcome to {{name}}",
-  "home_description": "A simple and user-friendly AI workflow management platform, making AI technology more accessible",
   "chats": "Chats",
   "apps": "Apps",
   "store": "Store",
@@ -20,5 +18,19 @@
   "light": "Light",
   "dark": "Dark",
   "toggle_theme": "Toggle theme",
-  "toggle": "Toggle"
+  "toggle": "Toggle",
+  "name": "Name",
+  "view": "View",
+  "create": "Create",
+  "create_time": "Create time",
+  "update_time": "Update time",
+  "start_time": "Start time",
+  "end_time": "End time",
+  "text": {
+    "home_description": "A simple and user-friendly AI workflow management platform, making AI technology more accessible",
+    "welcome": "Welcome to {{name}}",
+    "create_successfully": "Create successfully",
+    "save_successfully": "Save successfully",
+    "delete_successfully": "Delete successfully"
+  }
 }

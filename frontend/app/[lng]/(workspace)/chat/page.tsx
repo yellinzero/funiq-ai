@@ -8,7 +8,7 @@ export default function Chat() {
   return (
     <div className="flex flex-col items-center mx-12 pb-20 relative gap-8">
       <div className="text-center">
-        {t('global.welcome', {
+        {t('global.text.welcome', {
           name: t('global.product_name'),
         })}
       </div>

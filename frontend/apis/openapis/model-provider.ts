@@ -1,10 +1,11 @@
-import { ExtraConfig, type ExtractBodyType, fetchApi } from '@/apis/core'
+import type { ExtraConfig, ISaveProviderRequest } from '@/apis/types'
+import { fetchApi } from '@/apis/core'
 import {
   getModelProvidersUrl,
   getModelsUrl,
   getProviderUrl,
   saveProviderUrl,
-} from '@/apis/paths/model_providers'
+} from '@/apis/paths/model-provider'
 
 export async function getModelProvidersApi() {
   return await fetchApi.GET(getModelProvidersUrl)
@@ -32,7 +33,7 @@ export async function getProviderApi(providerName: string, config?: ExtraConfig)
 
 export async function saveProviderApi(
   providerName: string,
-  body: ExtractBodyType<'post', typeof saveProviderUrl>,
+  body: ISaveProviderRequest,
 ) {
   return await fetchApi.POST(saveProviderUrl, {
     params: {

@@ -1,14 +1,14 @@
 'use client'
 
 import { forgotPasswordApi, resendVerificationCodeApi, resetPasswordApi } from '@/apis'
-import { toast } from 'sonner'
+import { Card, CardContent } from '@/components/base/card'
 import { useCountdown } from '@/hooks/use-countdown'
+import { useTranslation } from '@/plugins/i18n/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
-import { useTranslation } from '@/plugins/i18n/client'
+import { toast } from 'sonner'
 import EmailForm from './components/EmailForm'
 import ResetForm from './components/ResetForm'
-import { Card, CardContent } from '@/components/base/card'
 
 export default function ForgotPassword() {
   const { t } = useTranslation(['auth'])
@@ -28,7 +28,7 @@ export default function ForgotPassword() {
       if (res.data?.token) {
         setToken(res.data.token)
         setStep(2)
-        toast.success(t('auth.reset_code_sent'))
+        toast.success(t('auth.text.reset_code_sent'))
       }
     }
     catch (e) {
@@ -43,7 +43,7 @@ export default function ForgotPassword() {
         code: data.code,
         new_password: data.password,
       })
-      toast.success(t('auth.password_reset_success'))
+      toast.success(t('auth.text.password_reset_success'))
       router.push('/sign-in')
     }
     catch (e) {
@@ -58,18 +58,18 @@ export default function ForgotPassword() {
           {t('auth.forgot_password')}
         </h1>
 
-      {step === 1
-        ? <EmailForm onSubmit={onSubmitEmail} initialEmail={email} />
-        : (
-            <ResetForm
-              onSubmit={onSubmitReset}
-              countdown={countdown}
-              onResend={async () => {
-                await resendVerificationCodeApi({ email, code_type: 'reset_password_email' })
-                startCountdown()
-              }}
-            />
-          )}
+        {step === 1
+          ? <EmailForm onSubmit={onSubmitEmail} initialEmail={email} />
+          : (
+              <ResetForm
+                onSubmit={onSubmitReset}
+                countdown={countdown}
+                onResend={async () => {
+                  await resendVerificationCodeApi({ email, code_type: 'reset_password_email' })
+                  startCountdown()
+                }}
+              />
+            )}
       </CardContent>
     </Card>
   )

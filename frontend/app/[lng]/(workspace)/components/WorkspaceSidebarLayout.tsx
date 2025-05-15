@@ -9,9 +9,10 @@ export function WorkspaceSidebarLayout({ children }: { children: React.ReactNode
   return (
     <SidebarProvider style={
       {
-        '--sidebar-width': isInApp ? "13rem" : '10rem'
+        '--sidebar-width': isInApp ? '13rem' : '10rem',
       } as React.CSSProperties
-    }>
+    }
+    >
       <WorkspaceSideBar variant="inset" />
       <WorkspaceMainPage>
         {children}

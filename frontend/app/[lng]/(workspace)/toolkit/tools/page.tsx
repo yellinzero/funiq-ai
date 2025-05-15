@@ -1,8 +1,8 @@
 'use client'
 
-import { useTranslation } from '@/plugins/i18n/client'
-import { Card, CardContent } from '@/components/base/card'
 import { Button } from '@/components/base/button'
+import { Card, CardContent } from '@/components/base/card'
+import { useTranslation } from '@/plugins/i18n/client'
 import { cn } from '@/utils/ui'
 
 interface ToolCard {
@@ -35,7 +35,7 @@ export default function ToolsPage() {
   return (
     <div className="p-4">
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-        {tools.map((tool) => (
+        {tools.map(tool => (
           <div key={tool.id}>
             <Card>
               <CardContent className="flex flex-col gap-4 p-6">
@@ -48,7 +48,7 @@ export default function ToolsPage() {
                 <Button
                   variant={tool.status === 'connected' ? 'outline' : 'default'}
                   className={cn(
-                    tool.status === 'connected' && 'border-input hover:bg-accent hover:text-accent-foreground'
+                    tool.status === 'connected' && 'border-input hover:bg-accent hover:text-accent-foreground',
                   )}
                 >
                   {tool.status === 'connected' ? t('disconnect') : t('connect')}

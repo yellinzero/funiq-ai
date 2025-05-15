@@ -1,11 +1,11 @@
 'use client'
 
-import { usePathname, useRouter } from 'next/navigation'
 import {
   Tabs,
   TabsList,
   TabsTrigger,
-} from "@/components/base/tabs"
+} from '@/components/base/tabs'
+import { usePathname, useRouter } from 'next/navigation'
 
 interface ToolkitTabsProps {
   labels: {
@@ -15,7 +15,7 @@ interface ToolkitTabsProps {
   children?: React.ReactNode
 }
 
-export default function ToolkitTabs({ labels, children }: ToolkitTabsProps) {
+export default function ToolkitTabs({ labels }: ToolkitTabsProps) {
   const router = useRouter()
   const pathname = usePathname()
 
@@ -36,7 +36,7 @@ export default function ToolkitTabs({ labels, children }: ToolkitTabsProps) {
           className="w-full"
         >
           <TabsList className="h-auto justify-start gap-6 bg-transparent p-0">
-            {labels.map((label) => (
+            {labels.map(label => (
               <TabsTrigger
                 key={label.value}
                 value={label.value}

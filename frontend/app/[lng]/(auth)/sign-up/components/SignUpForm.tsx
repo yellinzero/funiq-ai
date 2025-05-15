@@ -1,12 +1,6 @@
 'use client'
 
 import { signupApi } from '@/apis'
-import { toast } from 'sonner'
-import { passwordValidation } from '@/utils/constants'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import { useTranslation } from '@/plugins/i18n/client'
-import * as z from 'zod'
 import { Button } from '@/components/base/button'
 import {
   Form,
@@ -17,10 +11,16 @@ import {
   FormMessage,
 } from '@/components/base/form'
 import { Input } from '@/components/base/input'
+import { useTranslation } from '@/plugins/i18n/client'
+import { passwordValidation } from '@/utils/constants'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import * as z from 'zod'
 
 const signUpSchema = z.object({
-  name: z.string().nonempty('auth.name_required'),
-  email: z.string().email('auth.enter_valid_email'),
+  name: z.string().nonempty('auth.text.name_required'),
+  email: z.string().email('auth.text.enter_valid_email'),
   password: passwordValidation,
 })
 type SignUpFormInputs = z.infer<typeof signUpSchema>
@@ -39,7 +39,7 @@ export default function SignUpForm({ onSuccess }: SignUpFormProps) {
       email: '',
       password: '',
     },
-    mode: 'onChange'
+    mode: 'onChange',
   })
 
   const onSubmit = async (data: SignUpFormInputs) => {

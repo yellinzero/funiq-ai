@@ -1,14 +1,15 @@
 'use client'
 import { activateAccountApi, activateAccountVerifyApi, resendVerificationCodeApi } from '@/apis'
-import { toast } from 'sonner'
+import { Button } from '@/components/base/button'
+import { Card, CardContent } from '@/components/base/card'
 import VerificationCodeForm from '@/components/VerificationCodeForm'
 import { useCountdown } from '@/hooks/use-countdown'
 import { useSessionCookie } from '@/hooks/use-session-cookie'
+import { useTranslation } from '@/plugins/i18n/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Card, CardContent } from '@/components/base/card'
-import { Button } from '@/components/base/button'
-import { useTranslation } from '@/plugins/i18n/client'
+import { toast } from 'sonner'
+
 export default function Activate() {
   const { t } = useTranslation(['auth', 'global'])
   const router = useRouter()
@@ -21,7 +22,7 @@ export default function Activate() {
   useEffect(() => {
     const email = searchParams.get('email')
     if (!email) {
-      toast.error(t('auth.invalid_activation_link'))
+      toast.error(t('auth.text.invalid_activation_link'))
       return
     }
     setEmail(email)
@@ -35,7 +36,7 @@ export default function Activate() {
       if (res.data?.token) {
         setToken(res.data.token)
         startCountdown()
-        toast.success(t('auth.activation_code_sent'))
+        toast.success(t('auth.text.activation_code_sent'))
       }
     }
     catch (e) {
@@ -51,7 +52,7 @@ export default function Activate() {
         code_type: 'activate_account_email',
       })
       startCountdown()
-      toast.success(t('auth.activation_code_sent'))
+      toast.success(t('auth.text.activation_code_sent'))
     }
     catch (e) {
       console.error('Resend verification code error:', e)
@@ -62,7 +63,7 @@ export default function Activate() {
     const res = await activateAccountVerifyApi({ token, code })
     if (res.data) {
       setAuth(res.data.access_token, res.data.tenant_id ?? undefined)
-      toast.success(t('auth.account_activated'))
+      toast.success(t('auth.text.account_activated'))
       if (!res.data.tenant_id) {
         router.push('/create-tenant')
       }
@@ -80,7 +81,7 @@ export default function Activate() {
         </h1>
 
         <p className="text-muted-foreground">
-          {t('auth.activation_code_description', { email })}
+          {t('auth.text.activation_code_description', { email })}
         </p>
 
         {!token && (
@@ -89,7 +90,7 @@ export default function Activate() {
             onClick={sendActivationEmail}
             className="w-full"
           >
-            {t('auth.send_activation_code')}
+            {t('auth.text.send_activation_code')}
           </Button>
         )}
 
@@ -98,7 +99,6 @@ export default function Activate() {
             onSubmit={handleVerificationSubmit}
             countdown={countdown}
             onResend={handleResendCode}
-            errorMessage={t('auth.activation_failed')}
           />
         )}
       </CardContent>

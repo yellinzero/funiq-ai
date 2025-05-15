@@ -1,9 +1,11 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { useCurrentUserQuery, useTenantUsersQuery } from '../../stores/use-global-store'
+import { WorkspaceHeaderProvider } from './WorkspaceHeaderProvider'
 
-type WorkspaceContextType = {
+interface WorkspaceContextType {
   activeApp: string | null
   isInApp: boolean
 }
@@ -19,42 +21,49 @@ export function useWorkspace() {
 }
 
 export function WorkspaceProvider({
-  children
+  children,
 }: {
   children: React.ReactNode
 }) {
+  useTenantUsersQuery()
+  useCurrentUserQuery()
+
   const pathname = usePathname()
   const [activeApp, setActiveApp] = useState<string | null>(() => {
-    const match = pathname?.match(/\/apps\/([^\/]+)/)
-    return  match?.[1] ?? null
+    const match = pathname?.match(/\/apps\/([^/]+)/)
+    return match?.[1] ?? null
   })
 
   useEffect(() => {
-    const appMatch = pathname?.match(/\/apps\/([^\/]+)/)
+    const appMatch = pathname?.match(/\/apps\/([^/]+)/)
 
     if (appMatch) {
       const newAppId = appMatch[1] ?? null
-      setActiveApp(prev => {
+      setActiveApp((prev) => {
         if (prev !== newAppId) {
           return newAppId
         }
         return prev
       })
-    } else if (pathname === '/apps') {
+    }
+    else if (pathname === '/apps') {
       setActiveApp(null)
-    } else {
+    }
+    else {
       setActiveApp(null)
     }
   }, [pathname])
 
-  const value = {
+  const value = useMemo(() => ({
     activeApp,
-    isInApp: !!activeApp
-  }
+    isInApp: !!activeApp,
+  }), [activeApp])
 
   return (
     <WorkspaceContext.Provider value={value}>
-      {children}
+      <WorkspaceHeaderProvider>
+        {children}
+      </WorkspaceHeaderProvider>
     </WorkspaceContext.Provider>
   )
 }

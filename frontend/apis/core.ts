@@ -1,70 +1,19 @@
+import type { CustomFetchResponse, ExtraConfig, HttpMethod } from '@/apis/types'
 // TODO optimize typescript
 import type { paths } from '@/types/openapi'
-import type {
-  Client,
-  ClientMethod,
-  FetchResponse,
-  InitParam,
-  MaybeOptionalInit,
-  Middleware,
-} from 'openapi-fetch'
-import { toast } from 'sonner'
 import { I18N_COOKIE_NAME } from '@/plugins/i18n/settings'
 import { SESSION_COOKIE_NAME, TENANT_HEADER_NAME } from '@/utils/constants'
-import createClient from 'openapi-fetch'
-import { Cookies } from 'react-cookie'
+import i18next, { type TFunction } from 'i18next'
 import { redirect } from 'next/navigation'
-import i18next, { TFunction } from 'i18next'
-
-
-// Types
-export type HttpMethod = 'get' | 'put' | 'post' | 'delete' | 'options' | 'head' | 'patch' | 'trace'
-
-export type ExtractInitType<Method extends HttpMethod, Path extends keyof paths> =
-  MaybeOptionalInit<paths[Path], Method>
-
-export type ExtractBodyType<Method extends HttpMethod, Path extends keyof paths> =
-  'body' extends keyof MaybeOptionalInit<paths[Path], Method>
-  ? MaybeOptionalInit<paths[Path], Method>['body']
-  : never
-
-export type ExtractParamsType<Method extends HttpMethod, Path extends keyof paths> =
-  'params' extends keyof MaybeOptionalInit<paths[Path], Method>
-  ? MaybeOptionalInit<paths[Path], Method>['params']
-  : never
-
-export type PathsWithMethod<T, M extends HttpMethod> = keyof {
-  [P in keyof T as T[P] extends { [K in M]: unknown } ? P : never]: T[P]
-}
-
-export type ExtractResponseType<Method extends HttpMethod, Path extends keyof paths> =
-  paths[Path][Method] extends { responses: { 200: { content: { 'application/json': infer R } } } }
-  ? R extends { data: infer D }
-  ? D
-  : never
-  : never
-
-export type CustomFetchResponse<Path extends keyof paths, Method extends HttpMethod> =
-  | {
-    data: ExtractResponseType<Method, Path>
-    error?: never
-    response: FetchResponse<paths[Path], MaybeOptionalInit<paths[Path], Method>, Path>['response']
-  }
-  | {
-    data?: never
-    error: FetchResponse<paths[Path], MaybeOptionalInit<paths[Path], Method>, Path>['error']
-    response: FetchResponse<paths[Path], MaybeOptionalInit<paths[Path], Method>, Path>['response']
-  }
-
-
-export interface ExtraConfig {
-  disableErrorToast?: boolean
-  disableErrorToastStatusList?: number[]
-  disableErrorToastCodeList?: string[]
-}
-
-// Constants
-const namespaces = ['error']
+import createClient, {
+  type Client,
+  type ClientMethod,
+  type InitParam,
+  type MaybeOptionalInit,
+  type Middleware,
+} from 'openapi-fetch'
+import { Cookies } from 'react-cookie'
+import { toast } from 'sonner'
 
 // API Clients
 export const apiFetch = createClient<paths>({
@@ -232,6 +181,7 @@ export async function showErrorInfo(
 
 export function createFetchApi(client: Client<paths>) {
   const handleResponse = async <Path extends keyof paths, Method extends HttpMethod>(
+    // eslint-disable-next-line ts/no-empty-object-type
     promise: ReturnType<ClientMethod<{}, Method, Path>>,
     config?: ExtraConfig,
   ): Promise<CustomFetchResponse<Path, Method>> => {
@@ -279,8 +229,8 @@ export function createFetchApi(client: Client<paths>) {
 
   type MethodConfig<M extends HttpMethod> = {
     [P in keyof paths as paths[P] extends { [K in M]: unknown } ? P : never]: {
-      path: P;
-      init?: MaybeOptionalInit<paths[P], M>;
+      path: P
+      init?: MaybeOptionalInit<paths[P], M>
     }
   }
 
@@ -288,10 +238,10 @@ export function createFetchApi(client: Client<paths>) {
     return <P extends keyof MethodConfig<M>>(
       url: P,
       init?: MethodConfig<M>[P]['init'],
-      config?: ExtraConfig
+      config?: ExtraConfig,
     ) => handleResponse<P, M>(
       (client[method.toUpperCase() as Uppercase<M>] as any)(url, ...createRequest(init)),
-      config
+      config,
     )
   }
 

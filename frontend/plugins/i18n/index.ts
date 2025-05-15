@@ -1,6 +1,6 @@
+import { headers } from 'next/headers'
 import i18next from './i18next'
 import { headerName } from './settings'
-import { headers } from 'next/headers'
 
 export async function getTranslation(ns: string | string[], options?: {
   keyPrefix?: string
@@ -18,8 +18,8 @@ export async function getTranslation(ns: string | string[], options?: {
     t: i18next.getFixedT(
       lng ?? i18next.resolvedLanguage as string,
       ns,
-      options?.keyPrefix
+      options?.keyPrefix,
     ),
-    i18n: i18next
+    i18n: i18next,
   }
 }

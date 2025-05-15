@@ -1,0 +1,14 @@
+{
+  "info": "Info",
+  "knowledge_base": "Knowledge Base",
+  "workflow": "Workflow",
+  "create_app": "Create Application",
+  "description": "Description",
+  "delete_app": "Delete Application",
+  "text": {
+    "name_placeholder": "Enter application name",
+    "description_placeholder": "Enter application description",
+    "no_description": "No description",
+    "search_app": "Enter name or description to search for applications"
+  }
+}

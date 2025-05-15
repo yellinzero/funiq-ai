@@ -1,7 +1,7 @@
-import { create } from 'zustand'
-import { getModelsApi } from '@/apis/openapis/model_providers'
+import type { IModelInfo, IProviderInfo } from '@/apis'
+import { getModelsApi } from '@/apis/openapis/model-provider'
 import { useQuery } from '@tanstack/react-query'
-import { IModelInfo, IProviderInfo } from '@/apis/types'
+import { create } from 'zustand'
 
 interface ModelsStoreState {
   models: Record<string, IModelInfo[]>
@@ -12,41 +12,44 @@ interface ModelsStoreState {
   setError: (error: Error | null) => void
 }
 
-export const useModelsStore = create<ModelsStoreState>((set) => ({
+export const useModelsStore = create<ModelsStoreState>(set => ({
   models: {},
   currentProvider: null,
   error: null,
   setModels: (provider, models) =>
-    set((state) => ({
+    set(state => ({
       models: {
         ...state.models,
         [provider]: models,
       },
     })),
-  setCurrentProvider: (provider) => set({ currentProvider: provider }),
-  setError: (error) => set({ error }),
+  setCurrentProvider: provider => set({ currentProvider: provider }),
+  setError: error => set({ error }),
 }))
 
-export const useModelsQuery = (provider: string | null, lang: string) => {
+export function useModelsQuery(provider: string | null, lang: string) {
   const { setModels, setError } = useModelsStore()
 
   return useQuery({
     queryKey: ['models', provider, lang],
     queryFn: async () => {
-      if (!provider) return []
+      if (!provider)
+        return []
       try {
         const response = await getModelsApi(provider)
         const models = response.data?.models || []
 
         // Sort models: non-deprecated first, then deprecated
         const sortedModels = [...models].sort((a, b) => {
-          if (a.deprecated === b.deprecated) return 0
+          if (a.deprecated === b.deprecated)
+            return 0
           return a.deprecated ? 1 : -1
         })
 
         setModels(provider, sortedModels)
         return sortedModels
-      } catch (error) {
+      }
+      catch (error) {
         setError(error as Error)
         throw error
       }

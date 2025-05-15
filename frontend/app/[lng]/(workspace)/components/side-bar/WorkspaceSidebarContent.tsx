@@ -1,13 +1,10 @@
 'use client'
 
-import { MessageSquare, AppWindow, Wrench, Info, GitBranch, Book, ChevronRight } from 'lucide-react'
-import { useTranslation } from '@/plugins/i18n/client'
-import { usePathname } from 'next/navigation'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/base/collapsible"
+} from '@/components/base/collapsible'
 import {
   SidebarContent,
   SidebarMenu,
@@ -17,8 +14,11 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from "@/components/base/sidebar"
+} from '@/components/base/sidebar'
+import { useTranslation } from '@/plugins/i18n/client'
 import { cn } from '@/utils/ui'
+import { AppWindow, ChevronRight, MessageSquare, Wrench } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 import { useWorkspace } from '../WorkspaceProvider'
 
 export default function WorkspaceSidebarContent() {
@@ -32,17 +32,17 @@ export default function WorkspaceSidebarContent() {
 
   const getAppSubItems = (appId: string) => [
     {
-      title: t('apps.info'),
+      title: t('app.info'),
       url: `/apps/${appId}/info`,
     },
     {
-      title: t('apps.workflow'),
+      title: t('app.workflow'),
       url: `/apps/${appId}/workflow`,
     },
     {
-      title: t('apps.knowledge_base'),
+      title: t('app.knowledge_base'),
       url: `/apps/${appId}/knowledge-base`,
-    }
+    },
   ]
 
   const menuItems = [
@@ -50,14 +50,14 @@ export default function WorkspaceSidebarContent() {
       title: t('global.chats'),
       url: '/chat',
       icon: MessageSquare,
-      isActive: isSelected('/chat')
+      isActive: isSelected('/chat'),
     },
     {
       title: t('global.apps'),
       url: '/apps',
       icon: AppWindow,
       isActive: isSelected('/apps'),
-      items: activeApp ? getAppSubItems(activeApp) : undefined
+      items: activeApp ? getAppSubItems(activeApp) : undefined,
     },
     // {
     //   title: t('global.store'),
@@ -69,14 +69,14 @@ export default function WorkspaceSidebarContent() {
       title: t('global.toolkit'),
       url: '/toolkit',
       icon: Wrench,
-      isActive: isSelected('/toolkit')
-    }
+      isActive: isSelected('/toolkit'),
+    },
   ]
 
   return (
     <SidebarContent>
       <SidebarMenu>
-        {menuItems.map((item) => (
+        {menuItems.map(item => (
           <Collapsible key={item.title} asChild defaultOpen={item.isActive}>
             <SidebarMenuItem>
               <SidebarMenuButton
@@ -86,45 +86,47 @@ export default function WorkspaceSidebarContent() {
                 <a
                   href={item.url}
                   className={cn(
-                    isSelected(item.url) ? "bg-accent text-accent-foreground" : "",
-                    "cursor-pointer flex items-center"
+                    isSelected(item.url) ? 'bg-accent text-accent-foreground' : '',
+                    'cursor-pointer flex items-center',
                   )}
                 >
                   <item.icon className="h-4 w-4" />
                   <span>{item.title}</span>
                 </a>
               </SidebarMenuButton>
-              {item.items?.length ? (
-                <>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuAction className="data-[state=open]:rotate-90">
-                      <ChevronRight className="h-4 w-4" />
-                      <span className="sr-only">{t('global.toggle')}</span>
-                    </SidebarMenuAction>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {item.items?.map((subItem) => (
-                        <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton
-                            asChild
-                          >
-                            <a
-                              href={subItem.url}
-                              className={cn(
-                                isSelected(subItem.url) ? "bg-accent text-accent-foreground" : "",
-                                "cursor-pointer"
-                              )}
-                            >
-                              <span>{subItem.title}</span>
-                            </a>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </>
-              ) : null}
+              {item.items?.length
+                ? (
+                    <>
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuAction className="data-[state=open]:rotate-90">
+                          <ChevronRight className="h-4 w-4" />
+                          <span className="sr-only">{t('global.toggle')}</span>
+                        </SidebarMenuAction>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <SidebarMenuSub>
+                          {item.items?.map(subItem => (
+                            <SidebarMenuSubItem key={subItem.title}>
+                              <SidebarMenuSubButton
+                                asChild
+                              >
+                                <a
+                                  href={subItem.url}
+                                  className={cn(
+                                    isSelected(subItem.url) ? 'bg-accent text-accent-foreground' : '',
+                                    'cursor-pointer',
+                                  )}
+                                >
+                                  <span>{subItem.title}</span>
+                                </a>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))}
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </>
+                  )
+                : null}
             </SidebarMenuItem>
           </Collapsible>
         ))}

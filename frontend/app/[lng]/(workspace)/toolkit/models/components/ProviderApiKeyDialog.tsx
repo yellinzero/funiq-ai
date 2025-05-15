@@ -1,19 +1,20 @@
-import { RJSFSchema, UiSchema } from '@rjsf/utils'
-import { useTranslation } from '@/plugins/i18n/client'
-import React from 'react'
+import type { IProviderInfo } from '@/apis'
 import type FormType from '@rjsf/core'
-import JsonSchemaForm from '@/components/JsonSchemaForm'
-import { useProviderMutation, useProviderQuery } from '../stores/use-provider-store'
+import type { RJSFSchema, UiSchema } from '@rjsf/utils'
+import { Button } from '@/components/base/button'
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/base/dialog'
-import { Button } from '@/components/base/button'
+import JsonSchemaForm from '@/components/JsonSchemaForm'
+import { useTranslation } from '@/plugins/i18n/client'
 import { Loader2 } from 'lucide-react'
-import { IProviderInfo } from '@/apis/types'
+import React from 'react'
+import { useProviderMutation, useProviderQuery } from '../stores/use-provider-store'
+
 interface ProviderApiKeyDialogProps {
   provider: IProviderInfo
   open: boolean
@@ -42,17 +43,19 @@ export default function ProviderApiKeyDialog({
     if (formRef.current) {
       try {
         await saveProvider({
-          credentials: formData
+          credentials: formData,
         })
         handleClose()
-      } catch (error) {
+      }
+      catch (error) {
         console.error('Failed to save provider credentials:', error)
       }
     }
   }
 
-  const handleClose = () => {
-    if (isPending) return
+  function handleClose() {
+    if (isPending)
+      return
     setFormData({})
     onClose()
   }
@@ -62,7 +65,9 @@ export default function ProviderApiKeyDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {provider.label} {t('toolkit.api_key')}
+            {provider.label}
+            {' '}
+            {t('toolkit.api_key')}
           </DialogTitle>
         </DialogHeader>
 
@@ -70,7 +75,7 @@ export default function ProviderApiKeyDialog({
           <JsonSchemaForm
             ref={formRef}
             formData={formData}
-            onChange={(e) => setFormData(e.formData)}
+            onChange={e => setFormData(e.formData)}
             schema={schema}
             uiSchema={uiSchema}
             locale={i18n.language}

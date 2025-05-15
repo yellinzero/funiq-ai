@@ -1,0 +1,9 @@
+{
+  "pagination": {
+    "total_zero": "无数据",
+    "total_one": "共 {{count}} 条",
+    "total_other": "共 {{count}} 条",
+    "page_size": "每页显示",
+    "jump_to": "跳转至"
+  }
+}

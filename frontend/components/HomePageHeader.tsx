@@ -1,7 +1,7 @@
 'use client'
 
-import ThemeModeToggle from './ThemeModeToggle'
 import LangSelect from './LangSelect'
+import ThemeModeToggle from './ThemeModeToggle'
 
 export default function HomePageHeader() {
   return (

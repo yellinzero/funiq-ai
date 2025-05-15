@@ -1,10 +1,5 @@
 'use client'
 
-import { zodResolver } from '@hookform/resolvers/zod'
-import { passwordValidation } from '@/utils/constants'
-import { useForm } from 'react-hook-form'
-import { useTranslation } from '@/plugins/i18n/client'
-import * as z from 'zod'
 import { Button } from '@/components/base/button'
 import {
   Form,
@@ -15,15 +10,20 @@ import {
   FormMessage,
 } from '@/components/base/form'
 import { Input } from '@/components/base/input'
+import { useTranslation } from '@/plugins/i18n/client'
+import { passwordValidation } from '@/utils/constants'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
 
 const resetSchema = z.object({
-  code: z.string().length(6, 'auth.code_length'),
+  code: z.string().length(6, 'auth.text.code_length'),
   password: passwordValidation,
   confirmPassword: z.string()
-    .min(8, 'auth.password_min_length')
-}).refine((data: Record<string, string>) => data['password'] === data['confirmPassword'], {
+    .min(8, 'auth.text.password_min_length'),
+}).refine((data: Record<string, string>) => data.password === data.confirmPassword, {
   path: ['confirmPassword'],
-  message: 'auth.passwords_dont_match'
+  message: 'auth.text.passwords_dont_match',
 })
 
 type ResetFormInputs = z.infer<typeof resetSchema>
@@ -40,7 +40,7 @@ export default function ResetForm({ onSubmit, countdown, onResend }: ResetFormPr
   const form = useForm<ResetFormInputs>({
     resolver: zodResolver(resetSchema),
     defaultValues: { code: '', password: '', confirmPassword: '' },
-    mode: 'onChange'
+    mode: 'onChange',
   })
 
   return (
@@ -56,7 +56,7 @@ export default function ResetForm({ onSubmit, countdown, onResend }: ResetFormPr
                 <Input
                   {...field}
                   type="text"
-                  placeholder={t('auth.enter_code')}
+                  placeholder={t('auth.text.enter_code')}
                 />
               </FormControl>
               <FormMessage />
@@ -111,7 +111,7 @@ export default function ResetForm({ onSubmit, countdown, onResend }: ResetFormPr
         >
           {countdown > 0
             ? t('auth.resend_code_countdown', { seconds: countdown })
-            : t('auth.resend_code')}
+            : t('auth.text.resend_code')}
         </Button>
       </form>
     </Form>

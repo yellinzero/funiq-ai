@@ -1,8 +1,5 @@
-import { headers } from 'next/headers'
-import { redirect } from 'next/navigation'
 import { getTranslation } from '@/plugins/i18n'
 import ToolkitTabs from './components/ToolkitTabs'
-
 
 const namespaces = ['global']
 

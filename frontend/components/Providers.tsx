@@ -1,10 +1,11 @@
 'use client'
 import { getQueryClient } from '@/utils/get-query-client'
 
-import { ThemeProvider } from "next-themes"
+import { AppProgressProvider as ProgressProvider } from '@bprogress/next'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { CookiesProvider, useCookies } from 'react-cookie'
-import { AppProgressProvider as ProgressProvider } from '@bprogress/next';
+import { ThemeProvider } from 'next-themes'
+import { CookiesProvider } from 'react-cookie'
+
 interface ProvidersProps {
   children: React.ReactNode
 }
@@ -16,7 +17,7 @@ export default function Providers({ children }: ProvidersProps) {
       <CookiesProvider>
         <ThemeProvider attribute="class" enableSystem>
           <QueryClientProvider client={queryClient}>
-              {children}
+            {children}
           </QueryClientProvider>
         </ThemeProvider>
       </CookiesProvider>

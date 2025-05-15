@@ -1,2 +1,4 @@
 export * from './openapis'
-export * from './queries'
+export * from './paths'
+export * from './server'
+export * from './types'

@@ -2,7 +2,7 @@ import i18next from 'i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 import resourcesToBackend from 'i18next-resources-to-backend'
 import { initReactI18next } from 'react-i18next/initReactI18next'
-import { fallbackLng, languages, defaultNS, I18N_COOKIE_NAME, normalizeLanguageCode, denormalizeLanguageCode } from './settings'
+import { defaultNS, denormalizeLanguageCode, fallbackLng, I18N_COOKIE_NAME, languages } from './settings'
 
 const runsOnServerSide = typeof window === 'undefined'
 
@@ -22,7 +22,7 @@ i18next
       lookupLocalStorage: I18N_COOKIE_NAME,
       lookupSessionStorage: I18N_COOKIE_NAME,
       order: ['cookie', 'path', 'htmlTag', 'navigator'],
-      convertDetectedLanguage: (lng) => denormalizeLanguageCode(lng),
+      convertDetectedLanguage: lng => denormalizeLanguageCode(lng),
     },
     preload: runsOnServerSide ? languages : [],
     nsSeparator: '.',

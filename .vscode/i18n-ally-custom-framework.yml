@@ -16,6 +16,7 @@ usageMatchRegex:
   # the `{key}` will be placed by a proper keypath matching regex,
   # you can ignore it and use your own matching rules as well
   - "[^\\w\\d]t\\(['\"`]({key})['\"`]"
+  - "[^\\w\\d]i18nKey\\(['\"`]({key})['\"`]"
 
 # A RegEx to set a custom scope range. This scope will be used as a prefix when detecting keys
 # and works like how the i18next framework identifies the namespace scope from the
@@ -30,6 +31,20 @@ usageMatchRegex:
 
 # refactorTemplates:
 #  - i18n.get("$1")
+
+derivedKeyRules:
+  - "{key}_zero"
+  - "{key}_one"
+  - "{key}_two"
+  - "{key}_few"
+  - "{key}_many"
+  - "{key}_other"
+  - "{key}_ordinal_zero"
+  - "{key}_ordinal_one"
+  - "{key}_ordinal_two"
+  - "{key}_ordinal_few"
+  - "{key}_ordinal_other"
+
 
 
 # If set to true, only enables this custom framework (will disable all built-in frameworks)

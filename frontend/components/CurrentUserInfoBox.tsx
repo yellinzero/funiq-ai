@@ -1,9 +1,9 @@
 'use client'
-import type { IAccountResponse } from '@/apis/types'
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/base/avatar'
+import type { IUserInfo } from '@/apis'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/base/avatar'
 
 interface IUserInfoBoxProps {
-  userInfo?: IAccountResponse
+  userInfo?: IUserInfo
   showName?: boolean
   showEmail?: boolean
 }
@@ -13,7 +13,8 @@ export default function CurrentUserInfoBox({
   showName = false,
   showEmail = false,
 }: IUserInfoBoxProps) {
-  if (!userInfo) return null
+  if (!userInfo)
+    return null
 
   return (
     <div className="flex items-center justify-center gap-4">

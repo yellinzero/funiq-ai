@@ -1,7 +1,7 @@
+import type { components } from '@/types/openapi'
+import { getProviderApi, saveProviderApi } from '@/apis/openapis/model-provider'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { create } from 'zustand'
-import { getProviderApi, saveProviderApi } from '@/apis/openapis/model_providers'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { type components } from '@/types/openapi'
 
 type ProviderResponse = components['schemas']['ProviderResponse']
 type SaveProviderRequest = components['schemas']['SaveProviderRequest']
@@ -13,16 +13,16 @@ interface ProviderStoreState {
   setError: (error: Error | null) => void
 }
 
-export const useProviderStore = create<ProviderStoreState>((set) => ({
+export const useProviderStore = create<ProviderStoreState>(set => ({
   provider: null,
   error: null,
-  setProvider: (provider) => set({
-    provider
+  setProvider: provider => set({
+    provider,
   }),
-  setError: (error) => set({ error }),
+  setError: error => set({ error }),
 }))
 
-export const useProviderQuery = (providerName: string) => {
+export function useProviderQuery(providerName: string) {
   const { setProvider, setError } = useProviderStore()
 
   return useQuery({
@@ -35,7 +35,8 @@ export const useProviderQuery = (providerName: string) => {
         const provider = response.data || null
         setProvider(provider)
         return provider
-      } catch (error) {
+      }
+      catch (error) {
         setError(error as Error)
         throw error
       }
@@ -44,7 +45,7 @@ export const useProviderQuery = (providerName: string) => {
   })
 }
 
-export const useProviderMutation = (providerName: string) => {
+export function useProviderMutation(providerName: string) {
   const queryClient = useQueryClient()
   const { setProvider, setError } = useProviderStore()
 
@@ -53,7 +54,9 @@ export const useProviderMutation = (providerName: string) => {
       try {
         const response = await saveProviderApi(providerName, data)
         return response.data
-      } catch (error) {
+      }
+      catch (error) {
+        console.error(error)
         throw error
       }
     },

@@ -1,7 +1,5 @@
 {
   "product_name": "Funiq AI",
-  "welcome": "欢迎使用{{name}}",
-  "home_description": "简单易用的人工智能工作流程管理平台，让人工智能技术更易于使用",
   "chats": "对话",
   "apps": "应用",
   "store": "商店",
@@ -20,5 +18,19 @@
   "light": "亮色",
   "dark": "暗色",
   "toggle_theme": "切换主题",
-  "toggle": "切换"
+  "toggle": "切换",
+  "name": "姓名",
+  "view": "查看",
+  "create": "创建",
+  "create_time": "创建时间",
+  "update_time": "更新时间",
+  "start_time": "开始时间",
+  "end_time": "结束时间",
+  "text": {
+    "home_description": "简单易用的人工智能工作流程管理平台，让人工智能技术更易于使用",
+    "welcome": "欢迎使用{{name}}",
+    "create_successfully": "创建成功",
+    "save_successfully": "保存成功",
+    "delete_successfully": "删除成功"
+  }
 }

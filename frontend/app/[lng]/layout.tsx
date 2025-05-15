@@ -1,8 +1,8 @@
+import { Toaster } from '@/components/base/sonner'
+import Providers from '@/components/Providers'
 import { Roboto } from 'next/font/google'
 import React from 'react'
-import Providers from '@/components/Providers'
 import './globals.css'
-import { Toaster } from '@/components/base/sonner'
 
 export const roboto = Roboto({
   weight: ['300', '400', '500', '700'],

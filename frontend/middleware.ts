@@ -1,8 +1,7 @@
-import type { NextRequest } from 'next/server'
-import { cookies } from 'next/headers'
-import { NextResponse } from 'next/server'
 import acceptLanguage from 'accept-language'
-import { fallbackLng, languages, I18N_COOKIE_NAME, headerName, normalizeLanguageCode, denormalizeLanguageCode } from './plugins/i18n/settings'
+import { cookies } from 'next/headers'
+import { type NextRequest, NextResponse } from 'next/server'
+import { denormalizeLanguageCode, fallbackLng, headerName, I18N_COOKIE_NAME, languages, normalizeLanguageCode } from './plugins/i18n/settings'
 
 // Specify protected and public routes
 const publicRoutes = [
@@ -17,9 +16,15 @@ const publicRoutes = [
 const resolvedLanguages = languages.map(normalizeLanguageCode)
 acceptLanguage.languages(resolvedLanguages)
 
+export const config = {
+  matcher: ['/((?!api|_next/static|_next/image|assets|favicon.ico).*)'],
+}
+
 export default async function middleware(req: NextRequest) {
-  if (req.nextUrl.pathname.indexOf('icon') > -1 ||
-      req.nextUrl.pathname.indexOf('chrome') > -1) {
+  const { pathname } = req.nextUrl
+
+  if (req.nextUrl.pathname.includes('icon')
+    || req.nextUrl.pathname.includes('chrome')) {
     return NextResponse.next()
   }
 
@@ -35,7 +40,7 @@ export default async function middleware(req: NextRequest) {
     lng = fallbackLng
   }
 
-  const lngInPath = languages.find(loc => req.nextUrl.pathname.startsWith(`/${loc}`))
+  const lngInPath = languages.find(loc => pathname.startsWith(`/${loc}`))
   const headers = new Headers(req.headers)
   headers.set(headerName, lngInPath || lng)
 
@@ -48,13 +53,13 @@ export default async function middleware(req: NextRequest) {
     newUrl.pathname = `/${lng}${req.nextUrl.pathname}`
 
     return NextResponse.rewrite(newUrl, {
-      headers: headers
+      headers,
     })
   }
 
   if (req.headers.has('referer')) {
     const refererUrl = new URL(req.headers.get('referer')!)
-    const lngInReferer = languages.find((l) => refererUrl.pathname.startsWith(`/${l}`))
+    const lngInReferer = languages.find(l => refererUrl.pathname.startsWith(`/${l}`))
     const response = NextResponse.next({ headers })
     if (lngInReferer) {
       response.cookies.set(I18N_COOKIE_NAME, lngInReferer)
@@ -67,11 +72,4 @@ export default async function middleware(req: NextRequest) {
   }
 
   return NextResponse.next({ headers })
-}
-
-// Routes Middleware should not run on
-export const config = {
-  matcher: [
-    `/((?!api|_next/static|_next/image|.*\\.png$|${languages.join('|')}).*)`,
-  ],
 }

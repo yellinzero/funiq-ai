@@ -1,7 +1,7 @@
-import { create } from 'zustand'
-import { getModelProvidersApi } from '@/apis/openapis/model_providers'
+import type { IProviderInfo } from '@/apis'
+import { getModelProvidersApi } from '@/apis/openapis/model-provider'
 import { useQuery } from '@tanstack/react-query'
-import { IProviderInfo } from '@/apis/types'
+import { create } from 'zustand'
 
 interface ProvidersStoreState {
   providers: IProviderInfo[]
@@ -10,14 +10,14 @@ interface ProvidersStoreState {
   setError: (error: Error | null) => void
 }
 
-export const useProvidersStore = create<ProvidersStoreState>((set) => ({
+export const useProvidersStore = create<ProvidersStoreState>(set => ({
   providers: [],
   error: null,
-  setProviders: (providers) => set({ providers }),
-  setError: (error) => set({ error }),
+  setProviders: providers => set({ providers }),
+  setError: error => set({ error }),
 }))
 
-export const useProvidersQuery = (lang: string) => {
+export function useProvidersQuery(lang: string) {
   const { setProviders, setError } = useProvidersStore()
 
   return useQuery({
@@ -28,7 +28,8 @@ export const useProvidersQuery = (lang: string) => {
         const providers = response.data?.providers || []
         setProviders(providers)
         return providers
-      } catch (error) {
+      }
+      catch (error) {
         setError(error as Error)
         throw error
       }

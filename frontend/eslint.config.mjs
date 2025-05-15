@@ -11,31 +11,46 @@ const compat = new FlatCompat({
 })
 
 export default antfu({
-  react: true,
+  ignores: ['**/node_modules/*', '**/.next/*', '**/.vscode/*', '**/output/*', '**/dist/*', '**/out/*'],
+  react: {
+    overrides: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
   stylistic: true,
+  typescript: {
+    overrides: {
+      'ts/no-unused-vars': ['warn', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+        ignoreRestSiblings: true,
+      }],
+      'ts/no-empty-object-type': ['warn', {
+        allowInterfaces: 'always',
+      }],
+      'ts/consistent-type-imports': ['warn', {
+        fixStyle: 'inline-type-imports',
+      }],
+      'ts/no-unused-expressions': ['error', {
+      }],
+    },
+  },
   rules: {
+    'import/no-duplicates': ['warn', {
+      'prefer-inline': true,
+    }],
     'no-console': ['warn', {
       allow: ['info', 'error'],
     }],
-    'react/no-array-index-key': 'off',
+    'unused-imports/no-unused-vars': 'off',
     'node/prefer-global/process': 'off',
-    'ts/no-unused-vars': [
-      'warn',
-      { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-    ],
-    'no-unused-vars': [
-      'warn',
-      { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-    ],
-    'import/no-unused-vars': [
-      'warn',
-      { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-    ],
   },
 }).append(
   ...compat.extends('plugin:@next/next/recommended'),
   {
-    files: ['**/*.js', '**/*.ts', '**/*.jsx', '**/*.tsx'],
-    ignores: ['**/node_modules/*', '.next', '.vscode', 'output', 'dist', 'out'],
+    rules: {
+      '@next/next/no-img-element': 'off',
+    },
   },
 )

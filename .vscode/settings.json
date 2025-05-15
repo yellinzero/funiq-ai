@@ -44,7 +44,6 @@
     "{key}_ordinal_one",
     "{key}_ordinal_two",
     "{key}_ordinal_few",
-    "{key}_ordinal_many",
     "{key}_ordinal_other",
   ],
   "i18n-ally.namespace": true,

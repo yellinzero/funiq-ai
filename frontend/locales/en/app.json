@@ -9,6 +9,8 @@
     "name_placeholder": "Enter application name",
     "description_placeholder": "Enter application description",
     "no_description": "No description",
-    "search_app": "Enter name or description to search for applications"
+    "search_app": "Enter name or description to search for applications",
+    "delete_app_confirm": "Are you sure you want to delete the application {{name}}?",
+    "delete_app_title": "Delete Application"
   }
 }

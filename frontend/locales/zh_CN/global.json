@@ -26,6 +26,8 @@
   "update_time": "更新时间",
   "start_time": "开始时间",
   "end_time": "结束时间",
+  "confirm": "确认",
+  "delete": "删除",
   "text": {
     "home_description": "简单易用的人工智能工作流程管理平台，让人工智能技术更易于使用",
     "welcome": "欢迎使用{{name}}",

@@ -4,7 +4,6 @@ import type { paths } from '@/types/openapi'
 import { I18N_COOKIE_NAME } from '@/plugins/i18n/settings'
 import { SESSION_COOKIE_NAME, TENANT_HEADER_NAME } from '@/utils/constants'
 import i18next, { type TFunction } from 'i18next'
-import { redirect } from 'next/navigation'
 import createClient, {
   type Client,
   type ClientMethod,
@@ -112,25 +111,9 @@ const responseMiddleware: Middleware = {
       }
       else {
         // TODO: Server-side(if needed)
-        // const { cookies } = await import('next/headers')
-        // const cookieStore = await cookies()
-        // const session = JSON.parse(cookieStore.get(SESSION_COOKIE_NAME)?.value ?? '{}')
-        // cookieStore.set(SESSION_COOKIE_NAME, JSON.stringify({ ...session, accessToken: newAccessToken }))
       }
     }
 
-    const status = response.status
-    if (status >= 400 && status < 600) {
-      switch (status) {
-        case 401: {
-          redirect('/sign-in')
-          break
-        }
-        default: {
-          break
-        }
-      }
-    }
     return response
   },
   async onError({ error }) {
@@ -209,6 +192,20 @@ export function createFetchApi(client: Client<paths>) {
     )
 
     if (hasError) {
+      const status = response.status
+      if (status >= 400 && status < 600) {
+        switch (status) {
+          case 401: {
+            if (typeof window !== 'undefined') {
+              window.location.replace('/sign-in')
+            }
+            break
+          }
+          default: {
+            break
+          }
+        }
+      }
       throw new HttpError(
         data?.message || error?.message || response.statusText,
         response,

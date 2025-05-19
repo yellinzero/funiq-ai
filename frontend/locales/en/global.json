@@ -26,6 +26,8 @@
   "update_time": "Update time",
   "start_time": "Start time",
   "end_time": "End time",
+  "confirm": "Confirm",
+  "delete": "Delete",
   "text": {
     "home_description": "A simple and user-friendly AI workflow management platform, making AI technology more accessible",
     "welcome": "Welcome to {{name}}",

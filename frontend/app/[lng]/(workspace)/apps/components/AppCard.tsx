@@ -12,9 +12,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/base/dropdown-menu'
+import { useMessageBox } from '@/components/MessageBox'
+import RelativeTime from '@/components/RelativeTime'
 import { TruncatedText } from '@/components/TruncatedText'
 import { useTranslation } from '@/plugins/i18n/client'
-import { getRelativeTime } from '@/utils/time'
+import { convertTime } from '@/utils/time'
 import { Clock, MoreHorizontal, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -30,8 +32,22 @@ export default function AppCard({
   const deleteApp = useDeleteAppMutation()
   const user = useUserById(info.updated_by)
   const router = useRouter()
+  const messageBox = useMessageBox()
 
   const handleDeleteApp = async (appId: string) => {
+    const confirmed = await messageBox.confirm(
+      t('app.text.delete_app_confirm', { name: info.name }),
+      t('app.text.delete_app_title'),
+      {
+        type: 'error',
+        confirmText: t('global.delete'),
+        confirmButtonClass: 'bg-destructive hover:bg-destructive/90',
+      },
+    )
+
+    if (!confirmed)
+      return
+
     try {
       await deleteApp.mutateAsync(appId)
       toast.success(t('global.text.delete_successfully'))
@@ -86,7 +102,7 @@ export default function AppCard({
           <span className="text-xs">•</span>
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            <span className="text-xs">{getRelativeTime(info.updated_at)}</span>
+            <RelativeTime date={convertTime(info.updated_at)} className="text-xs" />
           </div>
         </div>
         <DropdownMenu>

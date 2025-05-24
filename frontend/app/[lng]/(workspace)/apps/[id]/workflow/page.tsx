@@ -1,15 +1,23 @@
 'use client'
 
-import { useTranslation } from '@/plugins/i18n/client'
+import { useAppStore } from '@/app/[lng]/(workspace)/apps/stores/use-app-store'
+import WorkflowEditor from './components/WorkflowEditor'
+import WorkflowHeader from './components/WorkflowHeader'
+import WorkflowProvider from './components/WorkflowProvider'
 
 export default function Workflow() {
-  const { t } = useTranslation(['global'])
+  const { app } = useAppStore()
+
+  if (!app || !app.workflow_id) {
+    return null
+  }
 
   return (
-    <div className="flex flex-col items-center mx-12 pb-20 relative gap-8">
-      <div className="text-center">
-        app workflow
+    <WorkflowProvider workflowId={app.workflow_id}>
+      <div className="relative size-full">
+        <WorkflowHeader className="absolute left-0 top-0 z-50" />
+        <WorkflowEditor />
       </div>
-    </div>
+    </WorkflowProvider>
   )
 }

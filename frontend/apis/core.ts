@@ -107,7 +107,14 @@ const responseMiddleware: Middleware = {
       if (typeof window !== 'undefined') {
         const cookies = new Cookies()
         const session = cookies.get(SESSION_COOKIE_NAME) ?? {}
-        cookies.set(SESSION_COOKIE_NAME, { ...session, accessToken: newAccessToken })
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+
+        cookies.set(SESSION_COOKIE_NAME, { ...session, accessToken: newAccessToken }, {
+          secure: true,
+          sameSite: 'lax',
+          expires: expiresAt,
+          path: '/',
+        })
       }
       else {
         // TODO: Server-side(if needed)

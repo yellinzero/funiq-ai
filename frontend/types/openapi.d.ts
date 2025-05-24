@@ -904,6 +904,7 @@ export interface components {
         CreateWorkflowNodePayload: {
             /** Node Key */
             node_key: string;
+            node_type: components["schemas"]["OperatorName"];
             /** Name */
             name: string;
             /** Description */
@@ -914,8 +915,6 @@ export interface components {
             extended_config?: Record<string, never> | null;
             /** Meta */
             meta?: Record<string, never> | null;
-            /** Node Type */
-            node_type: string;
         };
         /** CreateWorkflowVersionPayload */
         CreateWorkflowVersionPayload: {
@@ -1781,6 +1780,7 @@ export interface components {
         UpdateWorkflowNodePayload: {
             /** Node Key */
             node_key: string;
+            node_type: components["schemas"]["OperatorName"];
             /** Name */
             name?: string | null;
             /** Description */
@@ -1926,8 +1926,7 @@ export interface components {
             workflow_id: string;
             /** Node Key */
             node_key: string;
-            /** Node Type */
-            node_type: string;
+            node_type: components["schemas"]["OperatorName"];
             /** Name */
             name: string;
             /** Description */

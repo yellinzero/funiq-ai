@@ -1,7 +1,7 @@
+import { useCountdown } from '@/hooks/use-countdown'
 // test example
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { useCountdown } from '../use-countdown'
 
 describe('useCountdown', () => {
   beforeEach(() => {

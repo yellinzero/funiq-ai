@@ -20,6 +20,7 @@ import { convertTime } from '@/utils/time'
 import { Clock, MoreHorizontal, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import AppNameBox from './AppNameBox'
 
 export interface AppCardProps {
   info: IAppInfo
@@ -73,14 +74,14 @@ export default function AppCard({
       onClick={handleCardClick}
     >
       <CardHeader className="px-4 gap-0">
-        <div className="flex items-center gap-4 h-full">
-          <Avatar className="h-12 w-12 rounded-md">
-            <AvatarFallback className="rounded-md">
-              {info.name?.[0]?.toUpperCase() ?? 'A'}
-            </AvatarFallback>
-          </Avatar>
+        <AppNameBox
+          info={info}
+          avatarClassName="h-12 w-12 rounded-md"
+          wrapperClassName="flex items-center gap-4 h-full"
+          textClassName="text-lg font-medium"
+        >
           <CardTitle>{info.name}</CardTitle>
-        </div>
+        </AppNameBox>
       </CardHeader>
       <CardContent className="flex-1 px-4">
         <TruncatedText
@@ -107,8 +108,8 @@ export default function AppCard({
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreHorizontal className="h-4 w-4" />
+            <Button variant="ghost" size="icon" className="size-8">
+              <MoreHorizontal className="size-4.5" />
               <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>

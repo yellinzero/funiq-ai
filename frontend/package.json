@@ -10,7 +10,8 @@
     "lint": "next lint",
     "lint:fix": "pnpm run lint . --fix",
     "generate:openapi": "node scripts/generate-openapi.js",
-    "test": "vitest"
+    "test": "vitest",
+    "start:ws": "HOST=localhost PORT=1234 pnpm y-websocket"
   },
   "dependencies": {
     "@bprogress/next": "^3.2.12",
@@ -34,6 +35,8 @@
     "@rjsf/validator-ajv8": "6.0.0-beta.1",
     "@tailwindcss/postcss": "^4.1.5",
     "@tanstack/react-query": "^5.63.0",
+    "@xyflow/react": "^12.6.4",
+    "@y/websocket-server": "^0.1.1",
     "accept-language": "^3.0.20",
     "ajv-i18n": "^4.2.0",
     "class-variance-authority": "^0.7.1",
@@ -60,6 +63,8 @@
     "tailwindcss": "^4.1.5",
     "tailwindcss-multi": "^0.4.6",
     "vaul": "^1.1.2",
+    "y-websocket": "^3.0.0",
+    "yjs": "^13.6.27",
     "zod": "^3.24.1",
     "zustand": "^5.0.3"
   },

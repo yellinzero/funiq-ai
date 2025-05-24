@@ -6,16 +6,13 @@ import { create } from 'zustand'
 interface ModelsStoreState {
   models: Record<string, IModelInfo[]>
   currentProvider: IProviderInfo | null
-  error: Error | null
   setModels: (provider: string, models: IModelInfo[]) => void
   setCurrentProvider: (provider: IProviderInfo | null) => void
-  setError: (error: Error | null) => void
 }
 
 export const useModelsStore = create<ModelsStoreState>(set => ({
   models: {},
   currentProvider: null,
-  error: null,
   setModels: (provider, models) =>
     set(state => ({
       models: {
@@ -24,35 +21,28 @@ export const useModelsStore = create<ModelsStoreState>(set => ({
       },
     })),
   setCurrentProvider: provider => set({ currentProvider: provider }),
-  setError: error => set({ error }),
 }))
 
 export function useModelsQuery(provider: string | null, lang: string) {
-  const { setModels, setError } = useModelsStore()
+  const { setModels } = useModelsStore()
 
   return useQuery({
     queryKey: ['models', provider, lang],
     queryFn: async () => {
       if (!provider)
         return []
-      try {
-        const response = await getModelsApi(provider)
-        const models = response.data?.models || []
+      const response = await getModelsApi(provider)
+      const models = response.data?.models || []
 
-        // Sort models: non-deprecated first, then deprecated
-        const sortedModels = [...models].sort((a, b) => {
-          if (a.deprecated === b.deprecated)
-            return 0
-          return a.deprecated ? 1 : -1
-        })
+      // Sort models: non-deprecated first, then deprecated
+      const sortedModels = [...models].sort((a, b) => {
+        if (a.deprecated === b.deprecated)
+          return 0
+        return a.deprecated ? 1 : -1
+      })
 
-        setModels(provider, sortedModels)
-        return sortedModels
-      }
-      catch (error) {
-        setError(error as Error)
-        throw error
-      }
+      setModels(provider, sortedModels)
+      return sortedModels
     },
     enabled: !!provider,
   })

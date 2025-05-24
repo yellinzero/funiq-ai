@@ -1,7 +1,7 @@
 'use server'
-import type { IUserInfo } from '../types'
+import type { IUserInfo } from '@/apis/types'
+import { getUserInfoApi } from '@/apis/openapis/account'
 import { cookies } from 'next/headers'
-import { getUserInfoApi } from '../openapis/account'
 
 export async function getCurrentUser(): Promise<IUserInfo | null> {
   const session = (await cookies()).get('session')?.value

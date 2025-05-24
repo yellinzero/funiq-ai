@@ -1,5 +1,6 @@
 'use client'
 
+import { useWorkspace } from '@/app/[lng]/(workspace)/components/WorkspaceProvider'
 import {
   Collapsible,
   CollapsibleContent,
@@ -19,10 +20,9 @@ import { useTranslation } from '@/plugins/i18n/client'
 import { cn } from '@/utils/ui'
 import { AppWindow, ChevronRight, MessageSquare, Wrench } from 'lucide-react'
 import { usePathname } from 'next/navigation'
-import { useWorkspace } from '../WorkspaceProvider'
 
 export default function WorkspaceSidebarContent() {
-  const { t } = useTranslation(['global', 'apps'])
+  const { t } = useTranslation(['global', 'app'])
   const pathname = usePathname()
   const { activeApp } = useWorkspace()
 

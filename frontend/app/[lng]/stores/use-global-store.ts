@@ -17,13 +17,10 @@ interface GlobalState {
   tenants: ITenantResponse[]
   // Users in current tenant
   tenantUsers: IUserInfo[]
-  // Error states
-  error: Error | null
   // Actions
   setCurrentUser: (user: IUserInfo | null) => void
   setTenants: (tenants: ITenantResponse[]) => void
   setTenantUsers: (users: IUserInfo[]) => void
-  setError: (error: Error | null) => void
   getUserById: (userId: string) => IUserInfo | undefined
 }
 
@@ -35,11 +32,9 @@ export const useGlobalStore = create<GlobalState>((set, get) => ({
   currentUser: null,
   tenants: [],
   tenantUsers: [],
-  error: null,
   setCurrentUser: user => set({ currentUser: user }),
   setTenants: tenants => set({ tenants }),
   setTenantUsers: users => set({ tenantUsers: users }),
-  setError: error => set({ error }),
   getUserById: (userId) => {
     return get().tenantUsers.find(user => user.id === userId)
   },
@@ -50,21 +45,15 @@ export const useGlobalStore = create<GlobalState>((set, get) => ({
  * @client-only
  */
 export function useCurrentUserQuery() {
-  const { setCurrentUser, setError } = useGlobalStore()
+  const { setCurrentUser } = useGlobalStore()
 
   return useQuery({
     queryKey: ['currentUser'],
     queryFn: async () => {
-      try {
-        const response = await getUserInfoApi()
-        const user = response.data ?? null
-        setCurrentUser(user)
-        return user
-      }
-      catch (error) {
-        setError(error as Error)
-        throw error
-      }
+      const response = await getUserInfoApi()
+      const user = response.data ?? null
+      setCurrentUser(user)
+      return user
     },
   })
 }
@@ -74,21 +63,15 @@ export function useCurrentUserQuery() {
  * @client-only
  */
 export function useTenantsQuery() {
-  const { setTenants, setError } = useGlobalStore()
+  const { setTenants } = useGlobalStore()
 
   return useQuery({
     queryKey: ['tenants'],
     queryFn: async () => {
-      try {
-        const response = await getAccountTenantsApi()
-        const tenants = response.data ?? []
-        setTenants(tenants)
-        return tenants
-      }
-      catch (error) {
-        setError(error as Error)
-        throw error
-      }
+      const response = await getAccountTenantsApi()
+      const tenants = response.data ?? []
+      setTenants(tenants)
+      return tenants
     },
   })
 }
@@ -98,23 +81,17 @@ export function useTenantsQuery() {
  * @client-only
  */
 export function useTenantUsersQuery() {
-  const { setTenantUsers, setError } = useGlobalStore()
+  const { setTenantUsers } = useGlobalStore()
   const { getTenantId } = useSessionCookie()
   const tenantId = getTenantId()
 
   return useQuery({
     queryKey: ['tenantUsers', tenantId],
     queryFn: async () => {
-      try {
-        const response = await getTenantUsersApi(tenantId)
-        const users = response.data ?? []
-        setTenantUsers(users)
-        return users
-      }
-      catch (error) {
-        setError(error as Error)
-        throw error
-      }
+      const response = await getTenantUsersApi(tenantId)
+      const users = response.data ?? []
+      setTenantUsers(users)
+      return users
     },
     enabled: !!tenantId, // Only run query if tenantId is provided
   })

@@ -4,7 +4,12 @@
   "workflow": "工作流",
   "create_app": "创建应用",
   "description": "描述",
+  "edit_app": "编辑应用",
   "delete_app": "删除应用",
+  "publish": "发布",
+  "history": "历史",
+  "unpublished": "未发布",
+  "published": "已发布",
   "text": {
     "name_placeholder": "请输入应用名称",
     "description_placeholder": "请输入应用描述",

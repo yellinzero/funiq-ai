@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from fastapi import Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.security.utils import get_authorization_scheme_param
+from loguru import logger
 from starlette.requests import HTTPConnection
 
 from app.core.errors import CommonErrorCode
@@ -40,13 +41,17 @@ class JWTBearer(HTTPBearer):
     def __init__(self, auto_error: bool = True):
         super().__init__(auto_error=auto_error)
 
-    async def __call__(self, request: Request) -> HTTPAuthorizationCredentials | None:
-        credentials = await super().__call__(request)
-        if credentials is None:
-            raise CommonErrorCode.UNAUTHORIZED.exception(status_code=status.HTTP_401_UNAUTHORIZED)
+    async def __call__(self, request: Request) -> HTTPAuthorizationCredentials | None:        
+        try:
+            credentials = await super().__call__(request)
+            if credentials is None:
+                raise CommonErrorCode.UNAUTHORIZED.exception(status_code=status.HTTP_401_UNAUTHORIZED)
 
-        await self.validate_token(request, token=credentials.credentials)
-        return credentials
+            await self.validate_token(request, token=credentials.credentials)
+            return credentials
+        except Exception as e:
+            logger.error(f"Error in JWTBearer.__call__: {e!s}")
+            raise CommonErrorCode.UNAUTHORIZED.exception(status_code=status.HTTP_401_UNAUTHORIZED) from e
 
     @classmethod
     async def validate_token(cls, request: HTTPConnection, token: str):

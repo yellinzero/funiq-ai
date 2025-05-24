@@ -84,5 +84,5 @@ __all__ = [
     "update_database_schema",
     "with_redis",
     "with_session",
-    "with_sync_redis"
+    "with_sync_redis",
 ]

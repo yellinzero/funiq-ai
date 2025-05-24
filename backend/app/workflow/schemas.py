@@ -1,15 +1,17 @@
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel
 
 from app.core.models.workflow import WorkflowStatus, WorkflowVersionStatus
+from providers.operators.core import OperatorName
 
 
 class WorkflowInfo(BaseModel):
     id: str
     app_id: str
     status: WorkflowStatus
-    config: dict | None = None
+    config: dict[str, Any] | None = None
     created_at: datetime
     updated_at: datetime
     created_by: str
@@ -26,12 +28,12 @@ class WorkflowNodeInfo(BaseModel):
     id: str
     workflow_id: str
     node_key: str
-    node_type: str
+    node_type: OperatorName
     name: str
     description: str | None = None
-    meta: dict | None = None
-    config: dict | None = None
-    extended_config: dict | None = None
+    meta: dict[str, Any] | None = None
+    config: dict[str, Any] | None = None
+    extended_config: dict[str, Any] | None = None
     
     
 class WorkflowEdgeInfo(BaseModel):
@@ -40,7 +42,7 @@ class WorkflowEdgeInfo(BaseModel):
     edge_key: str
     source_node_key: str
     target_node_key: str
-    meta: dict | None = None
+    meta: dict[str, Any] | None = None
     
 
 class WorkflowSnapshotInfoBase(BaseModel):
@@ -91,15 +93,15 @@ class CreateWorkflowRequest(BaseModel):
 
 class EditWorkflowNodePayloadBase(BaseModel):
     node_key: str
+    node_type: OperatorName
     name: str | None = None
     description: str | None = None
-    config: dict | None = None
-    extended_config: dict | None = None
-    meta: dict | None = None
+    config: dict[str, Any] | None = None
+    extended_config: dict[str, Any] | None = None
+    meta: dict[str, Any] | None = None
 
 
 class CreateWorkflowNodePayload(EditWorkflowNodePayloadBase):
-    node_type: str
     node_key: str
     name: str
 
@@ -112,7 +114,7 @@ class EditWorkflowEdgePayloadBase(BaseModel):
     edge_key: str
     source_node_key: str | None = None
     target_node_key: str | None = None
-    meta: dict | None = None
+    meta: dict[str, Any] | None = None
 
 
 class CreateWorkflowEdgePayload(EditWorkflowEdgePayloadBase):

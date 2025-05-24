@@ -14,7 +14,7 @@ from infrastructure import (
     shutdown_database,
     shutdown_redis,
 )
-from middleware import install_global_middlewares
+from middleware import install_global_http_middlewares
 from utils.common.i18n import register_all_translation_domains
 
 
@@ -41,12 +41,12 @@ def create_app() -> FastAPI:
     register_exception_handlers(app)
     
     # Install middleware
-    install_global_middlewares(app)
+    install_global_http_middlewares(app)
 
     # Use INSTALLED_APPS from config
     app_manager.install_apps(funiq_ai_config.INSTALLED_APPS)
     app_manager.apply_modules_to_fastapi(app)
-
+    
     # Register routes
     register_routes(app)
 

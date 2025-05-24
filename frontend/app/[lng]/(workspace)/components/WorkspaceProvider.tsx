@@ -1,9 +1,8 @@
 'use client'
 
+import { useCurrentUserQuery, useTenantUsersQuery } from '@/app/[lng]/stores/use-global-store'
 import { usePathname } from 'next/navigation'
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { useCurrentUserQuery, useTenantUsersQuery } from '../../stores/use-global-store'
-import { WorkspaceHeaderProvider } from './WorkspaceHeaderProvider'
 
 interface WorkspaceContextType {
   activeApp: string | null
@@ -61,9 +60,7 @@ export function WorkspaceProvider({
 
   return (
     <WorkspaceContext.Provider value={value}>
-      <WorkspaceHeaderProvider>
-        {children}
-      </WorkspaceHeaderProvider>
+      {children}
     </WorkspaceContext.Provider>
   )
 }

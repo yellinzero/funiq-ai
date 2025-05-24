@@ -1,6 +1,7 @@
 import type { IProviderInfo } from '@/apis'
 import type FormType from '@rjsf/core'
 import type { RJSFSchema, UiSchema } from '@rjsf/utils'
+import { useProviderMutation, useProviderQuery } from '@/app/[lng]/(workspace)/toolkit/models/stores/use-provider-store'
 import { Button } from '@/components/base/button'
 import {
   Dialog,
@@ -13,7 +14,6 @@ import JsonSchemaForm from '@/components/JsonSchemaForm'
 import { useTranslation } from '@/plugins/i18n/client'
 import { Loader2 } from 'lucide-react'
 import React from 'react'
-import { useProviderMutation, useProviderQuery } from '../stores/use-provider-store'
 
 interface ProviderApiKeyDialogProps {
   provider: IProviderInfo

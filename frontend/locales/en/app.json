@@ -3,8 +3,13 @@
   "knowledge_base": "Knowledge Base",
   "workflow": "Workflow",
   "create_app": "Create Application",
+  "edit_app": "Edit Application",
   "description": "Description",
   "delete_app": "Delete Application",
+  "publish": "Publish",
+  "history": "History",
+  "unpublished": "Unpublished",
+  "published": "Published",
   "text": {
     "name_placeholder": "Enter application name",
     "description_placeholder": "Enter application description",

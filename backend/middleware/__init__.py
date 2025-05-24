@@ -8,12 +8,10 @@ from fastapi_async_sqlalchemy import SQLAlchemyMiddleware
 
 from configs import funiq_ai_config
 from infrastructure import get_engine
-from middleware.auth import TokenRefreshMiddleware
-from middleware.i18n import I18nMiddleware
-from middleware.request_context import RequestContextMiddleware
+from middleware.http import I18nMiddleware, RequestContextMiddleware, TokenRefreshMiddleware
 
 
-def install_global_middlewares(app: FastAPI):
+def install_global_http_middlewares(app: FastAPI):
     app.add_middleware(TokenRefreshMiddleware)
     # must be after TokenRefreshMiddleware, ensure return response is correct(including CORS headers)
     app.add_middleware(

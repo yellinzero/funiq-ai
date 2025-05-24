@@ -35,6 +35,7 @@ const nextConfig: NextConfig = {
 
     return config
   },
+  serverExternalPackages: ['yjs'],
 }
 
 export default nextConfig

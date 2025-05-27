@@ -1,12 +1,14 @@
 'use client'
 
 import type { WorkflowNode } from '@/app/[lng]/(workspace)/apps/[id]/workflow/types'
+import { useFlowHandler } from '@/app/[lng]/(workspace)/apps/[id]/workflow/hooks/use-flow-handler'
 import { useWorkflowStore } from '@/app/[lng]/(workspace)/apps/[id]/workflow/stores/use-workflow-store'
-import { Background, BackgroundVariant, Controls, MiniMap, ReactFlow } from '@xyflow/react'
+import { Background, BackgroundVariant, ReactFlow } from '@xyflow/react'
 import { useAwareness } from './AwarenessProvider'
 import EndNode from './nodes/EndNode'
 import LLMNode from './nodes/LLMNode'
 import StartNode from './nodes/StartNode'
+import WorkflowControls from './WorkflowControls'
 import '@xyflow/react/dist/style.css'
 
 const nodeTypes = {
@@ -25,13 +27,14 @@ export default function WorkflowEditor() {
   } = useWorkflowStore()
 
   const { handleNodesSelect } = useAwareness()
+  const { isValidConnection } = useFlowHandler()
 
   const onSelectionChange = ({ nodes: selectedNodes }: { nodes: WorkflowNode[] }) => {
     handleNodesSelect(selectedNodes.map(node => node.id))
   }
 
   return (
-    <div className="size-full relative">
+    <div className="size-full relative px-2">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -41,12 +44,12 @@ export default function WorkflowEditor() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onSelectionChange={onSelectionChange}
+        isValidConnection={isValidConnection}
+        className="[&_.react-flow\_\_attribution]:select-none"
       >
-        <Controls />
-        <MiniMap />
+        <WorkflowControls />
         <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
       </ReactFlow>
     </div>
-
   )
 }

@@ -1,14 +1,19 @@
 import type {
-  ICreateWorkflowEdgePayload,
-  ICreateWorkflowNodePayload,
-  IUpdateWorkflowEdgePayload,
-  IUpdateWorkflowNodePayload,
+  ISaveWorkflowEdgePayload,
+  ISaveWorkflowNodePayload,
   IWorkflowEdgeInfo,
   IWorkflowNodeInfo,
 } from '@/apis'
 
 import type { WorkflowEdge, WorkflowNode } from '@/app/[lng]/(workspace)/apps/[id]/workflow/types'
 import * as _ from 'lodash-es'
+
+import { customAlphabet } from 'nanoid'
+
+export const nanoid = customAlphabet(
+  '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
+  10,
+)
 
 export function convertToReactFlowNode(node: IWorkflowNodeInfo): WorkflowNode {
   return {
@@ -34,7 +39,7 @@ export function convertToReactFlowEdge(edge: IWorkflowEdgeInfo): WorkflowEdge {
   }
 }
 
-export function normalizeWorkflowNode(node: WorkflowNode): ICreateWorkflowNodePayload {
+export function normalizeWorkflowNode(node: WorkflowNode): ISaveWorkflowNodePayload {
   return {
     node_key: node.id,
     node_type: node.type,
@@ -46,10 +51,10 @@ export function normalizeWorkflowNode(node: WorkflowNode): ICreateWorkflowNodePa
       position: node.position,
       ..._.omit(node.data, ['id', 'name', 'description', 'config', 'extended_config', 'operator']),
     },
-  } as unknown as ICreateWorkflowNodePayload
+  } as unknown as ISaveWorkflowNodePayload
 }
 
-export function normalizeWorkflowEdge(edge: WorkflowEdge): ICreateWorkflowEdgePayload {
+export function normalizeWorkflowEdge(edge: WorkflowEdge): ISaveWorkflowEdgePayload {
   return {
     edge_key: edge.id,
     source_node_key: edge.source,
@@ -58,20 +63,4 @@ export function normalizeWorkflowEdge(edge: WorkflowEdge): ICreateWorkflowEdgePa
       ..._.omit(edge.data, ['id']),
     },
   }
-}
-
-export function convertToCreateWorkflowNode(node: WorkflowNode): ICreateWorkflowNodePayload {
-  return normalizeWorkflowNode(node)
-}
-
-export function convertToUpdateWorkflowNode(node: WorkflowNode): IUpdateWorkflowNodePayload {
-  return normalizeWorkflowNode(node)
-}
-
-export function convertToCreateWorkflowEdge(edge: WorkflowEdge): ICreateWorkflowEdgePayload {
-  return normalizeWorkflowEdge(edge)
-}
-
-export function convertToUpdateWorkflowEdge(edge: WorkflowEdge): IUpdateWorkflowEdgePayload {
-  return normalizeWorkflowEdge(edge)
 }

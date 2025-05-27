@@ -1,4 +1,4 @@
-import type { WorkflowEdge, WorkflowNode } from '@/app/[lng]/(workspace)/apps/[id]/workflow/types'
+import type { WorkflowEdge, WorkflowNode, WorkflowState, WorkflowUpdateState } from '@/app/[lng]/(workspace)/apps/[id]/workflow/types'
 import { type IWorkflowInfo, updateWorkflowApi } from '@/apis'
 import { useWorkflowStore } from '@/app/[lng]/(workspace)/apps/[id]/workflow/stores/use-workflow-store'
 import { normalizeWorkflowEdge, normalizeWorkflowNode } from '@/app/[lng]/(workspace)/apps/[id]/workflow/utils'
@@ -17,9 +17,25 @@ export function YjsProvider({
 }) {
   const isInitializing = useRef(true)
 
+  const getYWorkflowMapKey = (id: string) => id
+  const getYWorkflowUpdateStateMapKey = (id: string) => `workflow-update-state-${id}`
   const { run: saveWorkflowConfig } = useDebounceFn(async (id, body) => {
     if (id) {
-      await updateWorkflowApi(workflowId, body)
+      const res = await updateWorkflowApi(workflowId, body)
+      if (res.data) {
+        const { setWorkflowUpdated, yWorkflowUpdateStateMap } = useWorkflowStore.getState()
+        const key = getYWorkflowUpdateStateMapKey(workflowId)
+        if (yWorkflowUpdateStateMap) {
+          const data = yWorkflowUpdateStateMap.get(key)
+          if (data) {
+            setWorkflowUpdated(res.data.updated_at, res.data.updated_by)
+            yWorkflowUpdateStateMap.set(key, {
+              updated_at: data.updated_at,
+              updated_by: data.updated_by,
+            })
+          }
+        }
+      }
     }
   }, 500)
 
@@ -33,25 +49,22 @@ export function YjsProvider({
       workflowId,
       ydoc,
     )
+    const workflowMapKey = getYWorkflowMapKey(workflowId)
+    const workflowUpdateStateKey = getYWorkflowUpdateStateMapKey(workflowId)
 
-    const yWorkflowMap = ydoc.getMap<{
-      config: IWorkflowInfo['config']
-      nodes: WorkflowNode[]
-      edges: WorkflowEdge[]
-    }>(workflowId)
+    const yWorkflowMap = ydoc.getMap<WorkflowState>(workflowMapKey)
+    const yWorkflowUpdateStateMap = ydoc.getMap<WorkflowUpdateState>(workflowUpdateStateKey)
 
-    yWorkflowMap.observe((_event, transaction) => {
+    yWorkflowMap.observe(async (_event, transaction) => {
       if (isInitializing.current) {
         return
       }
+      const { setWorkflowConfig, setNodes, setEdges, workflowConfig: oldWorkflowConfig, nodes: oldNodes, edges: oldEdges } = useWorkflowStore.getState()
 
       const isLocalChange = transaction.local
-      const data = yWorkflowMap.get(workflowId)
+      const data = yWorkflowMap.get(workflowMapKey)
       if (data) {
         if (isLocalChange) {
-          const oldWorkflowConfig = useWorkflowStore.getState().workflowConfig
-          const oldNodes = useWorkflowStore.getState().nodes
-          const oldEdges = useWorkflowStore.getState().edges
           const configChanges = calculateWorkflowConfigChanges(data.config, oldWorkflowConfig)
           const nodesChanges = calculateNodesChanges(data.nodes, oldNodes)
           const edgesChanges = calculateEdgesChanges(data.edges, oldEdges)
@@ -64,35 +77,50 @@ export function YjsProvider({
           }
         }
 
-        useWorkflowStore.setState({
-          workflowConfig: data.config,
-          nodes: data.nodes,
-          edges: data.edges,
-        })
+        setWorkflowConfig(data.config)
+        setNodes(data.nodes)
+        setEdges(data.edges)
+      }
+    })
+
+    yWorkflowUpdateStateMap.observe(() => {
+      if (isInitializing.current) {
+        return
+      }
+      const { setWorkflowUpdated } = useWorkflowStore.getState()
+      const data = yWorkflowUpdateStateMap.get(workflowUpdateStateKey)
+      if (data) {
+        setWorkflowUpdated(data.updated_at, data.updated_by)
       }
     })
 
     const { setYjsState } = useWorkflowStore.getState()
-    setYjsState({ ydoc, wsProvider, yWorkflowMap })
+    setYjsState({ ydoc, wsProvider, yWorkflowMap, yWorkflowUpdateStateMap })
 
     wsProvider.once('sync', () => {
       const { workflow, workflowConfig, nodes, edges } = useWorkflowStore.getState()
       if (workflow) {
         ydoc.transact(() => {
           yWorkflowMap.set(workflow.id, {
-            config: workflowConfig || {},
+            config: workflowConfig,
             nodes: nodes || [],
             edges: edges || [],
+          })
+          yWorkflowUpdateStateMap.set(workflow.id, {
+            updated_at: workflow.updated_at,
+            updated_by: workflow.updated_by,
           })
         }, null)
       }
       isInitializing.current = false
+      const yUndoManager = new Y.UndoManager(yWorkflowMap)
+      setYjsState({ yUndoManager })
     })
 
     return () => {
       wsProvider.disconnect()
       ydoc.destroy()
-      setYjsState({ ydoc: null, wsProvider: null, yWorkflowMap: null })
+      setYjsState({ ydoc: null, wsProvider: null, yUndoManager: null, yWorkflowMap: null, yWorkflowUpdateStateMap: null })
     }
   }, [workflowId, saveWorkflowConfig])
 
@@ -110,87 +138,42 @@ function calculateWorkflowConfigChanges(newConfig: IWorkflowInfo['config'], oldC
 }
 
 function calculateNodesChanges(newNodes: WorkflowNode[], oldNodes: WorkflowNode[]) {
-  // Convert all nodes to normalized format first
-  const normalizedNewNodes = newNodes.map(node => ({
-    id: node.data?.id,
-    normalized: normalizeWorkflowNode(node),
-  }))
-  const normalizedOldNodes = oldNodes.map(node => ({
-    id: node.data?.id,
-    normalized: normalizeWorkflowNode(node),
-  }))
+  const normalizedNewNodes = newNodes.map(normalizeWorkflowNode)
+  const normalizedOldNodes = oldNodes.map(normalizeWorkflowNode)
 
-  // Return null if normalized nodes are identical
   if (_.isEqual(
-    normalizedNewNodes.map(n => n.normalized),
-    normalizedOldNodes.map(n => n.normalized),
+    normalizedNewNodes,
+    normalizedOldNodes,
   )) {
     return null
   }
 
+  const oldKeys = new Set(normalizedOldNodes.map(n => n.node_key))
+  const newKeys = new Set(normalizedNewNodes.map(n => n.node_key))
+
   return {
-    // Create: nodes without id
-    create_nodes: normalizedNewNodes
-      .filter(node => !node.id)
-      .map(node => node.normalized),
-
-    // Update: nodes with id and changed content
-    update_nodes: normalizedNewNodes
-      .filter((node) => {
-        if (!node.id)
-          return false
-        const oldNode = normalizedOldNodes.find(n => n.id === node.id)
-        return oldNode && !_.isEqual(node.normalized, oldNode.normalized)
-      })
-      .map(node => node.normalized),
-
-    // Delete: ids present in old array but missing in new array
-    delete_nodes: _.difference(
-      normalizedOldNodes.map(node => node.id).filter(Boolean),
-      normalizedNewNodes.map(node => node.id).filter(Boolean),
-    ) as string[],
+    update_nodes: normalizedNewNodes,
+    delete_nodes: Array.from(oldKeys).filter(key => !newKeys.has(key)),
   }
 }
 
 function calculateEdgesChanges(newEdges: WorkflowEdge[], oldEdges: WorkflowEdge[]) {
-  // Convert all edges to normalized format first
-  const normalizedNewEdges = newEdges.map(edge => ({
-    id: edge.data?.id,
-    normalized: normalizeWorkflowEdge(edge),
-  }))
-  const normalizedOldEdges = oldEdges.map(edge => ({
-    id: edge.data?.id,
-    normalized: normalizeWorkflowEdge(edge),
-  }))
+  const normalizedNewEdges = newEdges.map(normalizeWorkflowEdge)
+  const normalizedOldEdges = oldEdges.map(normalizeWorkflowEdge)
 
   // Return null if normalized edges are identical
   if (_.isEqual(
-    normalizedNewEdges.map(e => e.normalized),
-    normalizedOldEdges.map(e => e.normalized),
+    normalizedNewEdges,
+    normalizedOldEdges,
   )) {
     return null
   }
 
+  const oldKeys = new Set(normalizedOldEdges.map(e => e.edge_key))
+  const newKeys = new Set(normalizedNewEdges.map(e => e.edge_key))
+
   return {
-    // Create: edges without id
-    create_edges: normalizedNewEdges
-      .filter(edge => !edge.id)
-      .map(edge => edge.normalized),
-
-    // Update: edges with id and changed content
-    update_edges: normalizedNewEdges
-      .filter((edge) => {
-        if (!edge.id)
-          return false
-        const oldEdge = normalizedOldEdges.find(e => e.id === edge.id)
-        return oldEdge && !_.isEqual(edge.normalized, oldEdge.normalized)
-      })
-      .map(edge => edge.normalized),
-
-    // Delete: ids present in old array but missing in new array
-    delete_edges: _.difference(
-      normalizedOldEdges.map(edge => edge.id).filter(Boolean),
-      normalizedNewEdges.map(edge => edge.id).filter(Boolean),
-    ) as string[],
+    update_edges: normalizedNewEdges,
+    delete_edges: Array.from(oldKeys).filter(key => !newKeys.has(key)),
   }
 }

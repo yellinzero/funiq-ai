@@ -1,6 +1,6 @@
+import type { WorkflowEdge, WorkflowNode, WorkflowState, WorkflowUpdateState, YjsState } from '@/app/[lng]/(workspace)/apps/[id]/workflow/types'
 import type { WebsocketProvider } from 'y-websocket'
 import type * as Y from 'yjs'
-import type { WorkflowEdge, WorkflowNode } from '../types'
 import {
   getOperatorsApi,
   getWorkflowApi,
@@ -15,11 +15,11 @@ import {
   type IWorkflowVersionInfo,
   publishWorkflowApi,
 } from '@/apis'
+import { convertToReactFlowEdge, convertToReactFlowNode, nanoid } from '@/app/[lng]/(workspace)/apps/[id]/workflow/utils/workflow'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { addEdge, applyEdgeChanges, applyNodeChanges, type Connection, type EdgeChange, type NodeChange } from '@xyflow/react'
 import * as _ from 'lodash-es'
 import { create } from 'zustand'
-import { convertToReactFlowEdge, convertToReactFlowNode } from '../utils/workflow'
 
 interface WorkflowStoreState {
   workflow: IWorkflowInfo | null
@@ -31,12 +31,11 @@ interface WorkflowStoreState {
   debugSnapshots: IWorkflowDebugSnapshotInfo[]
   ydoc: Y.Doc | null
   wsProvider: WebsocketProvider | null
-  yWorkflowMap: Y.Map<{
-    config: IWorkflowInfo['config']
-    nodes: WorkflowNode[]
-    edges: WorkflowEdge[]
-  }> | null
+  yUndoManager: Y.UndoManager | null
+  yWorkflowMap: Y.Map<WorkflowState> | null
+  yWorkflowUpdateStateMap: Y.Map<WorkflowUpdateState> | null
   setWorkflow: (workflow: IWorkflowInfo | null) => void
+  setWorkflowUpdated: (updated_at: string, updated_by: string) => void
   setNodes: (nodes: WorkflowNode[]) => void
   setEdges: (edges: WorkflowEdge[]) => void
   setWorkflowConfig: (config: IWorkflowInfo['config']) => void
@@ -47,7 +46,13 @@ interface WorkflowStoreState {
   onNodesChange: (changes: NodeChange[]) => void
   onEdgesChange: (changes: EdgeChange[]) => void
   onConnect: (connection: Connection) => void
-  setYjsState: (state: { ydoc: Y.Doc | null, wsProvider: WebsocketProvider | null, yWorkflowMap: Y.Map<any> | null }) => void
+  setYjsState: (state: YjsState) => void
+}
+
+const defaultWorkflowState: WorkflowState = {
+  config: null,
+  nodes: [],
+  edges: [],
 }
 
 export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
@@ -60,7 +65,15 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
   debugSnapshots: [],
   ydoc: null,
   wsProvider: null,
+  yUndoManager: null,
   yWorkflowMap: null,
+  yWorkflowUpdateStateMap: null,
+  setWorkflowUpdated: (updated_at: string, updated_by: string) => {
+    const { workflow } = get()
+    if (workflow) {
+      set({ workflow: { ...workflow, updated_at, updated_by } })
+    }
+  },
   setWorkflow: (workflow) => {
     set({ workflow })
   },
@@ -84,7 +97,7 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
     const newNodes = applyNodeChanges(changes, nodes) as WorkflowNode[]
     const { yWorkflowMap, workflow } = get()
     if (yWorkflowMap && workflow) {
-      const data = yWorkflowMap.get(workflow.id) || { config: {}, nodes: [], edges: [] }
+      const data = yWorkflowMap.get(workflow.id) || defaultWorkflowState
       yWorkflowMap.set(workflow.id, { ...data, nodes: newNodes })
     }
   },
@@ -93,26 +106,33 @@ export const useWorkflowStore = create<WorkflowStoreState>((set, get) => ({
     const newEdges = applyEdgeChanges(changes, edges)
     const { yWorkflowMap, workflow } = get()
     if (yWorkflowMap && workflow) {
-      const data = yWorkflowMap.get(workflow.id) || { config: {}, nodes: [], edges: [] }
+      const data = yWorkflowMap.get(workflow.id) || defaultWorkflowState
       yWorkflowMap.set(workflow.id, { ...data, edges: newEdges })
     }
   },
   onConnect: (connection) => {
     const { edges } = get()
-    const newEdges = addEdge(connection, edges)
+
+    const edgeKey = nanoid()
+    const newEdge = {
+      ...connection,
+      id: edgeKey,
+    } as WorkflowEdge
+
+    const newEdges = addEdge(newEdge, edges)
     const { yWorkflowMap, workflow } = get()
     if (yWorkflowMap && workflow) {
-      const data = yWorkflowMap.get(workflow.id) || { config: {}, nodes: [], edges: [] }
+      const data = yWorkflowMap.get(workflow.id) || defaultWorkflowState
       yWorkflowMap.set(workflow.id, { ...data, edges: newEdges })
     }
   },
-  setYjsState: (state: { ydoc: Y.Doc | null, wsProvider: WebsocketProvider | null, yWorkflowMap: Y.Map<any> | null }) => {
+  setYjsState: (state: YjsState) => {
     set(state)
   },
 }))
 
 export function useWorkflowQuery(workflowId: string) {
-  const { setWorkflow, setWorkflowConfig } = useWorkflowStore()
+  const { setWorkflow, setWorkflowConfig, setWorkflowUpdated } = useWorkflowStore()
 
   return useQuery({
     queryKey: ['workflow', workflowId],
@@ -123,6 +143,7 @@ export function useWorkflowQuery(workflowId: string) {
       if (workflow) {
         setWorkflow(workflow)
         setWorkflowConfig(workflow.config)
+        setWorkflowUpdated(workflow.updated_at, workflow.updated_by)
       }
 
       return workflow

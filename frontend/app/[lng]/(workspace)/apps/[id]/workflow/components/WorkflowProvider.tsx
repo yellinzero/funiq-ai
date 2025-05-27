@@ -1,5 +1,6 @@
 import { useOperatorsQuery, useWorkflowEdgesQuery, useWorkflowNodesQuery, useWorkflowQuery } from '@/app/[lng]/(workspace)/apps/[id]/workflow/stores/use-workflow-store'
 import FullPageLoading from '@/components/FullPageLoading'
+import { ReactFlowProvider } from '@xyflow/react'
 import { AwarenessProvider } from './AwarenessProvider'
 import { YjsProvider } from './YjsProvider'
 
@@ -20,10 +21,12 @@ export default function WorkflowProvider({
   }
 
   return (
-    <YjsProvider workflowId={workflowId}>
-      <AwarenessProvider>
-        {children}
-      </AwarenessProvider>
-    </YjsProvider>
+    <ReactFlowProvider>
+      <YjsProvider workflowId={workflowId}>
+        <AwarenessProvider>
+          {children}
+        </AwarenessProvider>
+      </YjsProvider>
+    </ReactFlowProvider>
   )
 }

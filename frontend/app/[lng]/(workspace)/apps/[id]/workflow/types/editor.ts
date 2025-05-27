@@ -1,5 +1,7 @@
-import type { IOperatorName, IWorkflowEdgeInfo, IWorkflowNodeInfo } from '@/apis'
+import type { IOperatorName, IWorkflowEdgeInfo, IWorkflowInfo, IWorkflowNodeInfo } from '@/apis'
 import type { Edge, Node, NodeProps } from '@xyflow/react'
+import type { WebsocketProvider } from 'y-websocket'
+import type * as Y from 'yjs'
 
 export interface WorkflowNodeData extends Partial<IWorkflowNodeInfo>, Record<string, unknown> {
   id?: string
@@ -26,4 +28,22 @@ export interface WorkflowEdge extends Edge {
   data?: {
     id?: string
   }
+}
+
+export interface WorkflowUpdateState {
+  updated_at: string
+  updated_by: string
+}
+export interface WorkflowState {
+  config: IWorkflowInfo['config']
+  nodes: WorkflowNode[]
+  edges: WorkflowEdge[]
+}
+
+export interface YjsState {
+  ydoc?: Y.Doc | null
+  wsProvider?: WebsocketProvider | null
+  yUndoManager?: Y.UndoManager | null
+  yWorkflowMap?: Y.Map<WorkflowState> | null
+  yWorkflowUpdateStateMap?: Y.Map<WorkflowUpdateState> | null
 }

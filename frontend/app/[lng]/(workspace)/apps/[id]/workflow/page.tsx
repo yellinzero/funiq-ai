@@ -15,7 +15,7 @@ export default function Workflow() {
   return (
     <WorkflowProvider workflowId={app.workflow_id}>
       <div className="relative size-full">
-        <WorkflowHeader className="absolute left-0 top-0 z-50" />
+        <WorkflowHeader className="absolute left-0 top-4 z-50" />
         <WorkflowEditor />
       </div>
     </WorkflowProvider>

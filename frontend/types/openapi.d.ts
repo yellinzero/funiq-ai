@@ -889,33 +889,6 @@ export interface components {
             /** Description */
             description?: string | null;
         };
-        /** CreateWorkflowEdgePayload */
-        CreateWorkflowEdgePayload: {
-            /** Edge Key */
-            edge_key: string;
-            /** Source Node Key */
-            source_node_key: string;
-            /** Target Node Key */
-            target_node_key: string;
-            /** Meta */
-            meta?: Record<string, never> | null;
-        };
-        /** CreateWorkflowNodePayload */
-        CreateWorkflowNodePayload: {
-            /** Node Key */
-            node_key: string;
-            node_type: components["schemas"]["OperatorName"];
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Config */
-            config?: Record<string, never> | null;
-            /** Extended Config */
-            extended_config?: Record<string, never> | null;
-            /** Meta */
-            meta?: Record<string, never> | null;
-        };
         /** CreateWorkflowVersionPayload */
         CreateWorkflowVersionPayload: {
             /** Version */
@@ -1454,6 +1427,20 @@ export interface components {
             msg: string;
             data: components["schemas"]["ResendVerificationCodeResponse"];
         };
+        /** ResponseModel[SaveWorkflowResponse] */
+        ResponseModel_SaveWorkflowResponse_: {
+            /**
+             * Code
+             * @default 0
+             */
+            code: string;
+            /**
+             * Msg
+             * @default success
+             */
+            msg: string;
+            data: components["schemas"]["SaveWorkflowResponse"];
+        };
         /** ResponseModel[SignupResponse] */
         ResponseModel_SignupResponse_: {
             /**
@@ -1665,21 +1652,63 @@ export interface components {
             /** Credentials */
             credentials?: Record<string, never> | null;
         };
+        /** SaveWorkflowEdgePayload */
+        SaveWorkflowEdgePayload: {
+            /** Edge Key */
+            edge_key: string;
+            /** Source Node Key */
+            source_node_key?: string | null;
+            /** Target Node Key */
+            target_node_key?: string | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+        };
+        /** SaveWorkflowNodePayload */
+        SaveWorkflowNodePayload: {
+            /** Node Key */
+            node_key: string;
+            node_type: components["schemas"]["OperatorName"];
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Config */
+            config?: Record<string, never> | null;
+            /** Extended Config */
+            extended_config?: Record<string, never> | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+        };
         /** SaveWorkflowRequest */
         SaveWorkflowRequest: {
             /** Update Nodes */
-            update_nodes?: components["schemas"]["UpdateWorkflowNodePayload"][] | null;
+            update_nodes?: components["schemas"]["SaveWorkflowNodePayload"][] | null;
             /** Update Edges */
-            update_edges?: components["schemas"]["UpdateWorkflowEdgePayload"][] | null;
-            /** Create Nodes */
-            create_nodes?: components["schemas"]["CreateWorkflowNodePayload"][] | null;
-            /** Create Edges */
-            create_edges?: components["schemas"]["CreateWorkflowEdgePayload"][] | null;
+            update_edges?: components["schemas"]["SaveWorkflowEdgePayload"][] | null;
             /** Delete Nodes */
             delete_nodes?: string[] | null;
             /** Delete Edges */
             delete_edges?: string[] | null;
             config?: components["schemas"]["WorkflowConfig"] | null;
+        };
+        /** SaveWorkflowResponse */
+        SaveWorkflowResponse: {
+            /** Update Nodes */
+            update_nodes?: components["schemas"]["WorkflowNodeInfo"][] | null;
+            /** Update Edges */
+            update_edges?: components["schemas"]["WorkflowEdgeInfo"][] | null;
+            /** Delete Nodes */
+            delete_nodes?: string[] | null;
+            /** Delete Edges */
+            delete_edges?: string[] | null;
+            config?: components["schemas"]["WorkflowConfig"] | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Updated By */
+            updated_by: string;
         };
         /** SignupRequest */
         SignupRequest: {
@@ -1764,33 +1793,6 @@ export interface components {
             /** Tenant Id */
             tenant_id: string;
             role: components["schemas"]["TenantUserRole"];
-        };
-        /** UpdateWorkflowEdgePayload */
-        UpdateWorkflowEdgePayload: {
-            /** Edge Key */
-            edge_key: string;
-            /** Source Node Key */
-            source_node_key?: string | null;
-            /** Target Node Key */
-            target_node_key?: string | null;
-            /** Meta */
-            meta?: Record<string, never> | null;
-        };
-        /** UpdateWorkflowNodePayload */
-        UpdateWorkflowNodePayload: {
-            /** Node Key */
-            node_key: string;
-            node_type: components["schemas"]["OperatorName"];
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Config */
-            config?: Record<string, never> | null;
-            /** Extended Config */
-            extended_config?: Record<string, never> | null;
-            /** Meta */
-            meta?: Record<string, never> | null;
         };
         /** UserAddRequest */
         UserAddRequest: {
@@ -2848,7 +2850,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResponseModel_WorkflowInfo_"];
+                    "application/json": components["schemas"]["ResponseModel_SaveWorkflowResponse_"];
                 };
             };
             /** @description Validation Error */

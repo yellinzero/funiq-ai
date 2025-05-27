@@ -24,7 +24,7 @@ export default function WorkflowHeader({
   const status = workflow.status === 'published' ? t('app.published') : t('app.unpublished')
 
   return (
-    <div className={cn('flex items-center w-full px-4', className)}>
+    <div className={cn('flex w-full px-4', className)}>
       <div className="flex-1">
         <div className="flex items-center text-xs gap-0.5">
           <span>{user?.name ?? '--'}</span>

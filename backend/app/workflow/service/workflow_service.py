@@ -6,7 +6,7 @@ import semver
 from fastapi import Request, status
 from loguru import logger
 from nanoid import generate
-from sqlalchemy import and_, select
+from sqlalchemy import and_, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.account.service.tenant_service import TenantService
@@ -27,13 +27,12 @@ from providers.operators.core import OperatorName
 from utils.common.datetime import utcnow
 
 from ..schemas import (
-    CreateWorkflowEdgePayload,
-    CreateWorkflowNodePayload,
     CreateWorkflowRequest,
     CreateWorkflowVersionPayload,
+    SaveWorkflowEdgePayload,
+    SaveWorkflowNodePayload,
     SaveWorkflowRequest,
-    UpdateWorkflowEdgePayload,
-    UpdateWorkflowNodePayload,
+    SaveWorkflowResponse,
     WorkflowDebugSnapshotInfo,
     WorkflowEdgeInfo,
     WorkflowInfo,
@@ -224,7 +223,7 @@ class WorkflowService:
             await workflow.save(session)
             start_node = await WorkflowService._create_workflow_node(
                 session=session,
-                payload=CreateWorkflowNodePayload(
+                payload=SaveWorkflowNodePayload(
                     node_type=OperatorName.START,
                     node_key=generate_node_or_edge_key(),
                     name="Start",
@@ -234,7 +233,7 @@ class WorkflowService:
             )
             end_node = await WorkflowService._create_workflow_node(
                 session=session,
-                payload=CreateWorkflowNodePayload(
+                payload=SaveWorkflowNodePayload(
                     node_type=OperatorName.END,
                     node_key=generate_node_or_edge_key(),
                     name="End",
@@ -244,7 +243,7 @@ class WorkflowService:
             )
             await WorkflowService._create_workflow_edge(
                 session=session,
-                payload=CreateWorkflowEdgePayload(
+                payload=SaveWorkflowEdgePayload(
                     edge_key=generate_node_or_edge_key(),
                     source_node_key=start_node.node_key,
                     target_node_key=end_node.node_key,
@@ -267,7 +266,7 @@ class WorkflowService:
     @staticmethod
     async def _create_workflow_node(
         session: AsyncSession,
-        payload: CreateWorkflowNodePayload,
+        payload: SaveWorkflowNodePayload,
         workflow_id: str,
         user: User,
         need_commit: bool = False,
@@ -300,7 +299,7 @@ class WorkflowService:
     @staticmethod
     async def _create_workflow_edge(
         session: AsyncSession,
-        payload: CreateWorkflowEdgePayload,
+        payload: SaveWorkflowEdgePayload,
         workflow_id: str,
         user: User,
         need_commit: bool = False,
@@ -330,7 +329,7 @@ class WorkflowService:
     @staticmethod
     async def _update_workflow_node(
         session: AsyncSession,
-        payload: UpdateWorkflowNodePayload,
+        payload: SaveWorkflowNodePayload,
         workflow_id: str,
         user: User,
         need_commit: bool = False,
@@ -363,7 +362,7 @@ class WorkflowService:
     @staticmethod
     async def _update_workflow_edge(
         session: AsyncSession,
-        payload: UpdateWorkflowEdgePayload,
+        payload: SaveWorkflowEdgePayload,
         workflow_id: str,
         user: User,
         need_commit: bool = False,
@@ -424,6 +423,209 @@ class WorkflowService:
             ) from e
 
     @staticmethod
+    async def _batch_create_workflow_nodes(
+        session: AsyncSession,
+        payloads: list[SaveWorkflowNodePayload],
+        workflow_id: str,
+        user: User,
+    ) -> list[WorkflowNode]:
+        try:
+            nodes = [
+                WorkflowNode(
+                    workflow_id=workflow_id,
+                    node_type=payload.node_type,
+                    node_key=payload.node_key,
+                    name=payload.name,
+                    description=payload.description,
+                    config=payload.config,
+                    extended_config=payload.extended_config,
+                    meta=payload.meta,
+                    created_by=user.id,
+                    updated_by=user.id,
+                )
+                for payload in payloads
+            ]
+            session.add_all(nodes)
+            await session.flush()
+            return nodes
+        except Exception as e:
+            logger.error(f"Error batch creating workflow nodes: {e}")
+            raise WorkflowErrorCode.WORKFLOW_NODE_CREATE_ERROR.exception(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def _batch_create_workflow_edges(
+        session: AsyncSession,
+        payloads: list[SaveWorkflowEdgePayload],
+        workflow_id: str,
+        user: User,
+    ) -> list[WorkflowEdge]:
+        try:
+            edges = [
+                WorkflowEdge(
+                    workflow_id=workflow_id,
+                    edge_key=payload.edge_key,
+                    source_node_key=payload.source_node_key,
+                    target_node_key=payload.target_node_key,
+                    meta=payload.meta,
+                    created_by=user.id,
+                    updated_by=user.id,
+                )
+                for payload in payloads
+            ]
+            session.add_all(edges)
+            await session.flush()
+            return edges
+        except Exception as e:
+            logger.error(f"Error batch creating workflow edges: {e}")
+            raise WorkflowErrorCode.WORKFLOW_EDGE_CREATE_ERROR.exception(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def _batch_update_workflow_nodes(
+        session: AsyncSession,
+        payloads: list[SaveWorkflowNodePayload],
+        workflow_id: str,
+        user: User,
+    ) -> list[WorkflowNode]:
+        try:
+            node_keys = [payload.node_key for payload in payloads]
+            result = await session.execute(
+                select(WorkflowNode).where(
+                    and_(WorkflowNode.workflow_id == workflow_id, WorkflowNode.node_key.in_(node_keys))
+                )
+            )
+            nodes = result.scalars().all()
+
+            payloads_map = {payload.node_key: payload for payload in payloads}
+
+            for node in nodes:
+                payload = payloads_map[node.node_key]
+                if payload.name:
+                    node.name = payload.name
+                if payload.description:
+                    node.description = payload.description
+                if payload.config:
+                    node.config = payload.config
+                if payload.extended_config:
+                    node.extended_config = payload.extended_config
+                if payload.meta:
+                    node.meta = payload.meta
+                node.updated_by = user.id
+
+            await session.flush()
+            return nodes
+        except Exception as e:
+            logger.error(f"Error batch updating workflow nodes: {e}")
+            raise WorkflowErrorCode.WORKFLOW_NODE_UPDATE_ERROR.exception(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def _batch_update_workflow_edges(
+        session: AsyncSession,
+        payloads: list[SaveWorkflowEdgePayload],
+        workflow_id: str,
+        user: User,
+    ) -> list[WorkflowEdge]:
+        try:
+            edge_keys = [payload.edge_key for payload in payloads]
+            result = await session.execute(
+                select(WorkflowEdge).where(
+                    and_(WorkflowEdge.workflow_id == workflow_id, WorkflowEdge.edge_key.in_(edge_keys))
+                )
+            )
+            edges = result.scalars().all()
+
+            payloads_map = {payload.edge_key: payload for payload in payloads}
+
+            for edge in edges:
+                payload = payloads_map[edge.edge_key]
+                if payload.meta:
+                    edge.meta = payload.meta
+                if payload.source_node_key:
+                    edge.source_node_key = payload.source_node_key
+                if payload.target_node_key:
+                    edge.target_node_key = payload.target_node_key
+                edge.updated_by = user.id
+
+            await session.flush()
+            return edges
+        except Exception as e:
+            logger.error(f"Error batch updating workflow edges: {e}")
+            raise WorkflowErrorCode.WORKFLOW_EDGE_UPDATE_ERROR.exception(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def _batch_delete_workflow_nodes(
+        session: AsyncSession,
+        node_keys: list[str],
+        workflow_id: str,
+    ) -> list[str]:
+        try:
+            result = await session.execute(
+                select(WorkflowNode.node_key).where(
+                    and_(WorkflowNode.workflow_id == workflow_id, WorkflowNode.node_key.in_(node_keys))
+                )
+            )
+            found_keys = result.scalars().all()
+
+            if len(found_keys) != len(node_keys):
+                missing_keys = set(node_keys) - set(found_keys)
+                raise WorkflowErrorCode.WORKFLOW_NODE_NOT_FOUND.exception(
+                    data={"missing_node_keys": list(missing_keys)}, status_code=status.HTTP_404_NOT_FOUND
+                )
+
+            await session.execute(
+                delete(WorkflowNode).where(
+                    and_(WorkflowNode.workflow_id == workflow_id, WorkflowNode.node_key.in_(node_keys))
+                )
+            )
+            await session.flush()
+            return node_keys
+        except Exception as e:
+            logger.error(f"Error batch deleting workflow nodes: {e}")
+            raise WorkflowErrorCode.WORKFLOW_NODE_DELETE_ERROR.exception(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
+    async def _batch_delete_workflow_edges(
+        session: AsyncSession,
+        edge_keys: list[str],
+        workflow_id: str,
+    ) -> list[str]:
+        try:
+            result = await session.execute(
+                select(WorkflowEdge.edge_key).where(
+                    and_(WorkflowEdge.workflow_id == workflow_id, WorkflowEdge.edge_key.in_(edge_keys))
+                )
+            )
+            found_keys = result.scalars().all()
+
+            if len(found_keys) != len(edge_keys):
+                missing_keys = set(edge_keys) - set(found_keys)
+                raise WorkflowErrorCode.WORKFLOW_EDGE_NOT_FOUND.exception(
+                    data={"missing_edge_keys": list(missing_keys)}, status_code=status.HTTP_404_NOT_FOUND
+                )
+
+            await session.execute(
+                delete(WorkflowEdge).where(
+                    and_(WorkflowEdge.workflow_id == workflow_id, WorkflowEdge.edge_key.in_(edge_keys))
+                )
+            )
+            await session.flush()
+            return edge_keys
+        except Exception as e:
+            logger.error(f"Error batch deleting workflow edges: {e}")
+            raise WorkflowErrorCode.WORKFLOW_EDGE_DELETE_ERROR.exception(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) from e
+
+    @staticmethod
     async def _update_workflow_config(
         session: AsyncSession, workflow: Workflow, config: dict, user: User, need_commit: bool = False
     ) -> Workflow:
@@ -445,57 +647,97 @@ class WorkflowService:
     @staticmethod
     async def save_workflow(
         session: AsyncSession, request: Request, workflow_id: str, payload: SaveWorkflowRequest
-    ) -> WorkflowInfo:
+    ) -> SaveWorkflowResponse:
         _, _, user = await TenantService.get_tenant_and_user(session=session, request=request)
 
         try:
             workflow = await WorkflowService.get_workflow(session=session, workflow_id=workflow_id)
 
+            updated_nodes = []
+            updated_edges = []
+            deleted_nodes = []
+            deleted_edges = []
+
             if payload.update_nodes:
-                for node in payload.update_nodes:
-                    await WorkflowService._update_workflow_node(
-                        session=session, payload=node, workflow_id=workflow_id, user=user
+                node_keys = [node.node_key for node in payload.update_nodes]
+                existing_result = await session.execute(
+                    select(WorkflowNode).where(
+                        and_(WorkflowNode.workflow_id == workflow_id, WorkflowNode.node_key.in_(node_keys))
+                    )
+                )
+                existing_nodes = existing_result.scalars().all()
+                existing_keys = {node.node_key for node in existing_nodes}
+
+                nodes_to_create = [node for node in payload.update_nodes if node.node_key not in existing_keys]
+                nodes_to_update = [node for node in payload.update_nodes if node.node_key in existing_keys]
+
+                if nodes_to_create:
+                    created_nodes = await WorkflowService._batch_create_workflow_nodes(
+                        session=session, payloads=nodes_to_create, workflow_id=workflow_id, user=user
+                    )
+                    updated_nodes.extend([WorkflowService.serialize_workflow_node(node) for node in created_nodes])
+
+                if nodes_to_update:
+                    updated_existing_nodes = await WorkflowService._batch_update_workflow_nodes(
+                        session=session, payloads=nodes_to_update, workflow_id=workflow_id, user=user
+                    )
+                    updated_nodes.extend(
+                        [WorkflowService.serialize_workflow_node(node) for node in updated_existing_nodes]
                     )
 
-            if payload.create_nodes:
-                for node in payload.create_nodes:
-                    await WorkflowService._create_workflow_node(
-                        session=session, payload=node, workflow_id=workflow_id, user=user
-                    )
-                    
             if payload.update_edges:
-                for edge in payload.update_edges:
-                    await WorkflowService._update_workflow_edge(
-                        session=session, payload=edge, workflow_id=workflow_id, user=user
+                edge_keys = [edge.edge_key for edge in payload.update_edges]
+                existing_result = await session.execute(
+                    select(WorkflowEdge).where(
+                        and_(WorkflowEdge.workflow_id == workflow_id, WorkflowEdge.edge_key.in_(edge_keys))
                     )
+                )
+                existing_edges = existing_result.scalars().all()
+                existing_keys = {edge.edge_key for edge in existing_edges}
 
-            if payload.create_edges:
-                for edge in payload.create_edges:
-                    await WorkflowService._create_workflow_edge(
-                        session=session, payload=edge, workflow_id=workflow_id, user=user
+                edges_to_create = [edge for edge in payload.update_edges if edge.edge_key not in existing_keys]
+                edges_to_update = [edge for edge in payload.update_edges if edge.edge_key in existing_keys]
+
+                if edges_to_create:
+                    created_edges = await WorkflowService._batch_create_workflow_edges(
+                        session=session, payloads=edges_to_create, workflow_id=workflow_id, user=user
+                    )
+                    updated_edges.extend([WorkflowService.serialize_workflow_edge(edge) for edge in created_edges])
+
+                if edges_to_update:
+                    updated_existing_edges = await WorkflowService._batch_update_workflow_edges(
+                        session=session, payloads=edges_to_update, workflow_id=workflow_id, user=user
+                    )
+                    updated_edges.extend(
+                        [WorkflowService.serialize_workflow_edge(edge) for edge in updated_existing_edges]
                     )
 
             if payload.delete_nodes:
-                for node_key in payload.delete_nodes:
-                    await WorkflowService._delete_workflow_node(
-                        session=session, node_key=node_key, workflow_id=workflow_id, user=user
-                    )
+                deleted_nodes = await WorkflowService._batch_delete_workflow_nodes(
+                    session=session, node_keys=payload.delete_nodes, workflow_id=workflow_id
+                )
 
             if payload.delete_edges:
-                for edge_key in payload.delete_edges:
-                    await WorkflowService._delete_workflow_edge(
-                        session=session, edge_key=edge_key, workflow_id=workflow_id, user=user
-                    )
-            if payload.config:
-                await WorkflowService._update_workflow_config(
-                    session=session, workflow=workflow, config=payload.config, user=user
+                deleted_edges = await WorkflowService._batch_delete_workflow_edges(
+                    session=session, edge_keys=payload.delete_edges, workflow_id=workflow_id
                 )
+
+            if payload.config:
+                workflow.config = payload.config
 
             workflow.updated_by = user.id
             workflow.status = WorkflowStatus.DRAFT
             await workflow.save(session)
 
-            result = WorkflowService.serialize_workflow(workflow)
+            result = SaveWorkflowResponse(
+                update_nodes=updated_nodes or None,
+                update_edges=updated_edges or None,
+                delete_nodes=deleted_nodes or None,
+                delete_edges=deleted_edges or None,
+                config=workflow.config,
+                updated_at=workflow.updated_at,
+                updated_by=workflow.updated_by,
+            )
             await session.commit()
             return result
         except Exception as e:

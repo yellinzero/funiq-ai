@@ -17,7 +17,7 @@ class WorkflowInfo(BaseModel):
     created_by: str
     updated_by: str
     version: str | None
-    
+
 
 class GetWorkflowsResponse(BaseModel):
     workflows: list[WorkflowInfo]
@@ -91,7 +91,7 @@ class CreateWorkflowRequest(BaseModel):
     config: WorkflowConfig | None = None
     
 
-class EditWorkflowNodePayloadBase(BaseModel):
+class SaveWorkflowNodePayload(BaseModel):
     node_key: str
     node_type: OperatorName
     name: str | None = None
@@ -101,40 +101,29 @@ class EditWorkflowNodePayloadBase(BaseModel):
     meta: dict[str, Any] | None = None
 
 
-class CreateWorkflowNodePayload(EditWorkflowNodePayloadBase):
-    node_key: str
-    name: str
-
-
-class UpdateWorkflowNodePayload(EditWorkflowNodePayloadBase):
-    pass
-
-
-class EditWorkflowEdgePayloadBase(BaseModel):
+class SaveWorkflowEdgePayload(BaseModel):
     edge_key: str
     source_node_key: str | None = None
     target_node_key: str | None = None
     meta: dict[str, Any] | None = None
-
-
-class CreateWorkflowEdgePayload(EditWorkflowEdgePayloadBase):
-    edge_key: str
-    source_node_key: str
-    target_node_key: str
     
 
-class UpdateWorkflowEdgePayload(EditWorkflowEdgePayloadBase):
-    pass
-
-    
 class SaveWorkflowRequest(BaseModel):
-    update_nodes: list[UpdateWorkflowNodePayload] | None = None
-    update_edges: list[UpdateWorkflowEdgePayload] | None = None
-    create_nodes: list[CreateWorkflowNodePayload] | None = None
-    create_edges: list[CreateWorkflowEdgePayload] | None = None
+    update_nodes: list[SaveWorkflowNodePayload] | None = None
+    update_edges: list[SaveWorkflowEdgePayload] | None = None
     delete_nodes: list[str] | None = None
     delete_edges: list[str] | None = None
     config: WorkflowConfig | None = None
+    
+
+class SaveWorkflowResponse(BaseModel):
+    update_nodes: list[WorkflowNodeInfo] | None = None
+    update_edges: list[WorkflowEdgeInfo] | None = None
+    delete_nodes: list[str] | None = None
+    delete_edges: list[str] | None = None
+    config: WorkflowConfig | None = None
+    updated_at: datetime
+    updated_by: str
     
 
 class EditWorkflowSnapshotBase(BaseModel):

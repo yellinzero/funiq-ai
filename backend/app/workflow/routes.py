@@ -9,6 +9,7 @@ from .schemas import (
     GetWorkflowDebugSnapshotsResponse,
     GetWorkflowVersionsResponse,
     SaveWorkflowRequest,
+    SaveWorkflowResponse,
     WorkflowEdgeInfo,
     WorkflowInfo,
     WorkflowNodeInfo,
@@ -46,7 +47,7 @@ async def get_workflow(
 
 @workflow_router.put(
     "/{workflow_id}",
-    response_model=ResponseModel[WorkflowInfo],
+    response_model=ResponseModel[SaveWorkflowResponse],
 )
 async def update_workflow(
     request: Request,

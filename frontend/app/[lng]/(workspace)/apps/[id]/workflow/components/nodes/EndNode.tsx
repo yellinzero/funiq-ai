@@ -1,8 +1,15 @@
 'use client'
 
 import type { BaseWorkflowNodeProps } from '@/app/[lng]/(workspace)/apps/[id]/workflow/types'
+import NodeIcon from '@/app/[lng]/(workspace)/apps/[id]/workflow/components/NodeIcon'
 import BaseNode from './BaseNode'
 
 export default function EndNode(props: BaseWorkflowNodeProps) {
-  return <BaseNode {...props} icon={<div className="bg-blue-500 rounded size-5 text-white flex items-center justify-center">E</div>} />
+  const { type } = props
+  return (
+    <BaseNode
+      {...props}
+      icon={<NodeIcon label={type} />}
+    />
+  )
 }

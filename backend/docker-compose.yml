@@ -1,3 +1,5 @@
+name: funiq-ai-backend
+
 x-service-common: &service-common
   volumes:
     - .:/app
@@ -13,8 +15,8 @@ services:
       target: final
       args:
         BUILDKIT_INLINE_CACHE: 1
-    image: funiq_ai:latest
-    container_name: funiq_ai_server
+    image: funiq-ai-backend:latest
+    container_name: funiq-ai-backend-server
     environment:
       MODE: "web"
     ports:
@@ -25,8 +27,8 @@ services:
 
   celery_worker:
     <<: *service-common
-    image: funiq_ai:latest
-    container_name: funiq_ai_celery
+    image: funiq-ai-backend:latest
+    container_name: funiq-ai-backend-celery
     environment:
       MODE: "worker"
     depends_on:
@@ -35,7 +37,7 @@ services:
 
   db:
     image: postgres:15-alpine
-    container_name: ${PGHOST:-funiq_ai_postgres}
+    container_name: ${PGHOST:-funiq-ai-backend-postgres}
     restart: always
     environment:
       PGUSER: postgres
@@ -52,7 +54,7 @@ services:
       retries: 30
 
   redis:
-    container_name: funiq_ai_redis
+    container_name: funiq-ai-backend-redis
     image: redis:6-alpine
     user: redis
     volumes:

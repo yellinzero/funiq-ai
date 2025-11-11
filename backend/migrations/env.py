@@ -22,9 +22,8 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.DBBase.metadata
 target_metadata = DBBase.metadata
-
 def get_db_url():
-    return funiq_ai_config.SYNC_DATABASE_URL.replace(f"@{funiq_ai_config.PGHOST}", "@localhost")
+    return dy_config.SYNC_DATABASE_URL
 config.set_main_option("sqlalchemy.url", get_db_url())
 
 # other values from the config, defined by the needs of env.py,

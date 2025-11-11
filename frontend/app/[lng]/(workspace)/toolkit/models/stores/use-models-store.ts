@@ -28,6 +28,7 @@ export function useModelsQuery(provider: string | null, lang: string) {
 
   return useQuery({
     queryKey: ['models', provider, lang],
+    staleTime: 500,
     queryFn: async () => {
       if (!provider)
         return []

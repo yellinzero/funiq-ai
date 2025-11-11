@@ -227,11 +227,12 @@ export function usePublishWorkflowMutation() {
   })
 }
 
-export function useOperatorsQuery() {
+export function useOperatorsQuery(lang: string) {
   const { setOperators } = useWorkflowStore()
 
   return useQuery({
-    queryKey: ['operators'],
+    queryKey: ['operators', lang],
+    staleTime: 500,
     queryFn: async () => {
       const response = await getOperatorsApi()
       const operators = response.data ?? []

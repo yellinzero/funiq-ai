@@ -16,8 +16,8 @@ class EndOperatorOutput(BaseModel):
 
 schema = {
     "name": OperatorName.END.value,
-    "label": _("End Operator"),
-    "description": _("End operator"),
+    "label": _("End Operator", domain="providers"),
+    "description": _("End Operator", domain="providers"),
     "type": OperatorType.END.value,
     "output_stream": {
         "enabled": True,

@@ -31,3 +31,9 @@ def upgrade(revision: str = "head"):
 def downgrade(revision: str = "-1"):
     """Revert database to a previous version"""
     command.downgrade(config, revision)
+
+
+@cli.command()
+def current():
+    """Display current database migration version"""
+    command.current(config)

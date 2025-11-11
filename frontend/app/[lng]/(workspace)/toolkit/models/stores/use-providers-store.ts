@@ -18,6 +18,7 @@ export function useProvidersQuery(lang: string) {
 
   return useQuery({
     queryKey: ['providers', lang],
+    staleTime: 500,
     queryFn: async () => {
       const response = await getModelProvidersApi()
       const providers = response.data?.providers || []

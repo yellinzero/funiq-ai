@@ -1,3 +1,4 @@
 node_modules
 .ruff_cache
 .spec-workflow
+CLAUDE.md

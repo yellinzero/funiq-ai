@@ -15,6 +15,7 @@ export default antfu({
   react: {
     overrides: {
       'react-refresh/only-export-components': 'off',
+      'react/no-array-index-key': 'off',
     },
   },
   stylistic: true,
@@ -37,6 +38,7 @@ export default antfu({
     },
   },
   rules: {
+    'no-array-index-key': 'off',
     'import/no-duplicates': ['warn', {
       'prefer-inline': true,
     }],

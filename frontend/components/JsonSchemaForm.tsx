@@ -32,7 +32,7 @@ export default function JsonSchemaForm(props: Omit<JsonSchemaFormProps, 'validat
       showErrorList={resolvedShowErrorList}
       noHtml5Validate={resolvedNoHtml5Validate}
     >
-      {resolvedHideSubmitButton && !children ? null : children}
+      {resolvedHideSubmitButton && !children ? <div className="hidden" /> : children}
     </Form>
   )
 }

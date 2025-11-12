@@ -1,11 +1,11 @@
 import { faker } from '@faker-js/faker'
 import { JSONSchemaFaker } from 'json-schema-faker'
 
-// 配置 json-schema-faker 使用 faker.js
+// Configure json-schema-faker to use faker.js
 JSONSchemaFaker.extend('faker', () => faker)
 
 /**
- * 根据 JSON Schema 生成示例数据
+ * Generate mock data from a JSON Schema
  */
 export function generateMockDataFromSchema(schema: any): any {
   if (!schema)
@@ -13,20 +13,19 @@ export function generateMockDataFromSchema(schema: any): any {
 
   try {
     const jsonSchema = schema.json_schema || schema
-
-    // 使用 json-schema-faker 生成数据
+    // Use json-schema-faker to generate data
     const mockData = JSONSchemaFaker.generate(jsonSchema)
     return mockData
   }
   catch (error) {
     console.error('Failed to generate mock data from schema:', error)
-    // 降级到简单实现
+    // Fallback to a simple mock data generator
     return generateSimpleMockData(schema)
   }
 }
 
 /**
- * 简单的 mock 数据生成 (作为后备)
+ * Simple mock data generator (fallback)
  */
 function generateSimpleMockData(schema: any): any {
   const jsonSchema = schema.json_schema || schema
@@ -76,7 +75,7 @@ function generateSimpleMockData(schema: any): any {
 }
 
 /**
- * 格式化 JSON 数据以便展示
+ * Format JSON data for display
  */
 export function formatJsonData(data: any): string {
   try {

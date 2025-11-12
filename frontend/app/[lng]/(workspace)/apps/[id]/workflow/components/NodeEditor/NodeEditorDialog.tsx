@@ -42,6 +42,8 @@ export function NodeEditorDialog({ node, open, onOpenChange }: NodeEditorDialogP
   // Sync internal node with external node prop changes
   useEffect(() => {
     setInnerNode(node)
+    setIsInputPanelOpen(false)
+    setIsOutputPanelOpen(false)
   }, [node])
 
   // Get operator information for the current node
